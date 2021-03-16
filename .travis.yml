@@ -1,0 +1,27 @@
+language: go
+
+go:
+  - 1.x
+
+script:
+  #- echo "Build Terraform Provider Bluecat for Windows"
+  #- env GOOS=windows GOARCH=amd64 go build -o terraform-provider-bluecat-window-amd64
+  #- echo "Build Terraform Provider Bluecat for Linux"
+  #- env GOOS=linux GOARCH=amd64 go build -o terraform-provider-bluecat
+  #- echo "Build Terraform Provider Bluecat for Mac"
+  #- env GOOS=darwin GOARCH=amd64 go build -o terraform-provider-bluecat-mac-amd64
+
+
+before_deploy:
+  - export TRAVIS_TAG=${TRAVIS_TAG:-$VERSION}
+  - git tag $TRAVIS_TAG  
+deploy:
+  provider: releases
+  api_key: $GITHUB_TOKEN
+  file: 
+    #- terraform-provider-bluecat-window-amd64
+    #- terraform-provider-bluecat
+    #- terraform-provider-bluecat-mac-amd64
+  skip_cleanup: true
+  on:
+    all_branches: true
