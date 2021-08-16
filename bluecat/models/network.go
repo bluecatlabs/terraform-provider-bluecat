@@ -85,8 +85,8 @@ func GetNextIPAddress(ipAddr entities.IPAddress) *entities.IPAddress {
 	if len(ipAddr.Action) == 0 {
 		res.Action = AllocateStatic
 	}
-	res.SetObjectType("get_next_ip")
-	res.SetSubPath(fmt.Sprintf("%s/ipv4_networks/%s", getIPPath(res.Configuration), ipAddr.CIDR))
+	res.SetObjectType("")
+	res.SetSubPath(fmt.Sprintf("%s/ipv4_networks/%s/get_next_ip", getIPPath(res.Configuration), ipAddr.CIDR))
 
 	return &res
 }
@@ -96,6 +96,26 @@ func IPAddress(ipAddr entities.IPAddress) *entities.IPAddress {
 	res := ipAddr
 	res.SetObjectType("")
 	res.SetSubPath(fmt.Sprintf("%s/ipv4_address/%s", getIPPath(res.Configuration), ipAddr.Address))
+
+	return &res
+}
+
+// DHCP Range
+
+// NewDHCPRange Initialize the new DHCP Range to be added
+func NewDHCPRange(dhcpRange entities.DHCPRange) *entities.DHCPRange {
+	res := dhcpRange
+	res.SetObjectType("")
+	res.SetSubPath(fmt.Sprintf("%s/ipv4_networks/%s/dhcp_ranges", getPath(res.Configuration), dhcpRange.Network))
+
+	return &res
+}
+
+// DHCPRange Initialize the DHCP Range to be loaded, updated or deleted
+func DHCPRange(dhcpRange entities.DHCPRange) *entities.DHCPRange {
+	res := dhcpRange
+	res.SetObjectType("")
+	res.SetSubPath(fmt.Sprintf("%s/ipv4_networks/%s/dhcp_ranges", getPath(res.Configuration), dhcpRange.Network))
 
 	return &res
 }

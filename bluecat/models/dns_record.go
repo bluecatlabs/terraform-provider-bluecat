@@ -55,3 +55,43 @@ func CNAMERecord(cnameRecord entities.CNAMERecord) *entities.CNAMERecord {
 	res.SetSubPath(fmt.Sprintf("%s/cname_records/%s", getRRPrefixPath(cnameRecord.Configuration, cnameRecord.View), cnameRecord.AbsoluteName))
 	return &res
 }
+
+// TXTRecord Initialize the TXT record to be loaded, updated or deleted
+func TXTRecord(txtRecord entities.TXTRecord) *entities.TXTRecord {
+	res := txtRecord
+	res.SetObjectType("")
+	res.SetSubPath(fmt.Sprintf("%s/text_records/%s", getRRPrefixPath(txtRecord.Configuration, txtRecord.View), txtRecord.AbsoluteName))
+	return &res
+}
+
+// NewTXTRecord Initialize the new TXT record to be added
+func NewTXTRecord(txtRecord entities.TXTRecord) *entities.TXTRecord {
+	res := txtRecord
+	res.SetObjectType("text_records")
+	sPath := getRRPrefixPath(txtRecord.Configuration, txtRecord.View)
+	if len(txtRecord.Zone) > 0 {
+		sPath = fmt.Sprintf("%s/zones/%s", sPath, txtRecord.Zone)
+	}
+	res.SetSubPath(sPath)
+	return &res
+}
+
+// GenericRecord Initialize the Generic record to be loaded, updated or deleted
+func GenericRecord(genericRecord entities.GenericRecord) *entities.GenericRecord {
+	res := genericRecord
+	res.SetObjectType("")
+	res.SetSubPath(fmt.Sprintf("%s/generic_records/%s", getRRPrefixPath(genericRecord.Configuration, genericRecord.View), genericRecord.AbsoluteName))
+	return &res
+}
+
+// NewGenericRecord Initialize the new Generic record to be added
+func NewGenericRecord(genericRecord entities.GenericRecord) *entities.GenericRecord {
+	res := genericRecord
+	res.SetObjectType("generic_records")
+	sPath := getRRPrefixPath(genericRecord.Configuration, genericRecord.View)
+	if len(genericRecord.Zone) > 0 {
+		sPath = fmt.Sprintf("%s/zones/%s", sPath, genericRecord.Zone)
+	}
+	res.SetSubPath(sPath)
+	return &res
+}

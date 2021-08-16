@@ -42,7 +42,7 @@ func ResourceIPAllocation() *schema.Resource {
 				DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
 					zone := d.Get("zone").(string)
 					return checkDiffName(old, new, zone)
-				  },
+				},
 			},
 			"network": {
 				Type:        schema.TypeString,
@@ -61,7 +61,7 @@ func ResourceIPAllocation() *schema.Resource {
 						return false
 					}
 					return true
-				  },
+				},
 			},
 			"mac_address": {
 				Type:        schema.TypeString,
@@ -74,7 +74,17 @@ func ResourceIPAllocation() *schema.Resource {
 				Description: "IP address/Host record's properties. Example: attribute=value|",
 				DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
 					return checkDiffProperties(old, new)
-				  },
+				},
+			},
+			"action": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				Description: "Desired IP4 address state: MAKE_STATIC / MAKE_RESERVED / MAKE_DHCP_RESERVED",
+			},
+			"template": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				Description: "IPv4 Template which you want to assign",
 			},
 		},
 	}
@@ -93,6 +103,8 @@ func createIPAllocation(d *schema.ResourceData, m interface{}) error {
 	ip4Address := d.Get("ip4_address").(string)
 	macAddress := d.Get("mac_address").(string)
 	properties := d.Get("properties").(string)
+	action := d.Get("action").(string)
+	template := d.Get("template").(string)
 
 	connector := m.(*utils.Connector)
 	objMgr := new(utils.ObjectManager)
@@ -101,41 +113,39 @@ func createIPAllocation(d *schema.ResourceData, m interface{}) error {
 	addrCIDR := strings.Split(network, "/")
 	fqdnName := getFQDN(name, zone)
 
-	if len(ip4Address) == 0 || len(zone) == 0 {
-		createIP := true
-		if len(ip4Address) != 0 {
-			_, err := objMgr.GetIPAddress(configuration, ip4Address)
+	createIP := true
+	if len(ip4Address) != 0 {
+		_, err := objMgr.GetIPAddress(configuration, ip4Address)
+		if err != nil {
+			log.Debugf("The linked IP address doesn't exist")
+		} else {
+			createIP = false
+			err = updateAllocatedResource(d, m)
 			if err != nil {
-				log.Debugf("The linked IP address doesn't exist")
-			} else {
-				createIP = false
-				err = updateAllocatedResource(d, m)
-				if err != nil {
-					return err
-				}
+				return err
 			}
 		}
-		if createIP {
-			log.Debugf("Allocating the IP address under network %s", network)
-			ipProperties := properties
-			if len(zone)>0 {
-				ipProperties = ""
-			}
-			newIPAddress, err := objMgr.CreateStaticIP(configuration, addrCIDR[0], ip4Address, macAddress, fqdnName, ipProperties)
-			if err != nil {
-				msg := fmt.Sprintf("Error allocating IP from network %s: %s", network, err)
-				log.Debug(msg)
-				return fmt.Errorf(msg)
-			}
-			if len(ip4Address) == 0 {
-				//No IP address, so need to get the IP after got the new ones in the above step
-				ip4Address = getPropertyValue("address", newIPAddress.Properties)
-				log.Debugf("Got the IP address %s", ip4Address)
-			}
-		}
-		d.Set("ip4_address", ip4Address)
-		d.Set("name", fqdnName)
 	}
+	if createIP {
+		log.Debugf("Allocating the IP address under network %s", network)
+		ipProperties := properties
+		if len(zone) > 0 {
+			ipProperties = ""
+		}
+		newIPAddress, err := objMgr.CreateIPAddress(configuration, addrCIDR[0], ip4Address, macAddress, fqdnName, action, ipProperties, template)
+		if err != nil {
+			msg := fmt.Sprintf("Error allocating IP from network %s: %s", network, err)
+			log.Debug(msg)
+			return fmt.Errorf(msg)
+		}
+		if len(ip4Address) == 0 {
+			//No IP address, so need to get the IP after got the new ones in the above step
+			ip4Address = getPropertyValue("address", newIPAddress.Properties)
+			log.Debugf("Got the IP address %s", ip4Address)
+		}
+	}
+	d.Set("ip4_address", ip4Address)
+	d.Set("name", fqdnName)
 
 	if len(zone) > 0 {
 		log.Debugf("Creating the Host record %s", fqdnName)
@@ -305,7 +315,7 @@ func updateAllocatedResource(d *schema.ResourceData, m interface{}) error {
 		return fmt.Errorf(msg)
 	}
 	// The properties field belongs to Host record if the zone field is not none
-	if len(zone)>0 {
+	if len(zone) > 0 {
 		properties = ""
 	} else {
 		// 'address' and 'state' can not be changed.

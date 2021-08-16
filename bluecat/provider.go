@@ -52,6 +52,9 @@ func Provider() *schema.Provider {
 			"bluecat_ip_allocation":  ResourceIPAllocation(),
 			"bluecat_ip_association": ResourceIPAssociation(),
 			"bluecat_ptr_record":     ResourcePTRRecord(),
+			"bluecat_txt_record":     ResourceTXTRecord(),
+			"bluecat_generic_record": ResourceGenericRecord(),
+			"bluecat_dhcp_range":     ResourceDHCPRange(),
 		},
 		ConfigureFunc: providerConfigure,
 	}

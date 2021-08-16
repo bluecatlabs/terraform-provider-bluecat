@@ -1,12 +1,13 @@
 package main
 
 import (
-	"testing"
 	"fmt"
 	"strings"
 	"terraform-provider-bluecat/bluecat/utils"
-	"github.com/hashicorp/terraform-plugin-sdk/terraform"
+	"testing"
+
 	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/terraform"
 )
 
 func TestAccResourceNetwork(t *testing.T) {
@@ -22,7 +23,7 @@ func TestAccResourceNetwork(t *testing.T) {
 					testAccNetworkExists(t, fmt.Sprintf("bluecat_ipv4network.%s", netResource1), netName1, netCIDR1, netAllowDuplicateHost1, netGateway1, netReserveIPValue1),
 				),
 			},
-			// // update
+			// update
 			resource.TestStep{
 				Config: testAccResourceNetworkUpdateNotFullField,
 				Check: resource.ComposeTestCheckFunc(
@@ -52,6 +53,20 @@ func TestAccResourceNetwork(t *testing.T) {
 			},
 		},
 	})
+	// create with full fields include template field
+	resource.Test(t, resource.TestCase{
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckNetworkDestroy,
+		Steps: []resource.TestStep{
+			// create
+			resource.TestStep{
+				Config: testAccResourceNetworkCreateFullFieldWithTemplate,
+				Check: resource.ComposeTestCheckFunc(
+					testAccNetworkExists(t, fmt.Sprintf("bluecat_ipv4network.%s", netResource1), netName1, netCIDR1, netAllowDuplicateHost1, netGateway3, netReserveIPValue2),
+				),
+			},
+		},
+	})
 }
 
 func testAccCheckNetworkDestroy(s *terraform.State) error {
@@ -67,7 +82,7 @@ func testAccCheckNetworkDestroy(s *terraform.State) error {
 				log.Error(msg)
 				return fmt.Errorf(msg)
 			}
-			
+
 		} else if rs.Type == "bluecat_ipv4block" {
 			cidr := strings.Split(rs.Primary.ID, "/")
 			_, err := objMgr.GetBlock(configuration, cidr[0], cidr[1])
@@ -124,6 +139,12 @@ func testAccNetworkExists(t *testing.T, resource string, name string, cidr strin
 			log.Error(msg)
 			return fmt.Errorf(msg)
 		}
+		templateId := getPropertyValue("template", network.Properties)
+		if templateName != "" && templateId == "" {
+			msg := fmt.Sprintf("Assign %s template of Network %s failed", templateName, rs.Primary.ID)
+			log.Error(msg)
+			return fmt.Errorf(msg)
+		}
 		return nil
 	}
 }
@@ -141,12 +162,14 @@ var testAccresourceBlockCreate = fmt.Sprintf(
 	  }`, server, blockNetResource1, configuration)
 
 var netResource1 = "net_record"
+
 // var netName1 = ""
 var netName1 = "network1"
 var netCIDR1 = "30.0.0.0/24"
 var netGateway1 = "30.0.0.12"
 var netReserveIP1 = "1"
 var netReserveIPValue1 = "30.0.0.1"
+
 // var netProperties1 = ""
 var netProperties1 = "allowDuplicateHost=disable|"
 var netAllowDuplicateHost1 = "disable"
@@ -175,6 +198,7 @@ var testAccResourceNetworkCreateNotFullField = fmt.Sprintf(
 
 var netName2 = "network2"
 var netGateway2 = "30.0.0.15"
+
 // var netProperties2 = ""
 var netProperties2 = "allowDuplicateHost=enable|"
 var netAllowDuplicateHost2 = "enable"
@@ -200,3 +224,20 @@ var testAccResourceNetworkUpdateFullField = fmt.Sprintf(
 		properties = "%s"
 		depends_on = [bluecat_ipv4block.%s]
 		}`, testAccresourceBlockCreate, netResource1, configuration, netName2, netCIDR1, netGateway2, netReserveIP1, netProperties2, blockNetResource1)
+
+var netReserveIP2 = "1"
+var netReserveIPValue2 = "30.0.0.2"
+var templateName = "template1"
+var netGateway3 = "30.0.0.1"
+var testAccResourceNetworkCreateFullFieldWithTemplate = fmt.Sprintf(
+	`%s
+	resource "bluecat_ipv4network" "%s" {
+		configuration = "%s"
+		name = "%s"
+		cidr = "%s"
+		gateway = "%s"
+		reserve_ip = %s
+		properties = "%s"
+		template = "%s"
+		depends_on = [bluecat_ipv4block.%s]
+		}`, testAccresourceBlockCreate, netResource1, configuration, netName1, netCIDR1, netGateway3, netReserveIP2, netProperties1, templateName, blockNetResource1)

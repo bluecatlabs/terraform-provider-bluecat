@@ -51,7 +51,12 @@ func ResourceNetwork() *schema.Resource {
 				Description: "IPv4 Network's properties. Example: attribute=value|",
 				DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
 					return checkDiffProperties(old, new)
-				  },
+				},
+			},
+			"template": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				Description: "IPv4 Template",
 			},
 		},
 	}
@@ -66,6 +71,7 @@ func createNetwork(d *schema.ResourceData, m interface{}) error {
 	numReserved := d.Get("reserve_ip").(int)
 	gateway := d.Get("gateway").(string)
 	properties := d.Get("properties").(string)
+	template := d.Get("template").(string)
 
 	connector := m.(*utils.Connector)
 	objMgr := new(utils.ObjectManager)
@@ -80,7 +86,7 @@ func createNetwork(d *schema.ResourceData, m interface{}) error {
 		return fmt.Errorf(msg)
 	}
 
-	_, err = objMgr.CreateNetwork(configuration, block.AddressCIDR(), name, cidr, gateway, properties)
+	_, err = objMgr.CreateNetwork(configuration, block.AddressCIDR(), name, cidr, gateway, properties, template)
 	if err != nil {
 		msg := fmt.Sprintf("Error creating Network (%s): %s", cidr, err)
 		log.Error(msg)

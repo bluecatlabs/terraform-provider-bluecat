@@ -22,6 +22,7 @@ logging:
 ```
 
 ### Provider configuration:
+Create a file `main.tf` with the following
 ``` 
 provider "bluecat" {
   server = "127.0.0.1"
@@ -146,6 +147,43 @@ resource "bluecat_cname_record" "cname_record" {
   ttl = 123
   properties = ""
   depends_on = [bluecat_host_record.host_record]
+}
+```
+### Resource TXT Record:
+```
+resource "bluecat_txt_record" "txt_record" {
+  configuration = "terraform_demo"
+  view = "gg"
+  zone = "gateway.com"
+  absolute_name = "txt"
+  text = "text"
+  ttl = 123
+  properties = ""
+}
+```
+### Resource Generic Record:
+```
+resource "bluecat_generic_record" "generic_record" {
+  configuration = "terraform_demo"
+  view = "gg"
+  zone = "gateway.com"
+  type = "NS"
+  absolute_name = "test_NS"
+  data = "text"
+  ttl = 123
+  properties = ""
+}
+```
+### Resource DHCP Range:
+```
+resource "bluecat_dhcp_range" "dhcp_range" {
+  configuration = "terraform_demo"
+  network = "30.0.0.0/24"
+  start = "30.0.0.20"
+  end = "30.0.0.30"
+  properties = ""
+  template = "testtemplate"
+  depends_on = [bluecat_ipv4network.net_record]
 }
 ```
 

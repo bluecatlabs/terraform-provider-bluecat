@@ -29,16 +29,28 @@ type Network struct {
 	CIDR          string `json:"cidr"`
 	Gateway       string `json:"gateway"`
 	Properties    string `json:"properties,omitempty"`
+	Template      string `json:"template,omitempty"`
 }
 
 // IPAddress The IPv4 Address entity
 type IPAddress struct {
 	BAMBase       `json:"-"`
 	Configuration string `json:"-"`
+	Template      string `json:"template,omitempty"`
 	Action        string `json:"action,omitempty"`
 	CIDR          string `json:"network,omitempty"`
 	Address       string `json:"ipv4addr,omitempty"`
 	Mac           string `json:"mac_address,omitempty"`
 	Name          string `json:"name,omitempty"`
+	Properties    string `json:"properties,omitempty"`
+}
+
+type DHCPRange struct {
+	BAMBase       `json:"-"`
+	Configuration string `json:"-"`
+	Template      string `json:"template,omitempty"`
+	Network       string `json:"network,omitempty"`
+	Start         string `json:"start,omitempty"`
+	End           string `json:"end,omitempty"`
 	Properties    string `json:"properties,omitempty"`
 }

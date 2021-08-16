@@ -25,3 +25,28 @@ type CNAMERecord struct {
 	TTL           int    `json:"ttl,omitempty"`
 	Properties    string `json:"properties,omitempty"`
 }
+
+// TXTRecord TXT record entity
+type TXTRecord struct {
+	BAMBase       `json:"-"`
+	Configuration string `json:"-"`
+	View          string `json:"-"`
+	Zone          string `json:"-"`
+	AbsoluteName  string `json:"absolute_name,omitempty"`
+	Text          string `json:"text,omitempty"`
+	TTL           int    `json:"ttl,omitempty"`
+	Properties    string `json:"properties,omitempty"`
+}
+
+// GenericRecord Generic record entity
+type GenericRecord struct {
+	BAMBase       `json:"-"`
+	Configuration string `json:"-"`
+	View          string `json:"-"`
+	Zone          string `json:"-"`
+	TypeRR        string `json:"type,omitempty"`
+	AbsoluteName  string `json:"absolute_name,omitempty"`
+	Data          string `json:"data,omitempty"`
+	TTL           int    `json:"ttl,omitempty"`
+	Properties    string `json:"properties,omitempty"`
+}

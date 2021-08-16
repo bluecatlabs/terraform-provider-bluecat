@@ -253,7 +253,7 @@ func generateNetworkProperties(props string, gateway string) string {
 }
 
 // CreateNetwork Create a new Network
-func (objMgr *ObjectManager) CreateNetwork(configuration string, block string, name string, cidr string, gateway string, properties string) (*entities.Network, error) {
+func (objMgr *ObjectManager) CreateNetwork(configuration string, block string, name string, cidr string, gateway string, properties string, template string) (*entities.Network, error) {
 
 	network := models.NewNetwork(entities.Network{
 		Configuration: configuration,
@@ -262,6 +262,7 @@ func (objMgr *ObjectManager) CreateNetwork(configuration string, block string, n
 		CIDR:          cidr,
 		Gateway:       gateway,
 		Properties:    generateNetworkProperties(properties, gateway),
+		Template:      template,
 	})
 	_, err := objMgr.Connector.CreateObject(network)
 	return network, err
@@ -304,20 +305,84 @@ func (objMgr *ObjectManager) DeleteNetwork(configuration string, cidr string) (s
 	return objMgr.Connector.DeleteObject(network)
 }
 
+// DHCP Range
+
+// CreateDHCPRange Create a new DHCP Range
+func (objMgr *ObjectManager) CreateDHCPRange(configuration string, template string, network string, start string, end string, properties string) (*entities.DHCPRange, error) {
+
+	dhcpRange := models.NewDHCPRange(entities.DHCPRange{
+		Configuration: configuration,
+		Template:      template,
+		Network:       network,
+		Start:         start,
+		End:           end,
+		Properties:    properties,
+	})
+	_, err := objMgr.Connector.CreateObject(dhcpRange)
+	return dhcpRange, err
+}
+
+// GetDHCPRange Get the DHCP Range info
+func (objMgr *ObjectManager) GetDHCPRange(configuration string, network string, start string, end string) (*entities.DHCPRange, error) {
+
+	dhcpRange := models.DHCPRange(entities.DHCPRange{
+		Configuration: configuration,
+		Network:       network,
+		Start:         start,
+		End:           end,
+	})
+
+	err := objMgr.Connector.GetObject(dhcpRange, &dhcpRange)
+	return dhcpRange, err
+}
+
+// UpdateDHCPRange Update the DHCP Range info
+func (objMgr *ObjectManager) UpdateDHCPRange(configuration string, template string, network string, start string, end string, properties string) (*entities.DHCPRange, error) {
+
+	dhcpRange := models.DHCPRange(entities.DHCPRange{
+		Configuration: configuration,
+		Template:      template,
+		Network:       network,
+		Start:         start,
+		End:           end,
+		Properties:    properties,
+	})
+
+	err := objMgr.Connector.UpdateObject(dhcpRange, &dhcpRange)
+	return dhcpRange, err
+}
+
+// DeleteDHCPRange Delete the DHCP Range
+func (objMgr *ObjectManager) DeleteDHCPRange(configuration string, network string, start string, end string) (string, error) {
+
+	dhcpRange := models.DHCPRange(entities.DHCPRange{
+		Configuration: configuration,
+		Network:       network,
+		Start:         start,
+		End:           end,
+	})
+
+	return objMgr.Connector.DeleteObject(dhcpRange)
+}
+
 // IP
 
 // ReserveIPAddress Create the new IP address for later use
 func (objMgr *ObjectManager) ReserveIPAddress(configuration string, network string) (*entities.IPAddress, error) {
-	return objMgr.createIPAddress(configuration, network, "", "", "", models.AllocateReserved, "")
+	return objMgr.CreateIPAddress(configuration, network, "", "", "", models.AllocateReserved, "", "")
 }
 
 // CreateStaticIP Create the new static IP address
 func (objMgr *ObjectManager) CreateStaticIP(configuration string, network string, address string, macAddress string, name string, properties string) (*entities.IPAddress, error) {
-	return objMgr.createIPAddress(configuration, network, address, macAddress, name, models.AllocateStatic, properties)
+	return objMgr.CreateIPAddress(configuration, network, address, macAddress, name, models.AllocateStatic, properties, "")
 }
 
 // createIPAddress Create the new IP address. Allocate the next available on the network if IP address is not provided
-func (objMgr *ObjectManager) createIPAddress(configuration string, cidr string, address string, macAddress string, name string, addrType string, properties string) (*entities.IPAddress, error) {
+func (objMgr *ObjectManager) CreateIPAddress(configuration string, cidr string, address string, macAddress string, name string, addrType string, properties string, template string) (*entities.IPAddress, error) {
+	if len(addrType) == 0 {
+		addrType = models.AllocateStatic
+	}
+
 	addrEntity := entities.IPAddress{
 		Configuration: configuration,
 		CIDR:          cidr,
@@ -326,6 +391,7 @@ func (objMgr *ObjectManager) createIPAddress(configuration string, cidr string, 
 		Mac:           macAddress,
 		Action:        addrType,
 		Properties:    properties,
+		Template:      template,
 	}
 
 	ipAddr := new(entities.IPAddress)
@@ -389,4 +455,124 @@ func (objMgr *ObjectManager) DeleteIPAddress(configuration string, address strin
 		Address:       address,
 	})
 	return objMgr.Connector.DeleteObject(ipAddr)
+}
+
+// CreateTXTRecord Create the TXT record
+func (objMgr *ObjectManager) CreateTXTRecord(configuration string, view string, zone string, absoluteName string, text string, ttl int, properties string) (*entities.TXTRecord, error) {
+
+	txtRecord := models.NewTXTRecord(entities.TXTRecord{
+		Configuration: configuration,
+		View:          view,
+		Zone:          zone,
+		Text:          text,
+		AbsoluteName:  absoluteName,
+		TTL:           ttl,
+		Properties:    properties,
+	})
+
+	_, err := objMgr.Connector.CreateObject(txtRecord)
+	return txtRecord, err
+}
+
+// GetTXTRecord Get the TXT record
+func (objMgr *ObjectManager) GetTXTRecord(configuration string, view string, absoluteName string) (*entities.TXTRecord, error) {
+
+	txtRecord := models.TXTRecord(entities.TXTRecord{
+		Configuration: configuration,
+		View:          view,
+		AbsoluteName:  absoluteName,
+	})
+
+	err := objMgr.Connector.GetObject(txtRecord, &txtRecord)
+	return txtRecord, err
+}
+
+// UpdateTXTRecord Update the TXT record
+func (objMgr *ObjectManager) UpdateTXTRecord(configuration string, view string, zone string, absoluteName string, text string, ttl int, properties string) (*entities.TXTRecord, error) {
+
+	txtRecord := models.TXTRecord(entities.TXTRecord{
+		Configuration: configuration,
+		View:          view,
+		Zone:          zone,
+		Text:          text,
+		AbsoluteName:  absoluteName,
+		TTL:           ttl,
+		Properties:    properties,
+	})
+
+	err := objMgr.Connector.UpdateObject(txtRecord, &txtRecord)
+	return txtRecord, err
+}
+
+// DeleteTXTRecord Delete the TXT record
+func (objMgr *ObjectManager) DeleteTXTRecord(configuration string, view string, absoluteName string) (string, error) {
+
+	txtRecord := models.TXTRecord(entities.TXTRecord{
+		Configuration: configuration,
+		View:          view,
+		AbsoluteName:  absoluteName,
+	})
+
+	return objMgr.Connector.DeleteObject(txtRecord)
+}
+
+// CreateGenericRecord Create the Generic record
+func (objMgr *ObjectManager) CreateGenericRecord(configuration string, view string, zone string, typerr string, absoluteName string, data string, ttl int, properties string) (*entities.GenericRecord, error) {
+
+	genericRecord := models.NewGenericRecord(entities.GenericRecord{
+		Configuration: configuration,
+		View:          view,
+		Zone:          zone,
+		TypeRR:        typerr,
+		Data:          data,
+		AbsoluteName:  absoluteName,
+		TTL:           ttl,
+		Properties:    properties,
+	})
+
+	_, err := objMgr.Connector.CreateObject(genericRecord)
+	return genericRecord, err
+}
+
+// GetGenericRecord Get the Generic record
+func (objMgr *ObjectManager) GetGenericRecord(configuration string, view string, absoluteName string) (*entities.GenericRecord, error) {
+
+	genericRecord := models.GenericRecord(entities.GenericRecord{
+		Configuration: configuration,
+		View:          view,
+		AbsoluteName:  absoluteName,
+	})
+
+	err := objMgr.Connector.GetObject(genericRecord, &genericRecord)
+	return genericRecord, err
+}
+
+// UpdateGenericRecord Update the Generic record
+func (objMgr *ObjectManager) UpdateGenericRecord(configuration string, view string, zone string, typerr string, absoluteName string, data string, ttl int, properties string) (*entities.GenericRecord, error) {
+
+	genericRecord := models.GenericRecord(entities.GenericRecord{
+		Configuration: configuration,
+		View:          view,
+		Zone:          zone,
+		TypeRR:        typerr,
+		Data:          data,
+		AbsoluteName:  absoluteName,
+		TTL:           ttl,
+		Properties:    properties,
+	})
+
+	err := objMgr.Connector.UpdateObject(genericRecord, &genericRecord)
+	return genericRecord, err
+}
+
+// DeleteGenericRecord Delete the Generic record
+func (objMgr *ObjectManager) DeleteGenericRecord(configuration string, view string, absoluteName string) (string, error) {
+
+	genericRecord := models.GenericRecord(entities.GenericRecord{
+		Configuration: configuration,
+		View:          view,
+		AbsoluteName:  absoluteName,
+	})
+
+	return objMgr.Connector.DeleteObject(genericRecord)
 }
