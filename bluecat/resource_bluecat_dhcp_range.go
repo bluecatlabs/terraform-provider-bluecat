@@ -121,6 +121,10 @@ func updateDHCPRange(d *schema.ResourceData, m interface{}) error {
 	properties := d.Get("properties").(string)
 	template := d.Get("template").(string)
 
+	if template == "" {
+		template = " "
+	}
+
 	connector := m.(*utils.Connector)
 	objMgr := new(utils.ObjectManager)
 	objMgr.Connector = connector
