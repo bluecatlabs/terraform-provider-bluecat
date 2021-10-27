@@ -70,7 +70,6 @@ func createDHCPRange(d *schema.ResourceData, m interface{}) error {
 	connector := m.(*utils.Connector)
 	objMgr := new(utils.ObjectManager)
 	objMgr.Connector = connector
-
 	//TODO: Check Network?
 
 	_, err := objMgr.CreateDHCPRange(configuration, template, network, start, end, properties)
@@ -120,7 +119,6 @@ func updateDHCPRange(d *schema.ResourceData, m interface{}) error {
 	end := d.Get("end").(string)
 	properties := d.Get("properties").(string)
 	template := d.Get("template").(string)
-
 	if template == "" {
 		template = " "
 	}
@@ -138,7 +136,7 @@ func updateDHCPRange(d *schema.ResourceData, m interface{}) error {
 	d.Set("start", getAttributeFromProperties("start", properties))
 	d.Set("end", getAttributeFromProperties("end", properties))
 	log.Debugf("Completed to update DHCP Range (%s - %s)", start, end)
-	return getNetwork(d, m)
+	return getDHCPRange(d, m)
 }
 
 // deleteDHCPRange Delete the DHCP Range

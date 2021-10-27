@@ -115,7 +115,7 @@ func NewDHCPRange(dhcpRange entities.DHCPRange) *entities.DHCPRange {
 func DHCPRange(dhcpRange entities.DHCPRange) *entities.DHCPRange {
 	res := dhcpRange
 	res.SetObjectType("")
-	res.SetSubPath(fmt.Sprintf("%s/ipv4_networks/%s/dhcp_ranges", getPath(res.Configuration), dhcpRange.Network))
+	res.SetSubPath(fmt.Sprintf("%s/ipv4_networks/%s/start/%s/end/%s/dhcp_ranges", getPath(res.Configuration), dhcpRange.Network, dhcpRange.Start, dhcpRange.End))
 
 	return &res
 }

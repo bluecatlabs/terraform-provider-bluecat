@@ -5,7 +5,6 @@ import (
 	"strings"
 	"terraform-provider-bluecat/bluecat/utils"
 	"testing"
-
 	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/terraform"
 )
@@ -20,14 +19,14 @@ func TestAccResourceNetwork(t *testing.T) {
 			resource.TestStep{
 				Config: testAccResourceNetworkCreateFullField,
 				Check: resource.ComposeTestCheckFunc(
-					testAccNetworkExists(t, fmt.Sprintf("bluecat_ipv4network.%s", netResource1), netName1, netCIDR1, netAllowDuplicateHost1, netGateway1, netReserveIPValue1),
+					testAccNetworkExists(t, fmt.Sprintf("bluecat_ipv4network.%s", netResource1), netName1, netCIDR1, netAllowDuplicateHost1, netGateway1, netReserveIPValue1, ""),
 				),
 			},
 			// update
 			resource.TestStep{
 				Config: testAccResourceNetworkUpdateNotFullField,
 				Check: resource.ComposeTestCheckFunc(
-					testAccNetworkExists(t, fmt.Sprintf("bluecat_ipv4network.%s", netResource1), "", netCIDR1, netAllowDuplicateHost2, netGateway2, netReserveIPValue1),
+					testAccNetworkExists(t, fmt.Sprintf("bluecat_ipv4network.%s", netResource1), "", netCIDR1, netAllowDuplicateHost2, netGateway2, netReserveIPValue1, ""),
 				),
 			},
 		},
@@ -41,14 +40,14 @@ func TestAccResourceNetwork(t *testing.T) {
 			resource.TestStep{
 				Config: testAccResourceNetworkCreateNotFullField,
 				Check: resource.ComposeTestCheckFunc(
-					testAccNetworkExists(t, fmt.Sprintf("bluecat_ipv4network.%s", netResource1), "", netCIDR1, netAllowDuplicateHost1, netGateway1, netReserveIPValue1),
+					testAccNetworkExists(t, fmt.Sprintf("bluecat_ipv4network.%s", netResource1), "", netCIDR1, netAllowDuplicateHost1, netGateway1, netReserveIPValue1, ""),
 				),
 			},
 			// update
 			resource.TestStep{
 				Config: testAccResourceNetworkUpdateFullField,
 				Check: resource.ComposeTestCheckFunc(
-					testAccNetworkExists(t, fmt.Sprintf("bluecat_ipv4network.%s", netResource1), netName2, netCIDR1, netAllowDuplicateHost2, netGateway2, netReserveIPValue1),
+					testAccNetworkExists(t, fmt.Sprintf("bluecat_ipv4network.%s", netResource1), netName2, netCIDR1, netAllowDuplicateHost2, netGateway2, netReserveIPValue1, ""),
 				),
 			},
 		},
@@ -62,7 +61,7 @@ func TestAccResourceNetwork(t *testing.T) {
 			resource.TestStep{
 				Config: testAccResourceNetworkCreateFullFieldWithTemplate,
 				Check: resource.ComposeTestCheckFunc(
-					testAccNetworkExists(t, fmt.Sprintf("bluecat_ipv4network.%s", netResource1), netName1, netCIDR1, netAllowDuplicateHost1, netGateway3, netReserveIPValue2),
+					testAccNetworkExists(t, fmt.Sprintf("bluecat_ipv4network.%s", netResource1), netName1, netCIDR1, netAllowDuplicateHost1, netGateway3, netReserveIPValue2, templateName),
 				),
 			},
 		},
@@ -100,7 +99,7 @@ func testAccCheckNetworkDestroy(s *terraform.State) error {
 	return nil
 }
 
-func testAccNetworkExists(t *testing.T, resource string, name string, cidr string, allowDuplicateHost string, gateway string, netReserveIPValue string) resource.TestCheckFunc {
+func testAccNetworkExists(t *testing.T, resource string, name string, cidr string, allowDuplicateHost string, gateway string, netReserveIPValue string, template string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		rs, ok := s.RootModule().Resources[resource]
 		if !ok {
@@ -140,8 +139,8 @@ func testAccNetworkExists(t *testing.T, resource string, name string, cidr strin
 			return fmt.Errorf(msg)
 		}
 		templateId := getPropertyValue("template", network.Properties)
-		if templateName != "" && templateId == "" {
-			msg := fmt.Sprintf("Assign %s template of Network %s failed", templateName, rs.Primary.ID)
+		if template != "" && templateId == "" {
+			msg := fmt.Sprintf("Assign %s template of Network %s failed", template, rs.Primary.ID)
 			log.Error(msg)
 			return fmt.Errorf(msg)
 		}
