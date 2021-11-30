@@ -3,11 +3,12 @@
 package main
 
 import (
-	"testing"
 	"fmt"
 	"terraform-provider-bluecat/bluecat/utils"
-	"github.com/hashicorp/terraform-plugin-sdk/terraform"
+	"testing"
+
 	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/terraform"
 )
 
 func TestAccResourcePTRRecord(t *testing.T) {
@@ -89,7 +90,7 @@ func testAccPTRRecordExists(t *testing.T, resource string, name string, ttl stri
 			log.Error(msg)
 			return fmt.Errorf(msg)
 		}
-		if checkValidHostRecord(*hostRecord, ttl, ip, "true") == false{
+		if checkValidHostRecord(*hostRecord, ttl, ip, "true") == false {
 			msg := fmt.Sprintf("Getting Host record %s failed: %s. Expect ttl=%s addresses=%s reverseRecord=%s in properties, but received '%s'", rs.Primary.ID, err, ttl, ip, "true", hostRecord.Properties)
 			log.Error(msg)
 			return fmt.Errorf(msg)
@@ -115,6 +116,7 @@ var testAccresourcePTRRecordCreateFullField = fmt.Sprintf(
 		ip4_address = "%s"
 		ttl = %s
 		properties = "%s"
+		reverse_record = "True"
 	  }`, server, ptrResource1, configuration, view, zone, ptrName1, ptrNet1, ptrIP1, ptrTTL1, ptrProperties1)
 
 var testAccresourcePTRRecordCreateNotFullField = fmt.Sprintf(
@@ -127,6 +129,7 @@ var testAccresourcePTRRecordCreateNotFullField = fmt.Sprintf(
 		network = "%s"
 		ip4_address = "%s"
 		ttl = %s
+		reverse_record = "True"
 		}`, server, ptrResource1, configuration, view, zone, ptrName1, ptrNet1, ptrIP1, ptrTTL1)
 
 var ptrIP2 = "1.1.0.6"
@@ -141,5 +144,5 @@ var testAccresourcePTRRecordUpdateFullField = fmt.Sprintf(
 		ip4_address = "%s"
 		ttl = %s
 		properties = "%s"
+		reverse_record = "True"
 		}`, server, ptrResource1, configuration, view, zone, ptrName1, ptrNet1, ptrIP2, ptrTTL1, ptrProperties1)
-		

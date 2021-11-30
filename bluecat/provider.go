@@ -56,6 +56,12 @@ func Provider() *schema.Provider {
 			"bluecat_generic_record": ResourceGenericRecord(),
 			"bluecat_dhcp_range":     ResourceDHCPRange(),
 		},
+		DataSourcesMap: map[string]*schema.Resource{
+			"bluecat_ipv4network":  DataSourceIPv4Network(),
+			"bluecat_cname_record": DataSourceCNAMERecord(),
+			"bluecat_host_record":  DataSourceHostRecord(),
+			"bluecat_ipv4block":    DataSourceBlock(),
+		},
 		ConfigureFunc: providerConfigure,
 	}
 }

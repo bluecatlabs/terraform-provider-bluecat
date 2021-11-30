@@ -13,6 +13,7 @@ type Block struct {
 	Address       string `json:"address"`
 	CIDR          string `json:"cidr_notation"`
 	Properties    string `json:"properties,omitempty"`
+	BlockId       int    `json:"id,omitempty"`
 }
 
 // AddressCIDR Get the Block address in CIDR format
@@ -30,6 +31,7 @@ type Network struct {
 	Gateway       string `json:"gateway"`
 	Properties    string `json:"properties,omitempty"`
 	Template      string `json:"template,omitempty"`
+	NetWorkId     int    `json:"id,omitempty"`
 }
 
 // IPAddress The IPv4 Address entity
