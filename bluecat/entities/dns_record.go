@@ -11,7 +11,10 @@ type HostRecord struct {
 	AbsoluteName  string `json:"absolute_name,omitempty"`
 	IP4Address    string `json:"ip4_address,omitempty"`
 	TTL           int    `json:"ttl,omitempty"`
+	ReverseRecord string `json:"reverse_record,omitempty"`
 	Properties    string `json:"properties,omitempty"`
+	HostId        int    `json:"id,omitempty"`
+	Name          string `json:"name,omitempty"`
 }
 
 // CNAMERecord CNAME record entity
@@ -24,6 +27,8 @@ type CNAMERecord struct {
 	LinkedRecord  string `json:"linked_record,omitempty"`
 	TTL           int    `json:"ttl,omitempty"`
 	Properties    string `json:"properties,omitempty"`
+	Name          string `json:"name,omitempty"`
+	CNameId       int    `json:"id,omitempty"`
 }
 
 // TXTRecord TXT record entity

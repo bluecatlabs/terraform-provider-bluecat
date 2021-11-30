@@ -49,7 +49,7 @@ func ResourceHostRecord() *schema.Resource {
 				DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
 					zone := d.Get("zone").(string)
 					return checkDiffName(old, new, zone)
-				  },
+				},
 			},
 			"ip4_address": {
 				Type:        schema.TypeString,
@@ -68,7 +68,7 @@ func ResourceHostRecord() *schema.Resource {
 				Description: "Host record's properties. Example: attribute=value|",
 				DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
 					return checkDiffProperties(old, new)
-				  },
+				},
 			},
 		},
 	}
@@ -176,11 +176,17 @@ func deleteHostRecord(d *schema.ResourceData, m interface{}) error {
 	objMgr := new(utils.ObjectManager)
 	objMgr.Connector = connector
 
-	_, err := objMgr.DeleteHostRecord(configuration, view, absoluteName)
+	// Check the host exist or not
+	_, err := objMgr.GetHostRecord(configuration, view, absoluteName)
 	if err != nil {
-		msg := fmt.Sprintf("Getting Host record %s failed: %s", absoluteName, err)
-		log.Debug(msg)
-		return fmt.Errorf(msg)
+		log.Debugf("Host record %s not found", absoluteName)
+	} else {
+		_, err := objMgr.DeleteHostRecord(configuration, view, absoluteName)
+		if err != nil {
+			msg := fmt.Sprintf("Delete Host record %s failed: %s", absoluteName, err)
+			log.Debug(msg)
+			return fmt.Errorf(msg)
+		}
 	}
 	d.SetId("")
 	log.Debugf("Completed to delete Host record %s", d.Get("absolute_name"))

@@ -2,11 +2,10 @@ package main
 
 import (
 	"fmt"
-	"terraform-provider-bluecat/bluecat/utils"
-	"testing"
-
 	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/terraform"
+	"terraform-provider-bluecat/bluecat/utils"
+	"testing"
 )
 
 func TestAccResourceGenericRecord(t *testing.T) {

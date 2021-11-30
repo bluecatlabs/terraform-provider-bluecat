@@ -25,7 +25,7 @@ func TestAccResourceIPAllocation(t *testing.T) {
 			resource.TestStep{
 				Config: testAccresourceIPAllocationUpdateIPMacProperties,
 				Check: resource.ComposeTestCheckFunc(
-					testAccIPAllocationExists(t, fmt.Sprintf("bluecat_ip_allocation.%s", ipAllocateResource1), ipAllocateIP2, zone, ipAllocateName1, ipAllocateMac2),
+					testAccIPAllocationExists(t, fmt.Sprintf("bluecat_ip_allocation.%s", ipAllocateResource1), ipAllocateIP1, zone, ipAllocateName1, ipAllocateMac2),
 				),
 			},
 		},
@@ -153,24 +153,16 @@ func testAccIPAllocationExists(t *testing.T, resource string, ip string, zone st
 		}
 
 		hostRecord, err := objMgr.GetHostRecord(configuration, view, name)
-		if zone == "" {
-			if err == nil {
-				msg := fmt.Sprintf("There is an unexpected Host record %s: %s", name, err)
-				log.Error(msg)
-				return fmt.Errorf(msg)
-			}
-		} else {
-			if err != nil {
-				msg := fmt.Sprintf("Getting Host record %s failed: %s", rs.Primary.ID, err)
-				log.Error(msg)
-				return fmt.Errorf(msg)
-			}
-			ipProperty := getPropertyValue("addresses", hostRecord.Properties)
-			if ipProperty != ip {
-				msg := fmt.Sprintf("Getting Host record %s failed: %s. Expect addresses=%s in properties, but received %s.", rs.Primary.ID, err, ip, ipProperty)
-				log.Error(msg)
-				return fmt.Errorf(msg)
-			}
+		if err != nil {
+			msg := fmt.Sprintf("Getting Host record %s failed: %s", rs.Primary.ID, err)
+			log.Error(msg)
+			return fmt.Errorf(msg)
+		}
+		ipProperty := getPropertyValue("addresses", hostRecord.Properties)
+		if ipProperty != ip {
+			msg := fmt.Sprintf("Getting Host record %s failed: %s. Expect addresses=%s in properties, but received %s.", rs.Primary.ID, err, ip, ipProperty)
+			log.Error(msg)
+			return fmt.Errorf(msg)
 		}
 		return nil
 	}
@@ -243,7 +235,6 @@ var testAccresourceIPAllocationCreateNotZoneNotIP = fmt.Sprintf(
 		properties = "%s"
 		}`, server, ipAllocateResource1, configuration, view, ipAllocateName1, ipAllocateNet1, ipAllocateMac1, ipAllocateProperties1)
 
-var ipAllocateIP2 = "1.1.0.17"
 var ipAllocateMac2 = "888888888888"
 var ipAllocateProperties2 = ""
 var testAccresourceIPAllocationUpdateIPMacProperties = fmt.Sprintf(
@@ -257,7 +248,7 @@ var testAccresourceIPAllocationUpdateIPMacProperties = fmt.Sprintf(
 		ip4_address = "%s"
 		mac_address = "%s"
 		properties = "%s"
-	}`, server, ipAllocateResource1, configuration, view, zone, ipAllocateName1, ipAllocateNet1, ipAllocateIP2, ipAllocateMac2, ipAllocateProperties2)
+	}`, server, ipAllocateResource1, configuration, view, zone, ipAllocateName1, ipAllocateNet1, ipAllocateIP1, ipAllocateMac2, ipAllocateProperties2)
 
 var ipAllocateMac6 = "887788888888"
 
@@ -293,7 +284,7 @@ var testAccresourceIPAllocationCreateWithActionTemplate = fmt.Sprintf(
 		template = "%s"
 		}`, server, ipAllocateResource1, configuration, view, zone, ipAllocateName3, ipAllocateNet1, ipAllocateIP3, ipAllocateMac3, ipAllocateProperties1, actionDhcpReserved, template)
 
-var ipCheckExists2 = "1.1.0.5"
+var ipCheckExists2 = "1.1.0.4"
 var ipAllocateMac4 = "778888888877"
 var ipAllocateName4 = "allocation4.example.com"
 

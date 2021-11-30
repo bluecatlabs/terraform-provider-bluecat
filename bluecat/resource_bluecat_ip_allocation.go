@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"terraform-provider-bluecat/bluecat/models"
 	"terraform-provider-bluecat/bluecat/utils"
 
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
@@ -33,12 +34,12 @@ func ResourceIPAllocation() *schema.Resource {
 			"zone": {
 				Type:        schema.TypeString,
 				Optional:    true,
-				Description: "The Zone in which you want to update a host record",
+				Description: "The Zone in which you want to update a host record. If not provided, the absolute name must be FQDN ones",
 			},
 			"name": {
 				Type:        schema.TypeString,
 				Required:    true,
-				Description: "The name of the IP address/Host record",
+				Description: "The name of the Host record. Must be FQDN if the Zone is not provided",
 				DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
 					zone := d.Get("zone").(string)
 					return checkDiffName(old, new, zone)
@@ -80,6 +81,7 @@ func ResourceIPAllocation() *schema.Resource {
 				Type:        schema.TypeString,
 				Optional:    true,
 				Description: "Desired IP4 address state: MAKE_STATIC / MAKE_RESERVED / MAKE_DHCP_RESERVED",
+				Default:     models.AllocateStatic,
 			},
 			"template": {
 				Type:        schema.TypeString,
@@ -111,7 +113,13 @@ func createIPAllocation(d *schema.ResourceData, m interface{}) error {
 	objMgr.Connector = connector
 
 	addrCIDR := strings.Split(network, "/")
-	fqdnName := getFQDN(name, zone)
+
+	fqdnName := name
+	if len(zone) > 0 {
+		fqdnName = getFQDN(name, zone)
+	} else {
+		zone = getZoneFromRRName(fqdnName)
+	}
 
 	createIP := true
 	if len(ip4Address) != 0 {
@@ -129,10 +137,16 @@ func createIPAllocation(d *schema.ResourceData, m interface{}) error {
 	if createIP {
 		log.Debugf("Allocating the IP address under network %s", network)
 		ipProperties := properties
+		ipName := ""
 		if len(zone) > 0 {
 			ipProperties = ""
 		}
-		newIPAddress, err := objMgr.CreateIPAddress(configuration, addrCIDR[0], ip4Address, macAddress, fqdnName, action, ipProperties, template)
+		if action == models.AllocateStatic {
+			ipProperties = fmt.Sprintf("%s|excludeDHCPRange=true", ipProperties)
+		} else if action == models.AllocateReserved {
+			ipName = strings.Split(fqdnName, fmt.Sprintf(".%s", zone))[0][0:]
+		}
+		newIPAddress, err := objMgr.CreateIPAddress(configuration, addrCIDR[0], ip4Address, macAddress, ipName, action, ipProperties, template)
 		if err != nil {
 			msg := fmt.Sprintf("Error allocating IP from network %s: %s", network, err)
 			log.Debug(msg)
@@ -144,26 +158,31 @@ func createIPAllocation(d *schema.ResourceData, m interface{}) error {
 			log.Debugf("Got the IP address %s", ip4Address)
 		}
 	}
+
+	if len(macAddress) > 0 {
+		log.Debugf("Updating the MAC address for the IP address %s", ip4Address)
+		_, err := objMgr.SetMACAddress(configuration, ip4Address, macAddress)
+		if err != nil {
+			msg := fmt.Sprintf("Updating IP address %s failed: %s", ip4Address, err)
+			log.Debug(msg)
+			return fmt.Errorf(msg)
+		}
+	}
+
 	d.Set("ip4_address", ip4Address)
 	d.Set("name", fqdnName)
 
 	if len(zone) > 0 {
-		log.Debugf("Creating the Host record %s", fqdnName)
-		_, err := objMgr.CreateHostRecord(configuration, view, zone, fqdnName, ip4Address, -1, properties)
-		if err != nil {
-			msg := fmt.Sprintf("Error creating the Host record %s: %s", fqdnName, err)
-			log.Debug(msg)
-			return fmt.Errorf(msg)
-		}
-		if len(macAddress) > 0 {
-			log.Debugf("Updating the MAC address for the IP address %s", ip4Address)
-			_, err = objMgr.SetMACAddress(configuration, ip4Address, macAddress)
+		if action != models.AllocateReserved {
+			log.Debugf("Creating the Host record %s", fqdnName)
+			_, err := objMgr.CreateHostRecord(configuration, view, zone, fqdnName, ip4Address, -1, properties)
 			if err != nil {
-				msg := fmt.Sprintf("Updating IP address %s failed: %s", ip4Address, err)
+				msg := fmt.Sprintf("Error creating the Host record %s: %s", fqdnName, err)
 				log.Debug(msg)
 				return fmt.Errorf(msg)
 			}
 		}
+
 		d.Set("name", fqdnName)
 		log.Debugf("Finished to create the Host record %s", fqdnName)
 	}
@@ -183,20 +202,24 @@ func getIPAllocation(d *schema.ResourceData, m interface{}) error {
 	objMgr := new(utils.ObjectManager)
 	objMgr.Connector = connector
 
-	fqdnName := getFQDN(d.Get("name").(string), zone)
+	name := d.Get("name").(string)
+	fqdnName := name
+	if len(zone) > 0 {
+		fqdnName = getFQDN(name, zone)
+	} else {
+		zone = getZoneFromRRName(fqdnName)
+	}
 
 	properties := ""
 	if len(zone) > 0 {
 		view := d.Get("view").(string)
 		log.Debugf("Getting Host record info %s", fqdnName)
 		hostRecord, err := objMgr.GetHostRecord(configuration, view, fqdnName)
-		if err != nil {
-			msg := fmt.Sprintf("Getting Host record %s failed: %s", fqdnName, err)
-			log.Debug(msg)
-			return fmt.Errorf(msg)
+		if err == nil {
+			properties = hostRecord.Properties
 		}
-		properties = hostRecord.Properties
-	} else {
+	}
+	if properties == "" {
 		log.Debugf("Getting IP address info %s", ip4Address)
 		ipAddress, err := objMgr.GetIPAddress(configuration, ip4Address)
 		if err != nil {
@@ -228,23 +251,17 @@ func updateIPAllocation(d *schema.ResourceData, m interface{}) error {
 func deleteIPAllocation(d *schema.ResourceData, m interface{}) error {
 	log.Debugf("Beginning to release an IP allocated in the network %s", d.Get("network"))
 	configuration := d.Get("configuration").(string)
-	view := d.Get("view").(string)
-	zone := d.Get("zone").(string)
 	ip4Address := d.Get("ip4_address").(string)
-	fqdnName := getFQDN(d.Get("name").(string), zone)
 
 	connector := m.(*utils.Connector)
 	objMgr := new(utils.ObjectManager)
 	objMgr.Connector = connector
 
-	if len(zone) > 0 {
-		log.Debugf("Deleting the host record %s", fqdnName)
-		_, err := objMgr.DeleteHostRecord(configuration, view, fqdnName)
-		if err != nil {
-			msg := fmt.Sprintf("Delete Host record %s failed: %s", fqdnName, err)
-			log.Debug(msg)
-			return fmt.Errorf(msg)
-		}
+	log.Debugf("Checking the IP address %s for deletion", ip4Address)
+	_, err := objMgr.GetIPAddress(configuration, ip4Address)
+	if err != nil {
+		msg := fmt.Sprintf("The IP address %s not found: %s", ip4Address, err)
+		log.Debug(msg)
 	} else {
 		log.Debugf("Deleting the IP address %s", ip4Address)
 		_, err := objMgr.DeleteIPAddress(configuration, ip4Address)
@@ -254,6 +271,7 @@ func deleteIPAllocation(d *schema.ResourceData, m interface{}) error {
 			return fmt.Errorf(msg)
 		}
 	}
+
 	d.SetId("")
 	log.Debugf("Completed to release an IP allocated in the network %s", d.Get("network"))
 	return nil
@@ -269,42 +287,47 @@ func updateAllocatedResource(d *schema.ResourceData, m interface{}) error {
 	ip4Address := d.Get("ip4_address").(string)
 	macAddress := d.Get("mac_address").(string)
 	properties := d.Get("properties").(string)
+	action := d.Get("action")
 
 	connector := m.(*utils.Connector)
 	objMgr := new(utils.ObjectManager)
 	objMgr.Connector = connector
 
-	fqdnName := getFQDN(name, zone)
+	fqdnName := name
+	if len(zone) > 0 {
+		fqdnName = getFQDN(name, zone)
+	} else {
+		zone = getZoneFromRRName(fqdnName)
+	}
 
 	if len(zone) > 0 {
 		log.Debugf("Updating host record %s", fqdnName)
 		hostRecord, err := objMgr.GetHostRecord(configuration, view, fqdnName)
-		if err != nil {
+		if err == nil {
+			// Keeps values as in the server
+			log.Debugf(hostRecord.Properties)
+			TTL := getPropertyValue("ttl", hostRecord.Properties)
+			rrTTL, err := strconv.Atoi(TTL)
+			if err != nil {
+				msg := fmt.Sprintf("Convert Host record TTL %s failed: %s", TTL, err)
+				log.Debug(msg)
+				rrTTL = -1
+			}
+
+			associateIPs := ip4Address
+			currentAssociateIPs := getPropertyValue("addresses", hostRecord.Properties)
+			if len(currentAssociateIPs) > 0 {
+				associateIPs = fmt.Sprintf("%s,%s", currentAssociateIPs, ip4Address)
+			}
+			_, err = objMgr.UpdateHostRecord(configuration, view, zone, fqdnName, associateIPs, rrTTL, properties)
+			if err != nil {
+				msg := fmt.Sprintf("Error updating Host record %s: %s", fqdnName, err)
+				log.Debug(msg)
+				return fmt.Errorf(msg)
+			}
+		} else {
 			msg := fmt.Sprintf("Getting Host record %s failed: %s", name, err)
 			log.Debug(msg)
-			return fmt.Errorf(msg)
-		}
-
-		// Keeps values as in the server
-		log.Debugf(hostRecord.Properties)
-		TTL := getPropertyValue("ttl", hostRecord.Properties)
-		rrTTL, err := strconv.Atoi(TTL)
-		if err != nil {
-			msg := fmt.Sprintf("Convert Host record TTL %s failed: %s", TTL, err)
-			log.Debug(msg)
-			rrTTL = -1
-		}
-
-		associtaeIPs := ip4Address
-		if len(associtaeIPs) == 0 {
-			associtaeIPs := getPropertyValue("addresses", hostRecord.Properties)
-			ip4Address = strings.Split(associtaeIPs, ",")[0]
-		}
-		_, err = objMgr.UpdateHostRecord(configuration, view, zone, fqdnName, associtaeIPs, rrTTL, properties)
-		if err != nil {
-			msg := fmt.Sprintf("Error updating Host record %s: %s", fqdnName, err)
-			log.Debug(msg)
-			return fmt.Errorf(msg)
 		}
 	}
 	log.Debugf("Updating IP address %s", ip4Address)
@@ -324,7 +347,19 @@ func updateAllocatedResource(d *schema.ResourceData, m interface{}) error {
 		properties = removeAttributeFromProperties("state", properties)
 		properties = removeAttributeFromProperties("macAddress", properties)
 	}
-	_, err = objMgr.UpdateIPAddress(configuration, ip4Address, macAddress, fqdnName, ipAddress.Action, properties)
+
+	addrState := ""
+	ipName := ""
+	if action == nil {
+		log.Debug("No action specified, gets current IP address state")
+		addrState = getAttributeFromProperties("state", ipAddress.Properties)
+	} else {
+		addrState = action.(string)
+	}
+	if addrState == "RESERVED" || addrState == models.AllocateReserved {
+		ipName = strings.Split(fqdnName, fmt.Sprintf(".%s", zone))[0][0:]
+	}
+	_, err = objMgr.UpdateIPAddress(configuration, ip4Address, macAddress, ipName, ipAddress.Action, properties)
 	if err != nil {
 		msg := fmt.Sprintf("Error updating IP address %s: %s", ip4Address, err)
 		log.Debug(msg)

@@ -41,12 +41,7 @@ func ResourcePTRRecord() *schema.Resource {
 				DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
 					zone := d.Get("zone").(string)
 					return checkDiffName(old, new, zone)
-				  },
-			},
-			"network": {
-				Type:        schema.TypeString,
-				Required:    true,
-				Description: "The Network address in CIDR format",
+				},
 			},
 			"ip4_address": {
 				Type:        schema.TypeString,
@@ -59,13 +54,18 @@ func ResourcePTRRecord() *schema.Resource {
 				Description: "The TTL value",
 				Default:     -1,
 			},
+			"reverse_record": {
+				Type:        schema.TypeString,
+				Required:    true,
+				Description: "To create a reverse record for the pass host",
+			},
 			"properties": {
 				Type:        schema.TypeString,
 				Optional:    true,
 				Description: "Record's properties. Example: attribute=value|",
 				DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
 					return checkDiffProperties(old, new)
-				  },
+				},
 			},
 		},
 	}
@@ -79,35 +79,13 @@ func createPTRRecord(d *schema.ResourceData, m interface{}) error {
 	view := d.Get("view").(string)
 	zone := d.Get("zone").(string)
 	name := d.Get("name").(string)
-	network := d.Get("network").(string)
 	ip4Address := d.Get("ip4_address").(string)
 	ttl := d.Get("ttl").(int)
+	reverseRecord := d.Get("reverse_record").(string)
 	properties := d.Get("properties").(string)
-
-	connector := m.(*utils.Connector)
-	objMgr := new(utils.ObjectManager)
-	objMgr.Connector = connector
-
-	fqdnName := name
-
-	if len(zone) > 0 {
-		fqdnName = getFQDN(fqdnName, zone)
-	} else {
-		zone = getZoneFromRRName(fqdnName)
-	}
-	// Check if the network is already exist?
-	_, err := objMgr.GetNetwork(configuration, network)
+	fqdnName, err := updatePTR(m, configuration, view, zone, name, ip4Address, reverseRecord, properties, ttl)
 	if err != nil {
-		msg := fmt.Sprintf("Getting Network %s failed: %s", network, err)
-		log.Error(msg)
-		return fmt.Errorf(msg)
-	}
-	properties = fmt.Sprintf("%s|reverseRecord=true", properties)
-	_, err = objMgr.CreateHostRecord(configuration, view, zone, fqdnName, ip4Address, ttl, properties)
-	if err != nil {
-		msg := fmt.Sprintf("Error creating PTR record %s: %s", fqdnName, err)
-		log.Debug(msg)
-		return fmt.Errorf(msg)
+		return err
 	}
 	d.Set("name", fqdnName)
 	log.Debugf("Completed to create PTR record %s", d.Get("name"))
@@ -145,15 +123,26 @@ func updatePTRRecord(d *schema.ResourceData, m interface{}) error {
 	view := d.Get("view").(string)
 	zone := d.Get("zone").(string)
 	name := d.Get("name").(string)
-	network := d.Get("network").(string)
 	ip4Address := d.Get("ip4_address").(string)
 	ttl := d.Get("ttl").(int)
+	reverseRecord := d.Get("reverse_record").(string)
 	properties := d.Get("properties").(string)
 
+	fqdnName, err := updatePTR(m, configuration, view, zone, name, ip4Address, reverseRecord, properties, ttl)
+	if err != nil {
+		return err
+	}
+	d.Set("name", fqdnName)
+	log.Debugf("Completed to update PTR record %s", d.Get("name"))
+	return getPTRRecord(d, m)
+}
+
+// updatePTRRecord Update the existing PTR record
+// Update the PTR, just set the reverseRecord flag
+func updatePTR(m interface{}, configuration, view, zone, name, ip4Address, reverseRecord, properties string, ttl int) (string, error) {
 	connector := m.(*utils.Connector)
 	objMgr := new(utils.ObjectManager)
 	objMgr.Connector = connector
-
 	fqdnName := name
 
 	if len(zone) > 0 {
@@ -161,53 +150,52 @@ func updatePTRRecord(d *schema.ResourceData, m interface{}) error {
 	} else {
 		zone = getZoneFromRRName(fqdnName)
 	}
-	// Check network
-	_, err := objMgr.GetNetwork(configuration, network)
+
+	// Get the host
+	hostRecord, err := objMgr.GetHostRecord(configuration, view, fqdnName)
 	if err != nil {
-		msg := fmt.Sprintf("Getting Network %s failed: %s", network, err)
-		log.Error(msg)
-		return fmt.Errorf(msg)
+		msg := fmt.Sprintf("Getting Host record %s failed: %s", fqdnName, err)
+		log.Debug(msg)
+		return "", fmt.Errorf(msg)
 	}
-	// Check IP address, create the new one if doesn't exist
-	_, err = objMgr.GetIPAddress(configuration, ip4Address)
-	if err != nil {
-		log.Debugf("The linked IP address doesn't exist, allocating the IP address %s", ip4Address)
-		_, err = objMgr.CreateStaticIP(configuration, strings.Split(network, "/")[0], ip4Address, "", fqdnName, "")
-		if err != nil {
-			msg := fmt.Sprintf("Error allocating IP addess %s from network %s: %s", ip4Address, network, err)
-			log.Debug(msg)
-			return fmt.Errorf(msg)
-		}
+	// Validate the data
+	associateIPs := getAttributeFromProperties("addresses", hostRecord.Properties)
+	if !strings.Contains(associateIPs, ip4Address) {
+		msg := fmt.Sprintf("No matching PTR record found for %s : %s", fqdnName, err)
+		log.Debug(msg)
+		return "", fmt.Errorf(msg)
 	}
 	// Update the host record
-	_, err = objMgr.UpdateHostRecord(configuration, view, zone, fqdnName, ip4Address, ttl, properties)
+
+	reverseValue := strings.Contains("yes true 1", strings.ToLower(reverseRecord))
+	properties = removeAttributeFromProperties("reverseRecord", properties)
+	properties = fmt.Sprintf("%s|reverseRecord=%t", properties, reverseValue)
+
+	_, err = objMgr.UpdateHostRecord(configuration, view, zone, fqdnName, associateIPs, ttl, properties)
 	if err != nil {
 		msg := fmt.Sprintf("Error updating PTR record %s: %s", fqdnName, err)
 		log.Debug(msg)
-		return fmt.Errorf(msg)
+		return "", fmt.Errorf(msg)
 	}
-	d.Set("name", fqdnName)
-	log.Debugf("Completed to update PTR record %s", d.Get("name"))
-	return getPTRRecord(d, m)
+	return fqdnName, nil
 }
 
 // deletePTRRecord Delete the PTR record
-// To delete the PTR, just delete an IP address from the server
+// To delete the PTR, just set the reverseRecord flag to False
 func deletePTRRecord(d *schema.ResourceData, m interface{}) error {
 	log.Debugf("Beginning to delete PTR record %s", d.Get("name"))
 	configuration := d.Get("configuration").(string)
+	view := d.Get("view").(string)
+	zone := d.Get("zone").(string)
 	name := d.Get("name").(string)
 	ip4Address := d.Get("ip4_address").(string)
+	ttl := d.Get("ttl").(int)
+	reverseRecord := "false"
+	properties := d.Get("properties").(string)
 
-	connector := m.(*utils.Connector)
-	objMgr := new(utils.ObjectManager)
-	objMgr.Connector = connector
-
-	_, err := objMgr.DeleteIPAddress(configuration, ip4Address)
+	_, err := updatePTR(m, configuration, view, zone, name, ip4Address, reverseRecord, properties, ttl)
 	if err != nil {
-		msg := fmt.Sprintf("Getting PTR record %s failed: %s", name, err)
-		log.Debug(msg)
-		return fmt.Errorf(msg)
+		return err
 	}
 	d.SetId("")
 	log.Debugf("Completed to delete PTR record %s", d.Get("name"))

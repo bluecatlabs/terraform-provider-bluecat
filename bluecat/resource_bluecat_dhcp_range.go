@@ -133,8 +133,18 @@ func updateDHCPRange(d *schema.ResourceData, m interface{}) error {
 		log.Error(msg)
 		return fmt.Errorf(msg)
 	}
-	d.Set("start", getAttributeFromProperties("start", properties))
-	d.Set("end", getAttributeFromProperties("end", properties))
+
+	startAfterUpdate := getAttributeFromProperties("start", properties)
+	endAfterUpdate := getAttributeFromProperties("end", properties)
+
+	if startAfterUpdate != "" && endAfterUpdate != "" {
+		start = startAfterUpdate
+		end = endAfterUpdate
+	}
+
+	d.Set("start", start)
+	d.Set("end", end)
+
 	log.Debugf("Completed to update DHCP Range (%s - %s)", start, end)
 	return getDHCPRange(d, m)
 }
