@@ -24,4 +24,4 @@ Below are the available BlueCat data sources:
 -   Host Record (bluecat_host_record)
 -   CNAME Record (bluecat_cname_record)
 
-For the latest updates, please see the BlueCat [Terraform Plugin Administration Guide](https://docs.bluecatnetworks.com/r/en-US/BlueCat-Terraform-Plugin-Administration-Guide/21.10.1)
+For the latest updates, please see the BlueCat [Terraform Plugin Administration Guide](https://docs.bluecatnetworks.com/r/en-US/BlueCat-Terraform-Plugin-Administration-Guide/1.0.0)
