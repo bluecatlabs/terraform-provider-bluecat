@@ -29,12 +29,13 @@ func init() {
 
 // HostConfig Rest API server configuration
 type HostConfig struct {
-	Host      string
-	Version   string
-	Port      string
-	Transport string
-	Username  string
-	Password  string
+	Host            string
+	Version         string
+	Port            string
+	Transport       string
+	Username        string
+	Password        string
+	EncryptPassword bool
 }
 
 // RequestType HTTP request types
@@ -136,8 +137,9 @@ func NewConnector(hostConfig HostConfig, requestBuilder HTTPRequestBuilder, requ
 	connector.RequestBuilder.Init(connector.HostConfig)
 	connector.Requester.Init()
 	credObj := models.RestLogin(entities.RestLogin{
-		UserName: connector.HostConfig.Username,
-		Password: connector.HostConfig.Password,
+		UserName:        connector.HostConfig.Username,
+		Password:        connector.HostConfig.Password,
+		EncryptPassword: connector.HostConfig.EncryptPassword,
 	})
 	token, err := connector.getLoginToken(CREATE, credObj)
 	if err != nil {

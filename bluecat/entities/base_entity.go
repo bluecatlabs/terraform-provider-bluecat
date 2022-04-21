@@ -32,8 +32,9 @@ func (obj *BAMBase) SetSubPath(subPath string) {
 
 type RestLogin struct {
 	BAMBase
-	UserName string `json:"username"`
-	Password string `json:"password"`
+	UserName        string `json:"username"`
+	Password        string `json:"password"`
+	EncryptPassword bool   `json:"encrypt_password"`
 }
 type EntityID struct {
 	ID int

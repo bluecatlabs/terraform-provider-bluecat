@@ -8,6 +8,6 @@ import "terraform-provider-bluecat/bluecat/entities"
 func RestLogin(cred entities.RestLogin) *entities.RestLogin {
 	res := cred
 	res.SetObjectType("")
-	res.SetSubPath("/rest_login")
+	res.SetSubPath("/token")
 	return &res
 }

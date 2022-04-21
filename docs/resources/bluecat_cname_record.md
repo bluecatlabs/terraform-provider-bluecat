@@ -18,7 +18,7 @@ This resource will create a CNAME record (Alias) in Address Manager with the spe
       view = "gg"
       zone = "gateway.com"
       absolute_name = "cname2"
-      linked_record = "host1.gateway.com"
+      linked_record = "testhost.gateway.com"
       ttl = 123
       properties = ""
       depends_on = [bluecat_host_record.host_record]

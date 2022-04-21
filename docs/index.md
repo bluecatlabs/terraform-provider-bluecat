@@ -5,6 +5,7 @@
 Below are the available resources for the following objectTypes:
 
 -   Configuration - (bluecat_configuration)
+-   Zone - (bluecat_zone)
 -   IPv4 Block (bluecat_ipv4block)
 -   IPv4 Network (bluecat_ipv4network)
 -   IPv4 DHCP Range (bluecat_dhcp_range)
@@ -19,6 +20,7 @@ Below are the available resources for the following objectTypes:
 
 Below are the available BlueCat data sources:
 
+-   Zone (bluecat_zone)
 -   IPv4 Block (bluecat_ipv4block)
 -   IPv4 Network (bluecat_ipv4network)
 -   Host Record (bluecat_host_record)

@@ -2,6 +2,18 @@
 
 package entities
 
+// Zone the Zone entity
+type Zone struct {
+	BAMBase       `json:"-"`
+	Configuration string   `json:"-"`
+	View          string   `json:"-"`
+	Zone          string   `json:"name,omitempty"`
+	Deployable    string   `json:"deployable,omitempty"`
+	ServerRoles   []string `json:"server_roles,omitempty"`
+	Properties    string   `json:"properties,omitempty"`
+	ZoneId        int      `json:"id,omitempty"`
+}
+
 // HostRecord Host record entity
 type HostRecord struct {
 	BAMBase       `json:"-"`

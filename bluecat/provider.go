@@ -42,6 +42,11 @@ func Provider() *schema.Provider {
 				Required:    true,
 				Description: "The Transport type (HTTP or HTTPS).",
 			},
+			"encrypt_password": {
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Description: "Default is false, to indicate if the password is encrypted",
+			},
 		},
 		ResourcesMap: map[string]*schema.Resource{
 			"bluecat_host_record":    ResourceHostRecord(),
@@ -55,12 +60,14 @@ func Provider() *schema.Provider {
 			"bluecat_txt_record":     ResourceTXTRecord(),
 			"bluecat_generic_record": ResourceGenericRecord(),
 			"bluecat_dhcp_range":     ResourceDHCPRange(),
+			"bluecat_zone":           ResourceZone(),
 		},
 		DataSourcesMap: map[string]*schema.Resource{
 			"bluecat_ipv4network":  DataSourceIPv4Network(),
 			"bluecat_cname_record": DataSourceCNAMERecord(),
 			"bluecat_host_record":  DataSourceHostRecord(),
 			"bluecat_ipv4block":    DataSourceBlock(),
+			"bluecat_zone":         DataSourceZone(),
 		},
 		ConfigureFunc: providerConfigure,
 	}
@@ -68,12 +75,13 @@ func Provider() *schema.Provider {
 
 func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 	hostConfig := utils.HostConfig{
-		Host:      d.Get("server").(string),
-		Port:      d.Get("port").(string),
-		Transport: d.Get("transport").(string),
-		Username:  d.Get("username").(string),
-		Password:  d.Get("password").(string),
-		Version:   d.Get("api_version").(string),
+		Host:            d.Get("server").(string),
+		Port:            d.Get("port").(string),
+		Transport:       d.Get("transport").(string),
+		Username:        d.Get("username").(string),
+		Password:        d.Get("password").(string),
+		Version:         d.Get("api_version").(string),
+		EncryptPassword: d.Get("encrypt_password").(bool),
 	}
 
 	requestBuilder := &utils.APIRequestBuilder{}
