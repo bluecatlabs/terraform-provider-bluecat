@@ -83,7 +83,7 @@ func dataSourceZoneRead(d *schema.ResourceData, m interface{}) error {
 
 	var serverRolesRaw []string
 	for _, serverRole := range serverRoles.ServerRoles {
-		serverRoleRaw := fmt.Sprintf("%s, %s", serverRole.Role, serverRole.ServerFQDN)
+		serverRoleRaw := fmt.Sprintf("%s, %s", getRoleNameInTerraform(serverRole.Role), serverRole.ServerFQDN)
 		serverRolesRaw = append(serverRolesRaw, serverRoleRaw)
 	}
 
