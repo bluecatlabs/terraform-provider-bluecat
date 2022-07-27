@@ -167,9 +167,19 @@ func updatePTR(m interface{}, configuration, view, zone, name, ip4Address, rever
 	}
 	// Update the host record
 
-	reverseValue := strings.Contains("yes true 1", strings.ToLower(reverseRecord))
+	reverseValues := []string{"yes", "true", "1"}
+	notReversedValues := []string{"no", "false", "0", ""}
+	isReverse := contains(reverseValues, strings.ToLower(strings.Trim(reverseRecord, " ")))
+	isNotReverse := contains(notReversedValues, strings.ToLower(strings.Trim(reverseRecord, " ")))
+
 	properties = removeAttributeFromProperties("reverseRecord", properties)
-	properties = fmt.Sprintf("%s|reverseRecord=%t", properties, reverseValue)
+	if isReverse || isNotReverse {
+		properties = fmt.Sprintf("%s|reverseRecord=%t", properties, isReverse)
+	} else {
+		msg := fmt.Sprintf("invalid reverse_record value (must be either 'true' or 'false'): '%s'", reverseRecord)
+		log.Debug(msg)
+		return "", fmt.Errorf(msg)
+	}
 
 	_, err = objMgr.UpdateHostRecord(configuration, view, zone, fqdnName, associateIPs, ttl, properties)
 	if err != nil {

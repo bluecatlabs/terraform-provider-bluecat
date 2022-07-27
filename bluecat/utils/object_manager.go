@@ -244,10 +244,13 @@ func (objMgr *ObjectManager) DeleteBlock(configuration string, address string, c
 
 // Network
 
-func generateNetworkProperties(props string, gateway string) string {
+func generateNetworkProperties(props string, gateway string, allocatedId string) string {
 	result := props
 	if len(gateway) > 0 {
 		result = fmt.Sprintf("%s|gateway=%s", result, gateway)
+	}
+	if len(allocatedId) > 0 {
+		result = fmt.Sprintf("%s|allocatedId=%s", result, allocatedId)
 	}
 	return result
 }
@@ -261,11 +264,28 @@ func (objMgr *ObjectManager) CreateNetwork(configuration string, block string, n
 		Name:          name,
 		CIDR:          cidr,
 		Gateway:       gateway,
-		Properties:    generateNetworkProperties(properties, gateway),
+		Properties:    generateNetworkProperties(properties, gateway, ""),
 		Template:      template,
 	})
 	_, err := objMgr.Connector.CreateObject(network)
 	return network, err
+}
+
+// CreateNextAvailableNetwork Create a next available Network
+func (objMgr *ObjectManager) CreateNextAvailableNetwork(configuration string, block string, name string, gateway string, properties string, template string, size string, allocatedId string) (*entities.Network, string, error) {
+
+	network := models.NewNextAvailableNetwork(entities.Network{
+		Configuration: configuration,
+		BlockAddr:     block,
+		Name:          name,
+		Gateway:       gateway,
+		Properties:    generateNetworkProperties(properties, gateway, allocatedId),
+		Template:      template,
+		Size:          size,
+		AllocatedId:   allocatedId,
+	})
+	ref, err := objMgr.Connector.CreateObject(network)
+	return network, ref, err
 }
 
 // GetNetwork Get the Network info
@@ -280,6 +300,19 @@ func (objMgr *ObjectManager) GetNetwork(configuration string, cidr string) (*ent
 	return network, err
 }
 
+// GetNetworkByAllocatedId Get the Network info by allocated id
+func (objMgr *ObjectManager) GetNetworkByAllocatedId(configuration string, block string, allocatedId string) (*entities.Network, error) {
+
+	network := models.Network(entities.Network{
+		Configuration: configuration,
+		BlockAddr:     block,
+		AllocatedId:   allocatedId,
+	})
+
+	err := objMgr.Connector.GetObject(network, &network)
+	return network, err
+}
+
 // UpdateNetwork Update the Network info
 func (objMgr *ObjectManager) UpdateNetwork(configuration string, name string, cidr string, gateway string, properties string) (*entities.Network, error) {
 
@@ -287,7 +320,7 @@ func (objMgr *ObjectManager) UpdateNetwork(configuration string, name string, ci
 		Configuration: configuration,
 		Name:          name,
 		CIDR:          cidr,
-		Properties:    generateNetworkProperties(properties, gateway),
+		Properties:    generateNetworkProperties(properties, gateway, ""),
 	})
 
 	err := objMgr.Connector.UpdateObject(network, &network)
@@ -334,6 +367,19 @@ func (objMgr *ObjectManager) GetDHCPRange(configuration string, network string, 
 
 	err := objMgr.Connector.GetObject(dhcpRange, &dhcpRange)
 	return dhcpRange, err
+}
+
+// GetDeploymentRoles Get all Deployment role on the Zone
+func (objMgr *ObjectManager) GetDeploymentRoles(configuration string, view string, zone string) (*entities.DeploymentRoles, error) {
+
+	deploymentRoles := models.GetDeploymentRoles(entities.DeploymentRoles{
+		Configuration: configuration,
+		View:          view,
+		Zone:          zone,
+	})
+
+	err := objMgr.Connector.GetObject(deploymentRoles, &deploymentRoles)
+	return deploymentRoles, err
 }
 
 // UpdateDHCPRange Update the DHCP Range info
@@ -575,4 +621,123 @@ func (objMgr *ObjectManager) DeleteGenericRecord(configuration string, view stri
 	})
 
 	return objMgr.Connector.DeleteObject(genericRecord)
+}
+
+// Zone
+
+// CreateZone Create a new Zone
+func (objMgr *ObjectManager) CreateZone(configuration string, view string, zone string, properties string) (*entities.Zone, error) {
+
+	zoneObj := models.NewZone(entities.Zone{
+		Configuration: configuration,
+		View:          view,
+		Zone:          zone,
+		Properties:    properties,
+	})
+	_, err := objMgr.Connector.CreateObject(zoneObj)
+	return zoneObj, err
+}
+
+// GetZone Get the Zone info
+func (objMgr *ObjectManager) GetZone(configuration string, view string, zone string) (*entities.Zone, error) {
+
+	zoneObj := models.Zone(entities.Zone{
+		Configuration: configuration,
+		View:          view,
+		Zone:          zone,
+	})
+
+	err := objMgr.Connector.GetObject(zoneObj, &zoneObj)
+	return zoneObj, err
+}
+
+// UpdateZone Update the Zone info
+func (objMgr *ObjectManager) UpdateZone(configuration string, view string, zone string, properties string) (*entities.Zone, error) {
+
+	zoneObj := models.Zone(entities.Zone{
+		Configuration: configuration,
+		View:          view,
+		Zone:          zone,
+		Properties:    properties,
+	})
+
+	err := objMgr.Connector.UpdateObject(zoneObj, &zoneObj)
+	return zoneObj, err
+}
+
+// DeleteZone Delete the Zone
+func (objMgr *ObjectManager) DeleteZone(configuration string, view string, zone string) (string, error) {
+
+	zoneObj := models.Zone(entities.Zone{
+		Configuration: configuration,
+		View:          view,
+		Zone:          zone,
+	})
+
+	return objMgr.Connector.DeleteObject(zoneObj)
+}
+
+// Deployment role
+
+// CreateDeploymentRole Create the Deployment role
+func (objMgr *ObjectManager) CreateDeploymentRole(configuration string, view string, zone string, serverFQDN string, roleType string, role string, properties string, secondaryFQDN string) (*entities.DeploymentRole, error) {
+
+	deploymentRole := models.NewDeploymentRole(entities.DeploymentRole{
+		Configuration: configuration,
+		View:          view,
+		Zone:          zone,
+		ServerFQDN:    serverFQDN,
+		RoleType:      roleType,
+		Role:          role,
+		Properties:    properties,
+		SecondaryFQDN: secondaryFQDN,
+	})
+
+	_, err := objMgr.Connector.CreateObject(deploymentRole)
+	return deploymentRole, err
+}
+
+// GetDeploymentRole Get the Deployment role
+func (objMgr *ObjectManager) GetDeploymentRole(configuration string, view string, zone string, serverFQDN string) (*entities.DeploymentRole, error) {
+
+	deploymentRole := models.DeploymentRole(entities.DeploymentRole{
+		Configuration: configuration,
+		View:          view,
+		Zone:          zone,
+		ServerFQDN:    serverFQDN,
+	})
+
+	err := objMgr.Connector.GetObject(deploymentRole, &deploymentRole)
+	return deploymentRole, err
+}
+
+// UpdateDeploymentRole Update the Deployment role
+func (objMgr *ObjectManager) UpdateDeploymentRole(configuration string, view string, zone string, serverFQDN string, roleType string, role string, properties string, secondaryFQDN string) (*entities.DeploymentRole, error) {
+
+	deploymentRole := models.DeploymentRole(entities.DeploymentRole{
+		Configuration: configuration,
+		View:          view,
+		Zone:          zone,
+		ServerFQDN:    serverFQDN,
+		RoleType:      roleType,
+		Role:          role,
+		Properties:    properties,
+		SecondaryFQDN: secondaryFQDN,
+	})
+
+	err := objMgr.Connector.UpdateObject(deploymentRole, &deploymentRole)
+	return deploymentRole, err
+}
+
+// DeleteDeploymentRole Delete the Deployment role
+func (objMgr *ObjectManager) DeleteDeploymentRole(configuration string, view string, zone string, serverFQDN string) (string, error) {
+
+	deploymentRole := models.DeploymentRole(entities.DeploymentRole{
+		Configuration: configuration,
+		View:          view,
+		Zone:          zone,
+		ServerFQDN:    serverFQDN,
+	})
+
+	return objMgr.Connector.DeleteObject(deploymentRole)
 }

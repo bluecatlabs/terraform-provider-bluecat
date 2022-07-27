@@ -16,6 +16,24 @@ func getRRPrefixPath(configuration, view string) string {
 	return result
 }
 
+// Zone
+// Zone Initialize the new Zone to be added
+func NewZone(zone entities.Zone) *entities.Zone {
+	res := zone
+	res.SetObjectType("zones")
+	sPath := getRRPrefixPath(zone.Configuration, zone.View)
+	res.SetSubPath(sPath)
+	return &res
+}
+
+// Zone Initialize the Zone to be loaded, updated or deleted
+func Zone(zone entities.Zone) *entities.Zone {
+	res := zone
+	res.SetObjectType("")
+	res.SetSubPath(fmt.Sprintf("%s/zones/%s", getRRPrefixPath(zone.Configuration, zone.View), zone.Zone))
+	return &res
+}
+
 // NewHostRecord Initialize the new Host record to be added
 func NewHostRecord(hostRecord entities.HostRecord) *entities.HostRecord {
 	res := hostRecord

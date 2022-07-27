@@ -31,7 +31,10 @@ type Network struct {
 	Gateway       string `json:"gateway"`
 	Properties    string `json:"properties,omitempty"`
 	Template      string `json:"template,omitempty"`
+	ParentBlock   string `json:"parent_block,omitempty"`
+	Size          string `json:"size,omitempty"`
 	NetWorkId     int    `json:"id,omitempty"`
+	AllocatedId   string `json:"allocatedId,omitempty"`
 }
 
 // IPAddress The IPv4 Address entity

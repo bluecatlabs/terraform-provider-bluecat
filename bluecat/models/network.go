@@ -68,11 +68,29 @@ func NewNetwork(network entities.Network) *entities.Network {
 	return &res
 }
 
+// NewNextAvailableNetwork Initialize the new next available IPv4 Network to be added
+func NewNextAvailableNetwork(network entities.Network) *entities.Network {
+	res := network
+	res.SetObjectType("get_next_network")
+	res.SetSubPath(fmt.Sprintf("%s/ipv4_blocks/%s", getPath(res.Configuration), network.BlockAddr))
+
+	return &res
+}
+
 // Network Initialize the IPv4 Network to be loaded, updated or deleted
 func Network(network entities.Network) *entities.Network {
 	res := network
 	res.SetObjectType("")
 	res.SetSubPath(fmt.Sprintf("%s/ipv4_networks/%s", getPath(res.Configuration), network.CIDR))
+
+	return &res
+}
+
+// NetworkByAllocatedId Initialize the IPv4 Network to be loaded by allocated id
+func NetworkByAllocatedId(network entities.Network) *entities.Network {
+	res := network
+	res.SetObjectType("")
+	res.SetSubPath(fmt.Sprintf("%s/ipv4_blocks/%s/get_network_by_allocated_id/%s", getPath(res.Configuration), network.BlockAddr, network.AllocatedId))
 
 	return &res
 }
