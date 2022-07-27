@@ -137,8 +137,8 @@ func checkValidZone(objMgr *utils.ObjectManager, zone entities.Zone, zoneName st
 var zoneResource1 = "top_zone"
 var zoneName1 = "org"
 var zoneDeployable1 = "true"
-var zoneServerRolesRaw1 = "[\"master, server1\", \"slave, server2\"]"
-var zoneServerRoles1 = []string{"master, server1", "slave, server2"}
+var zoneServerRolesRaw1 = "[\"primary, server1\", \"secondary, server2\"]"
+var zoneServerRoles1 = []string{"primary, server1", "secondary, server2"}
 var zoneProperties1 = ""
 var testAccresourceZoneCreateFullField = fmt.Sprintf(
 	`%s
@@ -152,8 +152,8 @@ var testAccresourceZoneCreateFullField = fmt.Sprintf(
 		}`, server, zoneResource1, configuration, view, zoneName1, zoneDeployable1, zoneServerRolesRaw1, zoneProperties1)
 
 var zoneDeployable2 = "false"
-var zoneServerRolesRaw2 = "[\"slave, server1\", \"master, server3\"]"
-var zoneServerRoles2 = []string{"slave, server1", "master, server3"}
+var zoneServerRolesRaw2 = "[\"secondary, server1\", \"primary, server3\"]"
+var zoneServerRoles2 = []string{"secondary, server1", "primary, server3"}
 var testAccresourceZoneUpdateFullField = fmt.Sprintf(
 	`%s
 	resource "bluecat_zone" "%s" {

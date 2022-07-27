@@ -242,8 +242,37 @@ func updateDeployableProperty(deployable string, propertiesRaw string, isUpdateZ
 	return
 }
 
+func getRoleNameInRestApi(roleNameInTerraform string) string {
+	// "NAME_IN_TERRAFORM": "NAME_IN_REST_API"
+	roles := map[string]string{
+		"FORWARDER":         "FORWARDER",
+		"PRIMARY":           "MASTER",
+		"PRIMARY_HIDDEN":    "MASTER_HIDDEN",
+		"NONE":              "NONE",
+		"RECURSION":         "RECURSION",
+		"SECONDARY":         "SLAVE",
+		"SECONDARY_STEALTH": "SLAVE_STEALTH",
+		"STUB":              "STUB",
+	}
+	return roles[roleNameInTerraform]
+}
+
+func getRoleNameInTerraform(roleNameInRestApi string) string {
+	// "NAME_IN_REST_API": "NAME_IN_TERRAFORM"
+	roles := map[string]string{
+		"FORWARDER":     "FORWARDER",
+		"MASTER":        "PRIMARY",
+		"MASTER_HIDDEN": "PRIMARY_HIDDEN",
+		"NONE":          "NONE",
+		"RECURSION":     "RECURSION",
+		"SLAVE":         "SECONDARY",
+		"SLAVE_STEALTH": "SECONDARY_STEALTH",
+		"STUB":          "STUB",
+	}
+	return roles[roleNameInRestApi]
+}
+
 func validateServerRole(serverRole string) (role string, serverFQDN string, err error) {
-	roles := []string{"AD_MASTER", "FORWARDER", "MASTER", "MASTER_HIDDEN", "NONE", "RECURSION", "SLAVE", "SLAVE_STEALTH", "STUB"}
 
 	prop := strings.Split(serverRole, ",")
 	if len(prop) != 2 {
@@ -253,15 +282,18 @@ func validateServerRole(serverRole string) (role string, serverFQDN string, err 
 	role = strings.Trim(prop[0], " ")
 	serverFQDN = strings.Trim(prop[1], " ")
 
-	if !contains(roles, strings.ToUpper(role)) {
+	roleNameInRestApi := getRoleNameInRestApi(strings.ToUpper(role))
+	if roleNameInRestApi == "" {
 		err = fmt.Errorf("invalid role type: '%s'", role)
 		return
 	}
+	role = roleNameInRestApi
 
 	if serverFQDN == "" {
 		err = fmt.Errorf("'server_fqdn' is a required property: '%s'", serverRole)
 		return
 	}
+
 	return
 }
 
@@ -284,7 +316,7 @@ func prepareServerRoleData(objMgr *utils.ObjectManager, serverRolesRaw []interfa
 	}
 
 	for _, serverRole := range serverRoles.ServerRoles {
-		currentServerRoles[serverRole.ServerFQDN] = serverRole.Role
+		currentServerRoles[serverRole.ServerFQDN] = getRoleNameInTerraform(serverRole.Role)
 	}
 
 	return newServerRoles, currentServerRoles, err
@@ -306,7 +338,7 @@ func updateServerRoles(objMgr *utils.ObjectManager, currentServerRoles map[strin
 
 	for newServerFQDN, newRole := range newServerRoles {
 		currentRole, ok := currentServerRoles[newServerFQDN]
-		if ok && !strings.EqualFold(currentRole, newRole) && (strings.EqualFold(currentRole, "MASTER") || strings.EqualFold(currentRole, "MASTER_HIDDEN")) {
+		if ok && !strings.EqualFold(currentRole, newRole) && (strings.EqualFold(currentRole, "PRIMARY") || strings.EqualFold(currentRole, "PRIMARY_HIDDEN")) {
 			_, err := objMgr.UpdateDeploymentRole(configuration, view, zone, newServerFQDN, "dns", newRole, "", "")
 			if err != nil {
 				return trace, err

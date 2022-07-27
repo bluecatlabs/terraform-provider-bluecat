@@ -5,6 +5,7 @@ import (
 	"strings"
 	"terraform-provider-bluecat/bluecat/utils"
 	"testing"
+
 	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/terraform"
 )
@@ -62,6 +63,27 @@ func TestAccResourceNetwork(t *testing.T) {
 				Config: testAccResourceNetworkCreateFullFieldWithTemplate,
 				Check: resource.ComposeTestCheckFunc(
 					testAccNetworkExists(t, fmt.Sprintf("bluecat_ipv4network.%s", netResource1), netName1, netCIDR1, netAllowDuplicateHost1, netGateway3, netReserveIPValue2, templateName),
+				),
+			},
+		},
+	})
+	// create next available network with full fields and update without some optional fields
+	resource.Test(t, resource.TestCase{
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckNetworkDestroy,
+		Steps: []resource.TestStep{
+			// create
+			resource.TestStep{
+				Config: testAccResourceNextNetworkCreateFullField,
+				Check: resource.ComposeTestCheckFunc(
+					testAccNetworkExists(t, fmt.Sprintf("bluecat_ipv4network.%s", nextNetResource1), nextNetName1, nextNetCIDRValue1, nextNetAllowDuplicateHost1, nextNetGatewayValue1, nextNetReserveIPValue1, ""),
+				),
+			},
+			// update
+			resource.TestStep{
+				Config: testAccResourceNextNetworkUpdateNotFullField,
+				Check: resource.ComposeTestCheckFunc(
+					testAccNetworkExists(t, fmt.Sprintf("bluecat_ipv4network.%s", nextNetResource1), nextNetName2, nextNetCIDRValue1, nextNetAllowDuplicateHost1, nextNetGatewayValue1, nextNetReserveIPValue1, ""),
 				),
 			},
 		},
@@ -240,3 +262,46 @@ var testAccResourceNetworkCreateFullFieldWithTemplate = fmt.Sprintf(
 		template = "%s"
 		depends_on = [bluecat_ipv4block.%s]
 		}`, testAccresourceBlockCreate, netResource1, configuration, netName1, netCIDR1, netGateway3, netReserveIP2, netProperties1, templateName, blockNetResource1)
+
+var nextNetResource1 = "next_net_record"
+
+// var nextNetName1 = ""
+var nextNetName1 = "next network1"
+var nextNetReserveIP1 = "1"
+var nextNetParentBlock1 = "30.0.0.0/24"
+var nextNetSize1 = "256"
+
+var nextNetGatewayValue1 = "30.0.0.1"
+var nextNetReserveIPValue1 = "30.0.0.2"
+var nextNetCIDRValue1 = "30.0.0.0/24"
+
+// var nextNetProperties1 = ""
+var nextNetProperties1 = "allowDuplicateHost=disable|"
+var nextNetAllowDuplicateHost1 = "disable"
+var testAccResourceNextNetworkCreateFullField = fmt.Sprintf(
+	`%s
+	resource "bluecat_ipv4network" "%s" {
+		configuration = "%s"
+		name = "%s"
+		reserve_ip = %s
+		properties = "%s"
+		parent_block = "%s"
+		size = %s
+		allocated_id = timestamp()
+		depends_on = [bluecat_ipv4block.%s]
+		}`, testAccresourceBlockCreate, nextNetResource1, configuration, nextNetName1, nextNetReserveIP1, nextNetProperties1, nextNetParentBlock1, nextNetSize1, blockNetResource1)
+
+var nextNetName2 = "next network2"
+
+var testAccResourceNextNetworkUpdateNotFullField = fmt.Sprintf(
+	`%s
+	resource "bluecat_ipv4network" "%s" {
+		configuration = "%s"
+		name = "%s"
+		reserve_ip = %s
+		properties = "%s"
+		parent_block = "%s"
+		size = %s
+		allocated_id = timestamp()
+		depends_on = [bluecat_ipv4block.%s]
+		}`, testAccresourceBlockCreate, nextNetResource1, configuration, nextNetName2, nextNetReserveIP1, nextNetProperties1, nextNetParentBlock1, nextNetSize1, blockNetResource1)

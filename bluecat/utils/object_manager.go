@@ -244,10 +244,13 @@ func (objMgr *ObjectManager) DeleteBlock(configuration string, address string, c
 
 // Network
 
-func generateNetworkProperties(props string, gateway string) string {
+func generateNetworkProperties(props string, gateway string, allocatedId string) string {
 	result := props
 	if len(gateway) > 0 {
 		result = fmt.Sprintf("%s|gateway=%s", result, gateway)
+	}
+	if len(allocatedId) > 0 {
+		result = fmt.Sprintf("%s|allocatedId=%s", result, allocatedId)
 	}
 	return result
 }
@@ -261,11 +264,28 @@ func (objMgr *ObjectManager) CreateNetwork(configuration string, block string, n
 		Name:          name,
 		CIDR:          cidr,
 		Gateway:       gateway,
-		Properties:    generateNetworkProperties(properties, gateway),
+		Properties:    generateNetworkProperties(properties, gateway, ""),
 		Template:      template,
 	})
 	_, err := objMgr.Connector.CreateObject(network)
 	return network, err
+}
+
+// CreateNextAvailableNetwork Create a next available Network
+func (objMgr *ObjectManager) CreateNextAvailableNetwork(configuration string, block string, name string, gateway string, properties string, template string, size string, allocatedId string) (*entities.Network, string, error) {
+
+	network := models.NewNextAvailableNetwork(entities.Network{
+		Configuration: configuration,
+		BlockAddr:     block,
+		Name:          name,
+		Gateway:       gateway,
+		Properties:    generateNetworkProperties(properties, gateway, allocatedId),
+		Template:      template,
+		Size:          size,
+		AllocatedId:   allocatedId,
+	})
+	ref, err := objMgr.Connector.CreateObject(network)
+	return network, ref, err
 }
 
 // GetNetwork Get the Network info
@@ -280,6 +300,19 @@ func (objMgr *ObjectManager) GetNetwork(configuration string, cidr string) (*ent
 	return network, err
 }
 
+// GetNetworkByAllocatedId Get the Network info by allocated id
+func (objMgr *ObjectManager) GetNetworkByAllocatedId(configuration string, block string, allocatedId string) (*entities.Network, error) {
+
+	network := models.Network(entities.Network{
+		Configuration: configuration,
+		BlockAddr:     block,
+		AllocatedId:   allocatedId,
+	})
+
+	err := objMgr.Connector.GetObject(network, &network)
+	return network, err
+}
+
 // UpdateNetwork Update the Network info
 func (objMgr *ObjectManager) UpdateNetwork(configuration string, name string, cidr string, gateway string, properties string) (*entities.Network, error) {
 
@@ -287,7 +320,7 @@ func (objMgr *ObjectManager) UpdateNetwork(configuration string, name string, ci
 		Configuration: configuration,
 		Name:          name,
 		CIDR:          cidr,
-		Properties:    generateNetworkProperties(properties, gateway),
+		Properties:    generateNetworkProperties(properties, gateway, ""),
 	})
 
 	err := objMgr.Connector.UpdateObject(network, &network)
