@@ -1,6 +1,6 @@
 module terraform-provider-bluecat
 
-go 1.14
+go 1.17
 
 require (
 	github.com/hashicorp/terraform-plugin-sdk v1.15.0
