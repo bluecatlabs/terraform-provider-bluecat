@@ -93,7 +93,7 @@ func createZone(d *schema.ResourceData, m interface{}) error {
 	}
 
 	for _, serverRole := range serverRoles {
-		role, serverFQDN, err := validateServerRole(serverRole)
+		role, serverFQDN, err := validateServerRole(objMgr, configuration, serverRole)
 		if err == nil {
 			_, err = objMgr.CreateDeploymentRole(configuration, view, zone, serverFQDN, "dns", role, "", "")
 		}
@@ -213,6 +213,15 @@ func deleteZone(d *schema.ResourceData, m interface{}) error {
 	return nil
 }
 
+func checkServerExists(objMgr *utils.ObjectManager, configuration string, serverName string) bool {
+	_, err := objMgr.GetServerByFQDN(configuration, serverName)
+	if err != nil {
+		log.Debugf("Getting server %s failed", serverName)
+		return false
+	}
+	return true
+}
+
 func contains(s []string, str string) bool {
 	for _, v := range s {
 		if v == str {
@@ -272,7 +281,7 @@ func getRoleNameInTerraform(roleNameInRestApi string) string {
 	return roles[roleNameInRestApi]
 }
 
-func validateServerRole(serverRole string) (role string, serverFQDN string, err error) {
+func validateServerRole(objMgr *utils.ObjectManager, configuration string, serverRole string) (role string, serverFQDN string, err error) {
 
 	prop := strings.Split(serverRole, ",")
 	if len(prop) != 2 {
@@ -287,13 +296,18 @@ func validateServerRole(serverRole string) (role string, serverFQDN string, err 
 		err = fmt.Errorf("invalid role type: '%s'", role)
 		return
 	}
-	role = roleNameInRestApi
 
 	if serverFQDN == "" {
 		err = fmt.Errorf("'server_fqdn' is a required property: '%s'", serverRole)
 		return
 	}
 
+	if !checkServerExists(objMgr, configuration, serverFQDN) {
+		err = fmt.Errorf("Server '%s' with role  '%s' doesn't exists", serverFQDN, role)
+		return
+	}
+
+	role = roleNameInRestApi
 	return
 }
 
@@ -302,7 +316,7 @@ func prepareServerRoleData(objMgr *utils.ObjectManager, serverRolesRaw []interfa
 	currentServerRoles := make(map[string]string)
 
 	for _, serverRole := range serverRolesRaw {
-		role, serverFQDN, err := validateServerRole(serverRole.(string))
+		role, serverFQDN, err := validateServerRole(objMgr, configuration, serverRole.(string))
 		if err != nil {
 			return newServerRoles, currentServerRoles, err
 		}

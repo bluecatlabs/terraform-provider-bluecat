@@ -30,9 +30,11 @@ provider "bluecat" {
   transport = "http"
   port = "5000"
   username = "api_user"
-  password = "api_password"
+  password = "encryption_password/plain_text_password"
+  encrypt_password = true/false
 } 
 ```
+encrypt_password: Default is false, to indicate if the password is encrypted
 
 ## 2. Preparing the resource:
 ---
@@ -64,6 +66,18 @@ resource "bluecat_ipv4network" "net_record" {
   cidr = "30.0.0.0/24"
   gateway = "30.0.0.12"
   reserve_ip = 3
+  properties = ""
+  depends_on = [bluecat_ipv4block.block_record]
+}
+```
+```
+resource "bluecat_ipv4network" "next_available_net_record" {
+  configuration = "terraform_demo"
+  name = "next available network1"
+  reserve_ip = 3
+  parent_block = "30.0.0.0/24"
+  size = 256
+  allocated_id = timestamp()
   properties = ""
   depends_on = [bluecat_ipv4block.block_record]
 }
@@ -129,9 +143,9 @@ resource "bluecat_ptr_record" "ptr_record" {
   view = "gg"
   zone = "gateway.com"
   name = "host30"
-  network = "30.0.0.0/24"
   ip4_address = "30.0.0.30"
   ttl = 1
+  reverse_record = "True"
   properties = ""
   depends_on = [bluecat_ipv4network.net_record]
 }
@@ -186,8 +200,95 @@ resource "bluecat_dhcp_range" "dhcp_range" {
   depends_on = [bluecat_ipv4network.net_record]
 }
 ```
+### Resource Zone and Sub zone:
+```
+resource "bluecat_zone" "sub_zone" {
+  configuration = "terraform_demo"
+  view = "Internal"
+  zone = "example.com"
+  deployable = "True"
+  server_roles = [“master, server1”, “slave, server2”]
+  properties = ""
+}
+```
+## 3. Preparing the datasource:
 
-## 3. Executing the provider:
+### Datasource IPv4 Block:
+```
+data "bluecat_ipv4block" "test_ip4block" {
+  configuration = "terraform_demo"
+  cidr = "20.0.0.0/24"
+}
+
+output "output_block" {
+  value = data.bluecat_ipv4block.test_ip4block
+}
+```
+### Datasource IPv4 Network:
+```
+data "bluecat_ipv4network" "test_ip4network" {
+  configuration = "terraform_demo"
+  cidr = "20.0.0.0/24"
+}
+
+output "output_network" {
+  value = data.bluecat_ipv4network.test_ip4network
+}
+```
+### Datasource Host Record:
+```
+data "bluecat_host_record" "test_record" {
+  configuration = "terraform_demo"
+  view = "gg"
+  zone = "gateway.com"
+  fqdn = "host"
+}
+
+output "output_host" {
+  value = data.bluecat_host_record.test_record
+}
+```
+
+### Datasource CNAME Record:
+```
+data "bluecat_cname_record" "test_cname" {
+  configuration = "terraform_demo"
+  view = "gg"
+  zone = "gateway.com"
+  linked_record = "host.gateway.com"
+  canonical = "cname"
+}
+
+output "output_cname" {
+  value = data.bluecat_cname_record.test_cname
+}
+```
+### Datasource Zone and Sub zone:
+```
+data "bluecat_zone" "sub_zone" {
+  configuration="terraform_demo"
+  view="Internal"
+  zone="example.com"
+}
+
+output "sub_zone_data" {
+  value = data.bluecat_zone.sub_zone
+}
+
+output "id" {
+  value = data.bluecat_zone.sub_zone.id
+}
+
+output "deployable" {
+  value = data.bluecat_zone.sub_zone.deployable
+}
+
+output "server_roles" {
+  value = data.bluecat_zone.sub_zone.server_roles
+}
+```
+
+## 4. Executing the provider:
 ---
 ### Initialize the provider:
 
