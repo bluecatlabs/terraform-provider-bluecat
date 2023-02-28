@@ -741,3 +741,15 @@ func (objMgr *ObjectManager) DeleteDeploymentRole(configuration string, view str
 
 	return objMgr.Connector.DeleteObject(deploymentRole)
 }
+
+// GetServer Get the Server info
+func (objMgr *ObjectManager) GetServerByFQDN(configuration string, serverFQDN string) (*entities.Server, error) {
+
+	server := models.Server(entities.Server{
+		Configuration: configuration,
+		ServerFQDN:    serverFQDN,
+	})
+
+	err := objMgr.Connector.GetObject(server, &server)
+	return server, err
+}

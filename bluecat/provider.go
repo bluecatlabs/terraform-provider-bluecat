@@ -24,8 +24,8 @@ func Provider() *schema.Provider {
 			},
 			"password": {
 				Type:        schema.TypeString,
-				Required:    true,
-				Description: "Password to authenticate with BlueCat Gateway server.",
+				Optional:    true,
+				Description: "Password to authenticate with BlueCat Gateway server. The encrypted file name if encrypt_password set to True",
 			},
 			"api_version": {
 				Type:        schema.TypeString,
@@ -45,6 +45,7 @@ func Provider() *schema.Provider {
 			"encrypt_password": {
 				Type:        schema.TypeBool,
 				Optional:    true,
+				Default:     false,
 				Description: "Default is false, to indicate if the password is encrypted",
 			},
 		},
