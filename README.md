@@ -207,7 +207,7 @@ resource "bluecat_zone" "sub_zone" {
   view = "Internal"
   zone = "example.com"
   deployable = "True"
-  server_roles = [“master, server1”, “slave, server2”]
+  server_roles = [“primary, server1”, “secondary, server2”]
   properties = ""
 }
 ```
