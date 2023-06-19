@@ -56,6 +56,7 @@ Below are the available resources for the following objectTypes:
 -   CNAME Record (bluecat_cname_record)
 -   TXT Record (bluecat_txt_record)
 -   Generic Record (bluecat_generic_record)
+-   DNS Zone (bluecat_zone)
 
 ## Data Sources
 
@@ -65,5 +66,7 @@ Below are the available BlueCat data sources:
 -   IPv4 Network (bluecat_ipv4network)
 -   Host Record (bluecat_host_record)
 -   CNAME Record (bluecat_cname_record)
+-   DNS Zone (bluecat_zone)
 
-For the latest updates, please see the BlueCat [Terraform Plugin Administration Guide](https://docs.bluecatnetworks.com/r/en-US/BlueCat-Terraform-Plugin-Administration-Guide/21.10.1)
+For the latest updates, please see the BlueCat Product Documents.
+
