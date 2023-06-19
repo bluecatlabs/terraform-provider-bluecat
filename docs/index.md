@@ -68,5 +68,5 @@ Below are the available BlueCat data sources:
 -   CNAME Record (bluecat_cname_record)
 -   DNS Zone (bluecat_zone)
 
-For the latest updates, please see the BlueCat Product Documents.
+For the latest updates, please see the BlueCat Product Documentation.
 
