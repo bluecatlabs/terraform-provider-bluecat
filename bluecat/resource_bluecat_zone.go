@@ -88,27 +88,36 @@ func createZone(d *schema.ResourceData, m interface{}) error {
 	}
 
 	serverRoles := make([]string, len(serverRolesRaw))
+	count := 0
 	for i, raw := range serverRolesRaw {
-		serverRoles[i] = raw.(string)
-	}
-
-	for _, serverRole := range serverRoles {
-		role, serverFQDN, err := validateServerRole(objMgr, configuration, serverRole)
-		if err == nil {
-			_, err = objMgr.CreateDeploymentRole(configuration, view, zone, serverFQDN, "dns", role, "", "")
+		svrRole, ok := raw.(string)
+		if !ok {
+			log.Warning("Cannot load server role item at: ", i)
 		}
-
-		if err != nil {
-			msg := fmt.Sprintf("Error creating Zone (%s): %s", zone, err)
-			log.Debug(msg)
-
-			_, err := objMgr.DeleteZone(configuration, view, zone)
-			if err != nil {
-				msg := fmt.Sprintf("Rollback data - Delete Zone %s failed: %s", zone, err)
-				log.Debug(msg)
+		svrRole = strings.TrimSpace(svrRole)
+		if len(svrRole) > 0 {
+			serverRoles[count] = svrRole
+			count += 1
+		}
+	}
+	for _, serverRole := range serverRoles {
+		if len(serverRole) > 0 {
+			role, serverFQDN, err := validateServerRole(objMgr, configuration, serverRole)
+			if err == nil {
+				_, err = objMgr.CreateDeploymentRole(configuration, view, zone, serverFQDN, "dns", role, "", "")
 			}
 
-			return fmt.Errorf(msg)
+			if err != nil {
+				msg := fmt.Sprintf("Error creating Zone (%s): %s", zone, err)
+				log.Debug(msg)
+
+				_, err := objMgr.DeleteZone(configuration, view, zone)
+				if err != nil {
+					msg := fmt.Sprintf("Rollback data - Delete Zone %s failed: %s", zone, err)
+					log.Debug(msg)
+				}
+				return fmt.Errorf(msg)
+			}
 		}
 	}
 
@@ -315,12 +324,20 @@ func prepareServerRoleData(objMgr *utils.ObjectManager, serverRolesRaw []interfa
 	newServerRoles := make(map[string]string)
 	currentServerRoles := make(map[string]string)
 
-	for _, serverRole := range serverRolesRaw {
-		role, serverFQDN, err := validateServerRole(objMgr, configuration, serverRole.(string))
-		if err != nil {
-			return newServerRoles, currentServerRoles, err
+	for i, serverRole := range serverRolesRaw {
+		svrRole, ok := serverRole.(string)
+		if !ok {
+			log.Warning("Cannot load server role item at: ", i)
 		}
-		newServerRoles[serverFQDN] = role
+		svrRole = strings.TrimSpace(svrRole)
+		if len(svrRole) > 0 {
+			role, serverFQDN, err := validateServerRole(objMgr, configuration, svrRole)
+			if err != nil {
+				return newServerRoles, currentServerRoles, err
+			}
+			newServerRoles[serverFQDN] = role
+		}
+
 	}
 
 	serverRoles, err := objMgr.GetDeploymentRoles(configuration, view, zone)
