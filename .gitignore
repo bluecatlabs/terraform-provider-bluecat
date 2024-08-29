@@ -5,3 +5,4 @@
 main.tf
 terraform.tfstate
 dist/
+vendor/
