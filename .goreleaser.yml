@@ -48,8 +48,10 @@ signs:
       - "--detach-sign"
       - "${artifact}"
 release:
-  # If you want to manually examine the release before its live, uncomment this line:
-  # draft: true
+  github:
+    owner: cmaurer
+    name: terraform-bluecat-provider
+
 changelog:
   sort: asc
   use: github
