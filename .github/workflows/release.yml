@@ -1,52 +1,36 @@
-# This GitHub action can publish assets for release when a tag is created.
-# Currently its setup to run on any tag that matches the pattern "v*" (ie. v0.1.0).
-#
-# This uses an action (paultyng/ghaction-import-gpg) that assumes you set your 
-# private key in the `GPG_PRIVATE_KEY` secret and passphrase in the `PASSPHRASE`
-# secret. If you would rather own your own GPG handling, please fork this action
-# or use an alternative one for key handling.
-#
-# You will need to pass the `--batch` flag to `gpg` in your signing step 
-# in `goreleaser` to indicate this is being used in a non-interactive mode.
-#
 name: release
 on:
-  push:
-    tags:
-      - '*'
-
+    push:
+        branches: 
+            - master
 jobs:
-  goreleaser:
-    runs-on: ubuntu-latest
-    steps:
-      -
-        name: Checkout
-        uses: actions/checkout@v2
-      -
-        name: Unshallow
-        run: git fetch --prune --unshallow
-      -
-        name: Set up Go
-        uses: actions/setup-go@v2
-        with:
-          go-version: 1.23.0
-      -
-        name: Import GPG key
-        id: import_gpg
-        # TODO: move this to HashiCorp namespace or find alternative that is just simple gpg commands
-        # see https://github.com/hashicorp/terraform-provider-scaffolding/issues/22
-        uses: paultyng/ghaction-import-gpg@v2.1.0
-        env:
-          # These secrets will need to be configured for the repository:
-          GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
-          PASSPHRASE: ${{ secrets.PASSPHRASE }}
-      -
-        name: Run GoReleaser
-        uses: goreleaser/goreleaser-action@v2
-        with:
-          version: latest
-          args: release --rm-dist
-        env:
-          GPG_FINGERPRINT: ${{ steps.import_gpg.outputs.fingerprint }}
-          # GitHub sets this automatically
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    semantic-release:
+      runs-on: ubuntu-latest
+      steps:
+          - name: Checkout
+            uses: actions/checkout@v4
+          - name: Semantic Release
+            uses: cycjimmy/semantic-release-action@v4
+            env:
+              GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    releases-matrix:
+      name: Release Go Binary
+      runs-on: ubuntu-latest
+      strategy:
+        matrix:
+          # build and publish in parallel: linux/386, linux/amd64, linux/arm64, windows/386, windows/amd64, darwin/amd64, darwin/arm64
+          goos: [linux, windows, darwin]
+          goarch: ["386", amd64, arm64]
+          exclude:
+            - goarch: "386"
+              goos: darwin
+            - goarch: arm64
+              goos: windows
+      steps:
+        - uses: actions/checkout@v4
+        - uses: wangyoucao577/go-release-action@v1
+          with:
+            github_token: ${{ secrets.GITHUB_TOKEN }}
+            goos: ${{ matrix.goos }}
+            goarch: ${{ matrix.goarch }}
+            goversion: "https://dl.google.com/go/go1.23.0.linux-amd64.tar.gz"
