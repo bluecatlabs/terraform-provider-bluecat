@@ -49,7 +49,18 @@ jobs:
                 GOARCH: ${{ matrix.goarch }}
                 CGO_ENABLED: 0
               run: |
-                go build -mod vendor ${{ matrix.flags }} ${{ matrix.flags }} -o terraform-provider-bluecat.${{ matrix.goos }}.${{ matrix.goarch }} . 
+                go build -mod vendor ${{ matrix.flags }} ${{ matrix.flags }} -o terraform-provider-bluecat.${{ matrix.goos }}.${{ matrix.goarch }} .
+                tar -czvf terraform-provider-bluecat.${{ matrix.goos }}.${{ matrix.goarch }}.tar.gz terraform-provider-bluecat.${{ matrix.goos }}.${{ matrix.goarch }}
+            - name: upload
+              uses: actions/upload-artifact@v4
+              if: ${{ success() }}
+              id: artifact_upload
+              with:
+                name: terraform-provider-bluecat.${{ matrix.goos }}.${{ matrix.goarch }}
+                path: terraform-provider-bluecat.${{ matrix.goos }}.${{ matrix.goarch }}.tar.gz
+                overwrite: true
+                retention-days: 1
+
     release-workflow:
         name: release
         needs: build-workflow
