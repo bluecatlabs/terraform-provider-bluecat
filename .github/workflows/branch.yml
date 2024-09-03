@@ -1,0 +1,86 @@
+name: build
+on:
+    push:
+        branches: 
+            - '*'
+            - '!master'
+    pull_request:
+        branches:
+            - '*'
+jobs:
+    setup-workflow:
+      name: setup
+      runs-on: ubuntu-latest
+      steps:
+        - uses: actions/checkout@v4
+        - name: setup go
+          uses: actions/setup-go@v5
+          with:
+            go-version: '>=1.23.0'
+        - name: install dependencies
+          run: |
+              go version
+              go get
+        - name: test
+          run: |
+            go test -v ./...
+    build-workflow:
+        name: build
+        needs: setup-workflow
+        runs-on: ubuntu-latest
+        strategy:
+            matrix:
+                goos:
+                    - linux
+                goarch:
+                    - amd64
+                    - arm64
+                flags:
+                    - -trimpath
+        steps:
+            - uses: actions/checkout@v4
+            - name: setup go
+              uses: actions/setup-go@v5
+              with:
+                go-version: '>=1.23.0'
+            - name: build
+              env:
+                GOOS: ${{ matrix.goos }}
+                GOARCH: ${{ matrix.goarch }}
+                CGO_ENABLED: 0
+              run: |
+                go build -mod vendor ${{ matrix.flags }} ${{ matrix.flags }} -o terraform-provider-bluecat.${{ matrix.goos }}.${{ matrix.goarch }} .
+                tar -czvf terraform-provider-bluecat.${{ matrix.goos }}.${{ matrix.goarch }}.tar.gz terraform-provider-bluecat.${{ matrix.goos }}.${{ matrix.goarch }}
+            - name: upload
+              uses: actions/upload-artifact@v4
+              if: ${{ success() }}
+              id: artifact_upload
+              with:
+                name: terraform-provider-bluecat.${{ matrix.goos }}.${{ matrix.goarch }}
+                path: terraform-provider-bluecat.${{ matrix.goos }}.${{ matrix.goarch }}.tar.gz
+                overwrite: true
+                retention-days: 1
+
+    release-workflow:
+        name: release
+        needs: build-workflow
+        runs-on: ubuntu-latest
+        if: ${{ github.ref_name == 'master' }}
+        steps:
+            - name: checkout
+              uses: actions/checkout@v4
+            - name: semantic release
+              uses: cycjimmy/semantic-release-action@v4
+              id: semantic_release
+              env:
+                GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+            - name: create GitHub release
+              id: create_release
+              uses: zendesk/action-create-release@v1
+              env:
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+              with:
+                tag_name: ${{ steps.semantic_release.outputs.new_release_git_tag }}
+                tag_schema: semantic
+                body: ${{ steps.semantic_release.outputs.new_release_notes }}
+                
