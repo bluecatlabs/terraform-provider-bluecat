@@ -43,6 +43,6 @@ jobs:
                 GOOS: ${{ matrix.goos }}
                 GOARCH: ${{ matrix.goarch }}
               run: |
-                go build ${{ matrix.ldflags }} -mod vendor -trimpath  . 
+                go build -ldflags="${{ matrix.ldflags }}" -mod vendor -trimpath  . 
 
     
