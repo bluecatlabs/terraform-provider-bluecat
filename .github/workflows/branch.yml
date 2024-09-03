@@ -17,7 +17,7 @@ jobs:
           uses: actions/setup-go@v5
           with:
             go-version: '>=1.23.0'
-        - name: Install dependencies
+        - name: install dependencies
           run: |
               go version
               go get
@@ -49,14 +49,27 @@ jobs:
                 GOARCH: ${{ matrix.goarch }}
                 CGO_ENABLED: 0
               run: |
-                go build -mod vendor ${{ matrix.flags }}  . 
+                go build -mod vendor ${{ matrix.flags }} ${{ matrix.flags }} -o terraform-provider-bluecat.${{ matrix.goos }}.${{ matrix.goarch }} . 
     release-workflow:
         name: release
         needs: build-workflow
         runs-on: ubuntu-latest
         if: ${{ github.ref_name == 'master' }}
         steps:
-            - name: release
-              run: |
-                echo release
-    
+            - name: checkout
+              uses: actions/checkout@v4
+            - name: semantic release
+              uses: cycjimmy/semantic-release-action@v4
+              id: semantic_release
+              env:
+                GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+            - name: create GitHub release
+              id: create_release
+              uses: zendesk/action-create-release@v1
+              env:
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+              with:
+                tag_name: ${{ steps.semantic_release.outputs.new_release_git_tag }}
+                tag_schema: semantic
+                body: ${{ steps.semantic_release.outputs.new_release_notes }}
+                

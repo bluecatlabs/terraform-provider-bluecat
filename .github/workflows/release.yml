@@ -1,36 +1,26 @@
-name: release
-on:
-    push:
-        branches: 
-            - master
-jobs:
-    semantic-release:
-      runs-on: ubuntu-latest
-      steps:
-          - name: Checkout
-            uses: actions/checkout@v4
-          - name: Semantic Release
-            uses: cycjimmy/semantic-release-action@v4
-            env:
-              GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-    releases-matrix:
-      name: Release Go Binary
-      runs-on: ubuntu-latest
-      strategy:
-        matrix:
-          # build and publish in parallel: linux/386, linux/amd64, linux/arm64, windows/386, windows/amd64, darwin/amd64, darwin/arm64
-          goos: [linux, windows, darwin]
-          goarch: ["386", amd64, arm64]
-          exclude:
-            - goarch: "386"
-              goos: darwin
-            - goarch: arm64
-              goos: windows
-      steps:
-        - uses: actions/checkout@v4
-        - uses: wangyoucao577/go-release-action@v1
-          with:
-            github_token: ${{ secrets.GITHUB_TOKEN }}
-            goos: ${{ matrix.goos }}
-            goarch: ${{ matrix.goarch }}
-            goversion: "https://dl.google.com/go/go1.23.0.linux-amd64.tar.gz"
+# name: release
+# on:
+#     push:
+#         branches: 
+#             - master
+# jobs:
+#   release-workflow:
+#     name: release
+#     runs-on: ubuntu-latest
+#     steps:
+#       - name: checkout
+#         uses: actions/checkout@v4
+#       - name: semantic release
+#         uses: cycjimmy/semantic-release-action@v4
+#         id: semantic_release
+#         env:
+#           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#       - name: create GitHub release
+#         id: create_release
+#         uses: zendesk/action-create-release@v1
+#         env:
+#             GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#         with:
+#           tag_name: ${{ steps.semantic_release.outputs.new_release_git_tag }}
+#           tag_schema: semantic
+#           body: ${{ steps.semantic_release.outputs.new_release_notes }}
