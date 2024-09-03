@@ -21,8 +21,9 @@ jobs:
         - name: test
           run: |
             go test -v ./...
-    build:
+    build-workflow:
         name: build
+        needs: setup-workflow
         runs-on: ubuntu-latest
         strategy:
             matrix:
@@ -42,6 +43,6 @@ jobs:
                 GOOS: ${{ matrix.goos }}
                 GOARCH: ${{ matrix.goarch }}
               run: |
-                go build  -ldflags ${{ matrix.ldflags }} -mod vendor -trimpath  . 
+                go build ${{ matrix.ldflags }} -mod vendor -trimpath  . 
 
     
