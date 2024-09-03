@@ -2,6 +2,7 @@ name: release
 on:
     push:
         branches: 
+            - '*'
             - '!master'
 jobs:
     releases-matrix:
@@ -13,5 +14,13 @@ jobs:
           uses: actions/setup-go@v2
           with:
             go-version: ‘1.23.0’    
-    
-    
+        - name: Install dependencies
+          run: |
+              go version
+              go get
+        - name: test
+          run: |
+            go test -v ./...
+        - name: build
+          run: |
+            go build . 
