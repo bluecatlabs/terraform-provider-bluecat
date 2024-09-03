@@ -5,8 +5,8 @@ on:
             - '*'
             - '!master'
 jobs:
-    build-workflow:
-      name: build
+    setup-workflow:
+      name: setup
       runs-on: ubuntu-latest
       steps:
         - uses: actions/checkout@v4
@@ -21,6 +21,27 @@ jobs:
         - name: test
           run: |
             go test -v ./...
-        - name: build
-          run: |
-            go build . 
+    build:
+        name: build
+        runs-on: ubuntu-latest
+        strategy:
+            matrix:
+                goos:
+                    - linux
+                goarch:
+                    - amd64
+                    - arm64
+                flags:
+                    - -trimpath
+                ldflags:
+                    - -s -w -X main.version={{.Version}} -X main.commit={{.Commit}} -X main.date={{ .CommitDate }} -X main.builtBy=goreleaser -X main.treeState={{ .IsGitDirty }}                  
+        steps:
+            - uses: actions/setup-go@v5
+            - name: build
+              env:
+                GOOS: ${{ matrix.goos }}
+                GOARCH: ${{ matrix.goarch }}
+              run: |
+                go build  -ldflags ${{ matrix.ldflags }} -mod vendor -trimpath  . 
+
+    
