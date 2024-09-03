@@ -34,8 +34,6 @@ jobs:
                     - arm64
                 flags:
                     - -trimpath
-                ldflags:
-                    - -s -w -X main.version={{.Version}} -X main.commit={{.Commit}} -X main.date={{ .CommitDate }} -X main.builtBy=goreleaser -X main.treeState={{ .IsGitDirty }}                  
         steps:
             - uses: actions/checkout@v4
             - uses: actions/setup-go@v5
@@ -47,6 +45,6 @@ jobs:
               run: |
                 pwd
                 ls -ltr
-                go build -ldflags="${{ matrix.ldflags }}" -mod vendor -trimpath  . 
+                go build -mod vendor -trimpath  . 
 
     
