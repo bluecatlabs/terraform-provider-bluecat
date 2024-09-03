@@ -4,13 +4,16 @@ on:
         branches: 
             - '*'
             - '!master'
+    pull_request:
+        branches:
+            - '*'
 jobs:
     setup-workflow:
       name: setup
       runs-on: ubuntu-latest
       steps:
         - uses: actions/checkout@v4
-        - name: Setup Go
+        - name: setup go
           uses: actions/setup-go@v5
           with:
             go-version: '>=1.23.0'
@@ -36,15 +39,24 @@ jobs:
                     - -trimpath
         steps:
             - uses: actions/checkout@v4
-            - uses: actions/setup-go@v5
+            - name: setup go
+              uses: actions/setup-go@v5
+              with:
+                go-version: '>=1.23.0'
             - name: build
               env:
                 GOOS: ${{ matrix.goos }}
                 GOARCH: ${{ matrix.goarch }}
                 CGO_ENABLED: 0
               run: |
-                pwd
-                ls -ltr
-                go build -mod vendor -trimpath  . 
-
+                go build -mod vendor ${{ matrix.flags }}  . 
+    release-workflow:
+        name: release
+        needs: build-workflow
+        runs-on: ubuntu-latest
+        steps:
+            - name: release
+              if: ${{ github.ref_name != 'master' }}
+              run: |
+                echo release
     
