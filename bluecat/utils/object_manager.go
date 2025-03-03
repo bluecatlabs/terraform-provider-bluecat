@@ -186,117 +186,156 @@ func (objMgr *ObjectManager) DeleteConfiguration(name string) (string, error) {
 // Block
 
 // CreateBlock Create a new Block
-func (objMgr *ObjectManager) CreateBlock(configuration string, name string, address string, cidr string, parentBlock string, properties string) (*entities.Block, error) {
+func (objMgr *ObjectManager) CreateBlock(block entities.Block) (*entities.Block, error) {
 
-	block := models.NewBlock(entities.Block{
-		Configuration: configuration,
-		Name:          name,
-		Address:       address,
-		CIDR:          cidr,
-		ParentBlock:   parentBlock,
-		Properties:    properties,
-	})
+	// default value for the ipVersion is ipv4
+	if block.IPVersion == "" {
+		block.IPVersion = entities.IPV4
+	}
+	block = models.NewBlock(
+		entities.Block{
+			Configuration: block.Configuration,
+			Name:          block.Name,
+			Address:       block.Address,
+			CIDR:          block.CIDR,
+			ParentBlock:   block.ParentBlock,
+			Properties:    block.Properties,
+		},
+		block.IPVersion,
+	)
 
-	_, err := objMgr.Connector.CreateObject(block)
-	return block, err
+	_, err := objMgr.Connector.CreateObject(&block)
+	return &block, err
 }
 
 // GetBlock Get the Block info
-func (objMgr *ObjectManager) GetBlock(configuration string, address string, cidr string) (*entities.Block, error) {
+func (objMgr *ObjectManager) GetBlock(configuration string, address string, cidr string, ipVersion string) (*entities.Block, error) {
 
-	block := models.Block(entities.Block{
-		Configuration: configuration,
-		Address:       address,
-		CIDR:          cidr,
-	})
+	// default value for the ipVersion is ipv4
+	if ipVersion == "" {
+		ipVersion = entities.IPV4
+	}
+	block := models.IPBlock(
+		entities.Block{
+			Configuration: configuration,
+			Address:       address,
+			CIDR:          cidr,
+			IPVersion:     ipVersion,
+		},
+	)
 
 	err := objMgr.Connector.GetObject(block, &block)
 	return block, err
 }
 
 // UpdateBlock Update the Block info
-func (objMgr *ObjectManager) UpdateBlock(configuration string, name string, address string, cidr string, parentBlock string, properties string) (*entities.Block, error) {
+func (objMgr *ObjectManager) UpdateBlock(block entities.Block) (*entities.Block, error) {
 
-	block := models.Block(entities.Block{
-		Configuration: configuration,
-		Name:          name,
-		Address:       address,
-		CIDR:          cidr,
-		ParentBlock:   parentBlock,
-		Properties:    properties,
-	})
+	// default value for the ipVersion is ipv4
+	if block.IPVersion == "" {
+		block.IPVersion = entities.IPV4
+	}
+	blockEntity := models.IPBlock(
+		entities.Block{
+			Configuration: block.Configuration,
+			Name:          block.Name,
+			Address:       block.Address,
+			CIDR:          block.CIDR,
+			ParentBlock:   block.ParentBlock,
+			Properties:    block.Properties,
+			IPVersion:     block.IPVersion,
+		},
+	)
 
-	err := objMgr.Connector.UpdateObject(block, &block)
-	return block, err
+	err := objMgr.Connector.UpdateObject(blockEntity, &block)
+	return blockEntity, err
 }
 
 // DeleteBlock Delete the Block
-func (objMgr *ObjectManager) DeleteBlock(configuration string, address string, cidr string) (string, error) {
+func (objMgr *ObjectManager) DeleteBlock(configuration string, address string, cidr string, ipVersion string) (string, error) {
 
-	block := models.Block(entities.Block{
-		Configuration: configuration,
-		Address:       address,
-		CIDR:          cidr,
-	})
+	// default value for the ipVersion is ipv4
+	if ipVersion == "" {
+		ipVersion = entities.IPV4
+	}
+	block := models.IPBlock(
+		entities.Block{
+			Configuration: configuration,
+			Address:       address,
+			CIDR:          cidr,
+			IPVersion:     ipVersion,
+		},
+	)
 
 	return objMgr.Connector.DeleteObject(block)
 }
 
 // Network
 
-func generateNetworkProperties(props string, gateway string, allocatedId string) string {
+func generateNetworkProperties(props string, gateway string) string {
 	result := props
 	if len(gateway) > 0 {
 		result = fmt.Sprintf("%s|gateway=%s", result, gateway)
-	}
-	if len(allocatedId) > 0 {
-		result = fmt.Sprintf("%s|allocatedId=%s", result, allocatedId)
 	}
 	return result
 }
 
 // CreateNetwork Create a new Network
-func (objMgr *ObjectManager) CreateNetwork(configuration string, block string, name string, cidr string, gateway string, properties string, template string) (*entities.Network, error) {
+func (objMgr *ObjectManager) CreateNetwork(network entities.Network) (*entities.Network, error) {
 
-	network := models.NewNetwork(entities.Network{
-		Configuration: configuration,
-		BlockAddr:     block,
-		Name:          name,
-		CIDR:          cidr,
-		Gateway:       gateway,
-		Properties:    generateNetworkProperties(properties, gateway, ""),
-		Template:      template,
-	})
-	_, err := objMgr.Connector.CreateObject(network)
-	return network, err
+	networkEntity := entities.Network{
+		Configuration: network.Configuration,
+		BlockAddr:     network.BlockAddr,
+		Name:          network.Name,
+		CIDR:          network.CIDR,
+		Properties:    network.Properties,
+		Template:      network.Template,
+		IPVersion:     network.IPVersion,
+	}
+	if networkEntity.IPVersion == entities.IPV4 || networkEntity.IPVersion == "" {
+		networkEntity.Gateway = network.Gateway
+		networkEntity.Properties = generateNetworkProperties(network.Properties, network.Gateway)
+	}
+
+	network = models.NewNetwork(networkEntity)
+	_, err := objMgr.Connector.CreateObject(&network)
+	return &network, err
 }
 
 // CreateNextAvailableNetwork Create a next available Network
-func (objMgr *ObjectManager) CreateNextAvailableNetwork(configuration string, block string, name string, gateway string, properties string, template string, size string, allocatedId string) (*entities.Network, string, error) {
+func (objMgr *ObjectManager) CreateNextAvailableNetwork(network entities.Network) (*entities.Network, string, error) {
 
-	network := models.NewNextAvailableNetwork(entities.Network{
-		Configuration: configuration,
-		BlockAddr:     block,
-		Name:          name,
-		Gateway:       gateway,
-		Properties:    generateNetworkProperties(properties, gateway, allocatedId),
-		Template:      template,
-		Size:          size,
-		AllocatedId:   allocatedId,
+	networkEntity := models.NewNextAvailableNetwork(entities.Network{
+		Configuration: network.Configuration,
+		BlockAddr:     network.BlockAddr,
+		Name:          network.Name,
+		Gateway:       network.Gateway,
+		Properties:    network.Properties,
+		Template:      network.Template,
+		Size:          network.Size,
+		AllocatedId:   network.AllocatedId,
+		IPVersion:     network.IPVersion,
 	})
-	ref, err := objMgr.Connector.CreateObject(network)
-	return network, ref, err
+
+	if networkEntity.IPVersion == entities.IPV4 || networkEntity.IPVersion == "" {
+		networkEntity.Gateway = network.Gateway
+		networkEntity.Properties = generateNetworkProperties(network.Properties, network.Gateway)
+	}
+
+	ref, err := objMgr.Connector.CreateObject(networkEntity)
+	return networkEntity, ref, err
 }
 
 // GetNetwork Get the Network info
-func (objMgr *ObjectManager) GetNetwork(configuration string, cidr string) (*entities.Network, error) {
+func (objMgr *ObjectManager) GetNetwork(network *entities.Network) (*entities.Network, error) {
 
-	network := models.Network(entities.Network{
-		Configuration: configuration,
-		CIDR:          cidr,
+	networkEntity := models.Network(entities.Network{
+		Configuration: network.Configuration,
+		CIDR:          network.CIDR,
+		IPVersion:     network.IPVersion,
 	})
 
-	err := objMgr.Connector.GetObject(network, &network)
+	err := objMgr.Connector.GetObject(networkEntity, &network)
 	return network, err
 }
 
@@ -314,138 +353,116 @@ func (objMgr *ObjectManager) GetNetworkByAllocatedId(configuration string, block
 }
 
 // UpdateNetwork Update the Network info
-func (objMgr *ObjectManager) UpdateNetwork(configuration string, name string, cidr string, gateway string, properties string) (*entities.Network, error) {
+func (objMgr *ObjectManager) UpdateNetwork(network entities.Network) (*entities.Network, error) {
 
-	network := models.Network(entities.Network{
-		Configuration: configuration,
-		Name:          name,
-		CIDR:          cidr,
-		Properties:    generateNetworkProperties(properties, gateway, ""),
+	networkEntity := models.Network(entities.Network{
+		Configuration: network.Configuration,
+		Name:          network.Name,
+		CIDR:          network.CIDR,
+		Properties:    network.Properties,
+		IPVersion:     network.IPVersion,
 	})
 
-	err := objMgr.Connector.UpdateObject(network, &network)
-	return network, err
+	if networkEntity.IPVersion == entities.IPV4 || networkEntity.IPVersion == "" {
+		networkEntity.Gateway = network.Gateway
+		networkEntity.Properties = generateNetworkProperties(network.Properties, network.Gateway)
+	}
+
+	err := objMgr.Connector.UpdateObject(networkEntity, &network)
+	return networkEntity, err
 }
 
 // DeleteNetwork Delete the Network
-func (objMgr *ObjectManager) DeleteNetwork(configuration string, cidr string) (string, error) {
+func (objMgr *ObjectManager) DeleteNetwork(network entities.Network) (string, error) {
 
-	network := models.Network(entities.Network{
-		Configuration: configuration,
-		CIDR:          cidr,
+	networkEntity := models.Network(entities.Network{
+		Configuration: network.Configuration,
+		CIDR:          network.CIDR,
+		IPVersion:     network.IPVersion,
 	})
 
-	return objMgr.Connector.DeleteObject(network)
+	return objMgr.Connector.DeleteObject(networkEntity)
 }
 
 // DHCP Range
 
 // CreateDHCPRange Create a new DHCP Range
-func (objMgr *ObjectManager) CreateDHCPRange(configuration string, template string, network string, start string, end string, properties string) (*entities.DHCPRange, error) {
-
-	dhcpRange := models.NewDHCPRange(entities.DHCPRange{
-		Configuration: configuration,
-		Template:      template,
-		Network:       network,
-		Start:         start,
-		End:           end,
-		Properties:    properties,
-	})
-	_, err := objMgr.Connector.CreateObject(dhcpRange)
-	return dhcpRange, err
+func (objMgr *ObjectManager) CreateDHCPRange(dhcpRange entities.DHCPRange) (*entities.DHCPRange, error) {
+	dhcpRangeEntity := models.NewDHCPRange(dhcpRange)
+	_, err := objMgr.Connector.CreateObject(dhcpRangeEntity)
+	return dhcpRangeEntity, err
 }
 
 // GetDHCPRange Get the DHCP Range info
-func (objMgr *ObjectManager) GetDHCPRange(configuration string, network string, start string, end string) (*entities.DHCPRange, error) {
-
-	dhcpRange := models.DHCPRange(entities.DHCPRange{
-		Configuration: configuration,
-		Network:       network,
-		Start:         start,
-		End:           end,
-	})
-
-	err := objMgr.Connector.GetObject(dhcpRange, &dhcpRange)
-	return dhcpRange, err
+func (objMgr *ObjectManager) GetDHCPRange(dhcpRange entities.DHCPRange) (*entities.DHCPRange, error) {
+	dhcpRangeEntity := models.DHCPRange(dhcpRange)
+	err := objMgr.Connector.GetObject(dhcpRangeEntity, &dhcpRangeEntity)
+	return dhcpRangeEntity, err
 }
 
 // GetDeploymentRoles Get all Deployment role on the Zone
 func (objMgr *ObjectManager) GetDeploymentRoles(configuration string, view string, zone string) (*entities.DeploymentRoles, error) {
-
-	deploymentRoles := models.GetDeploymentRoles(entities.DeploymentRoles{
-		Configuration: configuration,
-		View:          view,
-		Zone:          zone,
-	})
+	var deploymentRoles *entities.DeploymentRoles
+	if zone == "" {
+		deploymentRoles = models.GetDeploymentRoles(entities.DeploymentRoles{
+			Configuration: configuration,
+			View:          view,
+		})
+	} else {
+		deploymentRoles = models.GetDeploymentRoles(entities.DeploymentRoles{
+			Configuration: configuration,
+			View:          view,
+			Zone:          zone,
+		})
+	}
 
 	err := objMgr.Connector.GetObject(deploymentRoles, &deploymentRoles)
 	return deploymentRoles, err
 }
 
 // UpdateDHCPRange Update the DHCP Range info
-func (objMgr *ObjectManager) UpdateDHCPRange(configuration string, template string, network string, start string, end string, properties string) (*entities.DHCPRange, error) {
-
-	dhcpRange := models.DHCPRange(entities.DHCPRange{
-		Configuration: configuration,
-		Template:      template,
-		Network:       network,
-		Start:         start,
-		End:           end,
-		Properties:    properties,
-	})
-
-	err := objMgr.Connector.UpdateObject(dhcpRange, &dhcpRange)
-	return dhcpRange, err
+func (objMgr *ObjectManager) UpdateDHCPRange(dhcpRange entities.DHCPRange) (*entities.DHCPRange, error) {
+	dhcpRangeEntity := models.DHCPRange(dhcpRange)
+	err := objMgr.Connector.UpdateObject(dhcpRangeEntity, &dhcpRangeEntity)
+	return dhcpRangeEntity, err
 }
 
 // DeleteDHCPRange Delete the DHCP Range
-func (objMgr *ObjectManager) DeleteDHCPRange(configuration string, network string, start string, end string) (string, error) {
-
-	dhcpRange := models.DHCPRange(entities.DHCPRange{
-		Configuration: configuration,
-		Network:       network,
-		Start:         start,
-		End:           end,
-	})
-
-	return objMgr.Connector.DeleteObject(dhcpRange)
+func (objMgr *ObjectManager) DeleteDHCPRange(dhcpRange entities.DHCPRange) (string, error) {
+	dhcpRangeEntity := models.DHCPRange(dhcpRange)
+	return objMgr.Connector.DeleteObject(dhcpRangeEntity)
 }
 
 // IP
 
 // ReserveIPAddress Create the new IP address for later use
-func (objMgr *ObjectManager) ReserveIPAddress(configuration string, network string) (*entities.IPAddress, error) {
-	return objMgr.CreateIPAddress(configuration, network, "", "", "", models.AllocateReserved, "", "")
-}
-
-// CreateStaticIP Create the new static IP address
-func (objMgr *ObjectManager) CreateStaticIP(configuration string, network string, address string, macAddress string, name string, properties string) (*entities.IPAddress, error) {
-	return objMgr.CreateIPAddress(configuration, network, address, macAddress, name, models.AllocateStatic, properties, "")
+func (objMgr *ObjectManager) ReserveIPAddress(configuration string, network string, ipVersion string) (*entities.IPAddress, error) {
+	address := entities.IPAddress{
+		Configuration: configuration,
+		CIDR:          network,
+		Name:          "",
+		Address:       "",
+		Mac:           "",
+		Action:        entities.AllocateReserved,
+		Properties:    "",
+		Template:      "",
+		IPVersion:     ipVersion,
+	}
+	return objMgr.CreateIPAddress(address)
 }
 
 // createIPAddress Create the new IP address. Allocate the next available on the network if IP address is not provided
-func (objMgr *ObjectManager) CreateIPAddress(configuration string, cidr string, address string, macAddress string, name string, addrType string, properties string, template string) (*entities.IPAddress, error) {
-	if len(addrType) == 0 {
-		addrType = models.AllocateStatic
-	}
-
-	addrEntity := entities.IPAddress{
-		Configuration: configuration,
-		CIDR:          cidr,
-		Name:          name,
-		Address:       address,
-		Mac:           macAddress,
-		Action:        addrType,
-		Properties:    properties,
-		Template:      template,
+func (objMgr *ObjectManager) CreateIPAddress(address entities.IPAddress) (*entities.IPAddress, error) {
+	if len(address.Action) == 0 {
+		address.Action = entities.AllocateStatic
 	}
 
 	ipAddr := new(entities.IPAddress)
-	if len(address) > 0 {
-		ipAddr = models.IPAddress(addrEntity)
+	if len(address.Address) > 0 {
+		ipAddr = models.IPAddress(address)
 	} else {
-		ipAddr = models.GetNextIPAddress(addrEntity)
-		log.Debugf("Requesting the new IP address in the network %s", cidr)
+		ipAddr = models.GetNextIPAddress(address)
+		log.Debugf("Requesting the new IP address in the network %s", address.CIDR)
 	}
 	res, err := objMgr.Connector.CreateObject(ipAddr)
 	if err == nil {
@@ -458,11 +475,12 @@ func (objMgr *ObjectManager) CreateIPAddress(configuration string, cidr string, 
 }
 
 // GetIPAddress Get the IP Address info
-func (objMgr *ObjectManager) GetIPAddress(configuration string, address string) (*entities.IPAddress, error) {
+func (objMgr *ObjectManager) GetIPAddress(configuration string, address string, ipVersion string) (*entities.IPAddress, error) {
 
 	ipAddr := models.IPAddress(entities.IPAddress{
 		Configuration: configuration,
 		Address:       address,
+		IPVersion:     ipVersion,
 	})
 
 	err := objMgr.Connector.GetObject(ipAddr, &ipAddr)
@@ -470,35 +488,27 @@ func (objMgr *ObjectManager) GetIPAddress(configuration string, address string) 
 }
 
 // SetMACAddress Update the MAC address for the existing IP address
-func (objMgr *ObjectManager) SetMACAddress(configuration string, address string, macAddress string) (*entities.IPAddress, error) {
-	ipAddr := models.IPAddress(entities.IPAddress{
-		Configuration: configuration,
-		Address:       address,
-		Mac:           macAddress,
-	})
+func (objMgr *ObjectManager) SetMACAddress(address entities.IPAddress) (*entities.IPAddress, error) {
+	address.Properties = ""
+	ipAddr := models.IPAddress(address)
 	err := objMgr.Connector.UpdateObject(ipAddr, &ipAddr)
 	return ipAddr, err
 }
 
 // UpdateIPAddress Update the IP address info
-func (objMgr *ObjectManager) UpdateIPAddress(configuration string, address string, macAddress string, name string, addrType string, properties string) (*entities.IPAddress, error) {
-	ipAddr := models.IPAddress(entities.IPAddress{
-		Configuration: configuration,
-		Name:          name,
-		Address:       address,
-		Mac:           macAddress,
-		Action:        addrType,
-		Properties:    properties,
-	})
+func (objMgr *ObjectManager) UpdateIPAddress(address entities.IPAddress) (*entities.IPAddress, error) {
+	ipAddr := models.IPAddress(address)
+	ipAddr.SetAction()
 	err := objMgr.Connector.UpdateObject(ipAddr, &ipAddr)
 	return ipAddr, err
 }
 
 // DeleteIPAddress Delete the existing IP address
-func (objMgr *ObjectManager) DeleteIPAddress(configuration string, address string) (string, error) {
+func (objMgr *ObjectManager) DeleteIPAddress(configuration string, address string, ipVersion string) (string, error) {
 	ipAddr := models.IPAddress(entities.IPAddress{
 		Configuration: configuration,
 		Address:       address,
+		IPVersion:     ipVersion,
 	})
 	return objMgr.Connector.DeleteObject(ipAddr)
 }
@@ -752,4 +762,52 @@ func (objMgr *ObjectManager) GetServerByFQDN(configuration string, serverFQDN st
 
 	err := objMgr.Connector.GetObject(server, &server)
 	return server, err
+}
+
+// CreateView Create a new View
+func (objMgr *ObjectManager) CreateView(configuration string, name string, properties string) (*entities.View, error) {
+
+	view := models.NewView(&entities.View{
+		Configuration: configuration,
+		Name:          name,
+		Properties:    properties,
+	})
+
+	_, err := objMgr.Connector.CreateObject(view)
+	return view, err
+}
+
+func (objMgr *ObjectManager) GetView(configuration string, name string) (*entities.View, error) {
+
+	view := models.View(entities.View{
+		Configuration: configuration,
+		Name:          name,
+	})
+
+	err := objMgr.Connector.GetObject(view, &view)
+	return view, err
+}
+
+// UpdateView Update the View info
+func (objMgr *ObjectManager) UpdateView(configuration string, name string, properties string) (*entities.View, error) {
+
+	view := models.View(entities.View{
+		Configuration: configuration,
+		Name:          name,
+		Properties:    properties,
+	})
+
+	err := objMgr.Connector.UpdateObject(view, &view)
+	return view, err
+}
+
+// DeleteView Delete the View
+func (objMgr *ObjectManager) DeleteView(configuration string, name string) (string, error) {
+
+	view := models.View(entities.View{
+		Configuration: configuration,
+		Name:          name,
+	})
+
+	return objMgr.Connector.DeleteObject(view)
 }

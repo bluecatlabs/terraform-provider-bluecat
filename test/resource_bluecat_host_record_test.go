@@ -2,29 +2,29 @@ package main
 
 import (
 	"fmt"
-	"testing"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"strings"
-	"terraform-provider-bluecat/bluecat/utils"
 	"terraform-provider-bluecat/bluecat/entities"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/terraform"
+	"terraform-provider-bluecat/bluecat/utils"
+	"testing"
 )
 
 func TestAccResourceHostRecord(t *testing.T) {
 	// create with full fields and update
 	resource.Test(t, resource.TestCase{
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckHostRecordDestroy,
+		ProviderFactories: testAccProviders,
+		CheckDestroy:      testAccCheckHostRecordDestroy,
 		Steps: []resource.TestStep{
 			// create
-			resource.TestStep{
+			{
 				Config: testAccresourceHostRecordCreateFullField,
 				Check: resource.ComposeTestCheckFunc(
 					testAccHostRecordExists(t, fmt.Sprintf("bluecat_host_record.%s", hostResource1), hostName1, hostTTL1, hostIP1, hostReverseProperty1),
 				),
 			},
 			// update
-			resource.TestStep{
+			{
 				Config: testAccresourceHostRecordUpdateFullField,
 				Check: resource.ComposeTestCheckFunc(
 					testAccHostRecordExists(t, fmt.Sprintf("bluecat_host_record.%s", hostResource1), hostName1, hostTTL2, hostIP2, hostReverseProperty2),
@@ -34,8 +34,8 @@ func TestAccResourceHostRecord(t *testing.T) {
 	})
 	// create without some optional fields
 	resource.Test(t, resource.TestCase{
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckHostRecordDestroy,
+		ProviderFactories: testAccProviders,
+		CheckDestroy:      testAccCheckHostRecordDestroy,
 		Steps: []resource.TestStep{
 			// create
 			resource.TestStep{
@@ -89,7 +89,7 @@ func testAccHostRecordExists(t *testing.T, resource string, name string, ttl str
 			log.Error(msg)
 			return fmt.Errorf(msg)
 		}
-		if checkValidHostRecord(*hostRecord, ttl, ip, hostReverseProperty) == false{
+		if checkValidHostRecord(*hostRecord, ttl, ip, hostReverseProperty) == false {
 			msg := fmt.Sprintf("Getting Host record %s failed: %s. Expect ttl=%s addresses=%s reverseRecord=%s in properties, but received '%s'", rs.Primary.ID, err, ttl, ip, hostReverseProperty, hostRecord.Properties)
 			log.Error(msg)
 			return fmt.Errorf(msg)
@@ -133,7 +133,7 @@ var testAccresourceHostRecordCreateFullField = fmt.Sprintf(
 		view = "%s"
 		zone = "%s"
 		absolute_name = "%s"
-		ip4_address = "%s"
+		ip_address = "%s"
 		ttl = %s
 		properties = "%s"
 	  }`, server, hostResource1, configuration, view, zone, hostName1, hostIP1, hostTTL1, hostProperties1)
@@ -144,7 +144,7 @@ var testAccresourceHostRecordCreateNotFullField = fmt.Sprintf(
 		configuration = "%s"
 		view = "%s"
 		absolute_name = "%s"
-		ip4_address = "%s"
+		ip_address = "%s"
 		ttl = %s
 		properties = "%s"
 		}`, server, hostResource1, configuration, view, hostName1, hostIP1, hostTTL1, hostProperties1)
@@ -160,7 +160,7 @@ var testAccresourceHostRecordUpdateFullField = fmt.Sprintf(
 		view = "%s"
 		zone = "%s"
 		absolute_name = "%s"
-		ip4_address = "%s"
+		ip_address = "%s"
 		ttl = %s
 		properties = "%s"
 		}`, server, hostResource1, configuration, view, zone, hostName1, hostIP2, hostTTL2, hostProperties2)

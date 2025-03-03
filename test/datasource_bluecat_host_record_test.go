@@ -6,13 +6,13 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 )
 
 func TestAccDataSourceHostRecord(t *testing.T) {
 	// getting with full field
 	resource.Test(t, resource.TestCase{
-		Providers: testAccProviders,
+		ProviderFactories: testAccProviders,
 		Steps: []resource.TestStep{
 			resource.TestStep{
 				Config: testAccDataSourceHostRecordsReadFullField,
@@ -27,7 +27,7 @@ func TestAccDataSourceHostRecord(t *testing.T) {
 	})
 	// getting without some optional fields
 	resource.Test(t, resource.TestCase{
-		Providers: testAccProviders,
+		ProviderFactories: testAccProviders,
 		Steps: []resource.TestStep{
 			resource.TestStep{
 				Config: testAccDataSourceHostRecordsReadNotFullField,
@@ -53,7 +53,7 @@ var testAccDataSourceHostRecordsReadFullField = fmt.Sprintf(
 		view = "%s"
 		zone = "%s"
 		absolute_name = "%s"
-		ip4_address = "%s"
+		ip_address = "%s"
 		ttl = 200
 		properties = ""
 		}
@@ -63,7 +63,7 @@ var testAccDataSourceHostRecordsReadFullField = fmt.Sprintf(
 		view = "%s"
 		zone = "%s"
 		fqdn = bluecat_host_record.%s.absolute_name
-		ip_address = bluecat_host_record.%s.ip4_address
+		ip_address = bluecat_host_record.%s.ip_address
 		}`, server, dataHostResource1, configuration, view, zone, fqdnName1, ipAddress1, hostDataSource1, configuration,
 	view, zone, dataHostResource1, dataHostResource1)
 
@@ -78,7 +78,7 @@ var testAccDataSourceHostRecordsReadNotFullField = fmt.Sprintf(
 		view = "%s"
 		zone = "%s"
 		absolute_name = "%s"
-		ip4_address = "%s"
+		ip_address = "%s"
 		ttl = 200
 		properties = ""
 		}
@@ -87,5 +87,5 @@ var testAccDataSourceHostRecordsReadNotFullField = fmt.Sprintf(
 		configuration = "%s"
 		view = "%s"
 		fqdn = bluecat_host_record.%s.absolute_name
-		ip_address = bluecat_host_record.%s.ip4_address
+		ip_address = bluecat_host_record.%s.ip_address
 		}`, server, dataHostResource2, configuration, view, zone, fqdnName2, ipAddress2, hostDataSource2, configuration, view, dataHostResource2, dataHostResource2)

@@ -6,7 +6,7 @@ This data source allows to retrieve the following information
 | --- | --- | --- | --- |
 | configuration | Optional | The Configuration. Getting the IPvBlock record in the default Configuration if doesn't specify | Demo |
 | name | Optional |  The Block name | Server Farm |
-| parent_block | Optional | The parent Block. Specified to getting the child Block. THe Block in CIDR format |  |
+| ip_version | Optional | If not provided, this will default to ipv4. Options are ipv4 or ipv6|  |
 | cidr | Required | IPv4 Block's CIDR | 10.0.0.0/24 |
 | properties | Optional | The properties of the IPv4 Block | attribute=value |
 
@@ -15,7 +15,7 @@ This data source allows to retrieve the following information
 
     data "bluecat_ipv4block" "toronto_block" {
       configuration="terraform_demo"
-      parent_block="10.0.0.0/8"
+      ip_version="ipv4"
       cidr="10.0.0.0/16"
     }
 
@@ -23,6 +23,6 @@ This data source allows to retrieve the following information
       value = data.bluecat_ipv4block.toronto_block
     }
 
-    output "toronto_block_data" {
+    output "toronto_block_id" {
       value = data.bluecat_ipv4block.toronto_block.id
     }

@@ -5,16 +5,14 @@ package bluecat
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"reflect"
 	"strconv"
 	"strings"
 	"terraform-provider-bluecat/bluecat/entities"
-	"terraform-provider-bluecat/bluecat/utils"
-
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 )
 
-// ResourceNetwork The IPv4 Network
+// ResourceNetwork The IPv4/IPv6 Network
 func ResourceNetwork() *schema.Resource {
 
 	return &schema.Resource{
@@ -86,132 +84,190 @@ func ResourceNetwork() *schema.Resource {
 					return old != ""
 				},
 			},
+			"ip_version": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				Description: "Network IP version: ipv4 or ipv6",
+			},
+		},
+		Importer: &schema.ResourceImporter{
+			State: resourceImporter,
 		},
 	}
 }
 
-// createNetwork Create the new IPv4 Network
+// createNetwork Create the new IPv4/IPv6 Network
 func createNetwork(d *schema.ResourceData, m interface{}) error {
-	log.Debugf("Beginning to create Network %s", d.Get("cidr"))
-	configuration := d.Get("configuration").(string)
-	name := d.Get("name").(string)
-	cidr := d.Get("cidr").(string)
+
+	objMgr := GetObjManager(m)
+
+	network := entities.Network{}
+	if !network.InitNetwork(d) {
+		log.Error(network.InitError)
+		return fmt.Errorf(network.InitError)
+	}
+	log.Debugf("Beginning to create Network %s", network.CIDR)
+
 	numReserved := d.Get("reserve_ip").(int)
-	gateway := d.Get("gateway").(string)
-	properties := d.Get("properties").(string)
-	template := d.Get("template").(string)
-	parentBlock := d.Get("parent_block").(string)
-	size := d.Get("size").(string)
-	allocatedId := d.Get("allocated_id").(string)
 
 	var networkAddress string
-
-	connector := m.(*utils.Connector)
-	objMgr := new(utils.ObjectManager)
-	objMgr.Connector = connector
-
-	if cidr != "" {
+	if network.CIDR != "" {
 		// Create specified network
 
-		networkAddress = strings.Split(cidr, "/")[0]
+		networkAddress = strings.Split(network.CIDR, "/")[0]
 
-		block, err := objMgr.GetBlock(configuration, networkAddress, "0")
+		var parentBlockCidrNotation string
+		block, err := objMgr.GetBlock(network.Configuration, networkAddress, "0", network.IPVersion)
+		if block.IPVersion == entities.IPV6 {
+			parentBlockCidrNotation = block.GetIPv6BlockFromPropsPrefix()
+		}
 		if err != nil {
-			msg := fmt.Sprintf("Failed to getting the IPv4 Block for (%s): %s", cidr, err)
+			msg := fmt.Sprintf("Failed to getting the IPv4 Block for (%s): %s", network.CIDR, err)
 			log.Error(msg)
 			return fmt.Errorf(msg)
 		}
 
-		_, err = objMgr.CreateNetwork(configuration, block.AddressCIDR(), name, cidr, gateway, properties, template)
+		if network.IPVersion == "" || network.IPVersion == entities.IPV4 {
+			network.IPVersion = entities.IPV4
+			network.BlockAddr = block.AddressCIDR()
+		} else if network.IPVersion == entities.IPV6 {
+			// we use this since 2000::/3 or FC00::/6 is a default block
+			// if there is no any specific block under that block
+			network.BlockAddr = parentBlockCidrNotation
+		}
+
+		_, err = objMgr.CreateNetwork(network)
 		if err != nil {
-			msg := fmt.Sprintf("Error creating Network (%s): %s", cidr, err)
+			msg := fmt.Sprintf("Error creating Network (%s): %s", network.CIDR, err)
 			log.Error(msg)
 			return fmt.Errorf(msg)
 		}
 
-		log.Debugf("Successful to create Network %s", d.Get("cidr"))
+		log.Debugf("Successful to create Network %s", network.CIDR)
 
-	} else {
+	} else if network.IPVersion != entities.IPV6 {
 		// Create next available network
 
-		if parentBlock == "" {
+		if network.ParentBlock == "" {
 			msg := "'parent_block' is a required property to get next available network"
 			log.Error(msg)
 			return fmt.Errorf(msg)
 		}
 
-		if allocatedId == "" {
-			msg := "'allocated_id' is a required property to get next available network"
-			log.Error(msg)
-			return fmt.Errorf(msg)
-		}
-
-		sizeNumber, err := strconv.Atoi(size)
+		sizeNumber, err := strconv.Atoi(network.Size)
 		if err != nil && !isPowerOfTwo(sizeNumber) {
 			msg := "'size' is a required property and must be power of 2 to get next available network"
 			log.Error(msg)
 			return fmt.Errorf(msg)
 		}
 
-		block, err := objMgr.GetBlock(configuration, parentBlock, "0")
+		if strings.Contains(network.ParentBlock, "/") {
+			network.ParentBlock = strings.Split(network.ParentBlock, "/")[0]
+		}
+		block, err := objMgr.GetBlock(network.Configuration, network.ParentBlock, "0", network.IPVersion)
 		if err != nil {
-			msg := fmt.Sprintf("Failed to getting the IPv4 Block for (%s): %s", cidr, err)
+			msg := fmt.Sprintf("Failed to getting the IPv4 Block for (%s): %s", network.CIDR, err)
 			log.Error(msg)
 			return fmt.Errorf(msg)
 		}
+		network.BlockAddr = block.AddressCIDR()
 
-		_, ref, err := objMgr.CreateNextAvailableNetwork(configuration, block.AddressCIDR(), name, gateway, properties, template, size, allocatedId)
+		_, ref, err := objMgr.CreateNextAvailableNetwork(network)
 		if err != nil {
-			msg := fmt.Sprintf("Error creating next available Network of Block(%s): %s", parentBlock, err)
+			msg := fmt.Sprintf("Error creating next available Network of Block(%s): %s", network.ParentBlock, err)
 			log.Error(msg)
 			return fmt.Errorf(msg)
 		}
 
 		log.Debugf("Successful to create next available Network of Block %s", d.Get("parent_block"))
 
-		cidr = getObjectFieldValue("CIDR", ref)
-		d.Set("cidr", cidr)
+		network.CIDR = getObjectFieldValue("CIDR", ref)
+		d.Set("cidr", network.CIDR)
 
-		networkAddress = strings.Split(cidr, "/")[0]
+		networkAddress = strings.Split(network.CIDR, "/")[0]
 	}
 
-	if numReserved > 0 {
-		log.Debugf("Reserving %d IP Addresses on the Network %s", numReserved, cidr)
-		for i := 0; i < numReserved; i++ {
-			_, err := objMgr.ReserveIPAddress(configuration, networkAddress)
-			if err != nil {
-				msg := fmt.Sprintf("Reservation IP Address failed in network %s:%s", cidr, err)
-				log.Error(msg)
-				return fmt.Errorf(msg)
+	if network.IPVersion == entities.IPV4 {
+		// numReserved is now only used for ipv4
+		// TODO: Develop this feature in some of the next releases
+		if numReserved > 0 {
+			log.Debugf("Reserving %d IP Addresses on the Network %s", numReserved, network.CIDR)
+			for i := 0; i < numReserved; i++ {
+				_, err := objMgr.ReserveIPAddress(network.Configuration, networkAddress, network.IPVersion)
+				if err != nil {
+					msg := fmt.Sprintf("Reservation IP Address failed in network %s:%s", network.CIDR, err)
+					log.Error(msg)
+					return fmt.Errorf(msg)
+				}
 			}
 		}
 	}
-
 	return getNetwork(d, m)
 }
 
-// getNetwork Get the IPv4 Network
+// getNetwork Get the IPv4/IPv6 Network
 func getNetwork(d *schema.ResourceData, m interface{}) error {
+
+	objMgr := GetObjManager(m)
+
+	var address, cidr, cidrStr, ipVersion string
+	var err error
+	if d.Id() != "" {
+		address, cidrStr, err = resourceServiceParseId(d.Id())
+		cidr = fmt.Sprintf("%s/%s", address, cidrStr)
+	}
+
+	if err != nil {
+		return err
+	}
 	log.Debugf("Beginning to get Network %s", d.Get("cidr"))
 	configuration := d.Get("configuration").(string)
-	cidr := d.Get("cidr").(string)
+	if cidr == "" {
+		cidr = d.Get("cidr").(string)
+	}
+	d.Set("cidr", cidr)
+	name := d.Get("name").(string)
+	fmt.Println("%v", name)
+	//cidrStr, err = strconv.Atoi(cidrStr)
+	fmt.Println("%v", cidr)
 
 	parentBlock := d.Get("parent_block").(string)
 	allocatedId := d.Get("allocated_id").(string)
+	if parentBlock != "" {
+		ipVersion = getIpVersion(d, strings.Split(parentBlock, "/")[0])
+	} else {
+		if cidr != "" {
+			address = strings.Split(cidr, "/")[0]
+		}
+		ipVersion = getIpVersion(d, address)
+	}
+	if ipVersion == entities.IPV6 {
+		d.Set("ip_version", ipVersion)
+	}
 
-	connector := m.(*utils.Connector)
-	objMgr := new(utils.ObjectManager)
-	objMgr.Connector = connector
+	networkEntity := entities.Network{}
+	if !networkEntity.InitNetwork(d) {
+		log.Error(networkEntity.InitError)
+		return fmt.Errorf(networkEntity.InitError)
+	}
 
 	var network *entities.Network
-	var err error
-
-	if cidr != "" {
-		network, err = objMgr.GetNetwork(configuration, cidr)
-		if err != nil {
-			msg := fmt.Sprintf("Getting Network %s failed: %s", cidr, err)
-			log.Error(msg)
-			return fmt.Errorf(msg)
+	var getNetworkError error
+	if networkEntity.CIDR != "" {
+		network, getNetworkError = objMgr.GetNetwork(&networkEntity)
+		if getNetworkError != nil {
+			// check to see if some resource exist. If it does not exist, and it is in the plan - create that resource
+			if d.Id() != "" {
+				e := createNetwork(d, m)
+				if e != nil {
+					msg := fmt.Sprintf("Something gone wrong %v", e)
+					return fmt.Errorf(msg)
+				}
+			} else {
+				msg := fmt.Sprintf("Getting Network %s failed: %s", cidr, err)
+				log.Error(msg)
+				return fmt.Errorf(msg)
+			}
 		}
 	} else if allocatedId != "" && parentBlock != "" {
 		network, err = objMgr.GetNetworkByAllocatedId(configuration, parentBlock, allocatedId)
@@ -224,48 +280,48 @@ func getNetwork(d *schema.ResourceData, m interface{}) error {
 
 	d.SetId(network.CIDR)
 	d.Set("cidr", network.CIDR)
-	d.Set("name", network.Name)
 	d.Set("properties", network.Properties)
 	log.Debugf("Completed getting Network %s", d.Get("cidr"))
 	return nil
 }
 
-// updateNetwork Update the existing IPv4 Network
+// updateNetwork Update the existing IPv4/IPv6 Network
 func updateNetwork(d *schema.ResourceData, m interface{}) error {
-	log.Debugf("Beginning to update Network %s", d.Get("cidr"))
-	configuration := d.Get("configuration").(string)
-	name := d.Get("name").(string)
-	cidr := d.Get("cidr").(string)
-	gateway := d.Get("gateway").(string)
-	properties := d.Get("properties").(string)
 
-	connector := m.(*utils.Connector)
-	objMgr := new(utils.ObjectManager)
-	objMgr.Connector = connector
+	objMgr := GetObjManager(m)
 
-	_, err := objMgr.UpdateNetwork(configuration, name, cidr, gateway, properties)
+	network := entities.Network{}
+	if !network.InitNetwork(d) {
+		log.Error(network.InitError)
+		return fmt.Errorf(network.InitError)
+	}
+	log.Debugf("Beginning to update Network %s", network.CIDR)
+
+	_, err := objMgr.UpdateNetwork(network)
 	if err != nil {
-		msg := fmt.Sprintf("Error updating Network (%s): %s", cidr, err)
+		msg := fmt.Sprintf("Error updating Network (%s): %s", network.CIDR, err)
 		log.Error(msg)
 		return fmt.Errorf(msg)
 	}
-	log.Debugf("Completed to update Network %s", d.Get("cidr"))
+	log.Debugf("Completed to update Network %s", network.CIDR)
 	return getNetwork(d, m)
 }
 
-// deleteNetwork Delete the IPv4 Network
+// deleteNetwork Delete the IPv4/IPv6 Network
 func deleteNetwork(d *schema.ResourceData, m interface{}) error {
-	log.Debugf("Beginning to delete Network %s", d.Get("cidr"))
-	configuration := d.Get("configuration").(string)
-	cidr := d.Get("cidr").(string)
 
-	connector := m.(*utils.Connector)
-	objMgr := new(utils.ObjectManager)
-	objMgr.Connector = connector
+	objMgr := GetObjManager(m)
 
-	_, err := objMgr.DeleteNetwork(configuration, cidr)
+	network := entities.Network{}
+	if !network.InitNetwork(d) {
+		log.Error(network.InitError)
+		return fmt.Errorf(network.InitError)
+	}
+	log.Debugf("Beginning to delete Network %s", network.CIDR)
+
+	_, err := objMgr.DeleteNetwork(network)
 	if err != nil {
-		msg := fmt.Sprintf("Delete Network %s failed: %s", cidr, err)
+		msg := fmt.Sprintf("Delete Network %s failed: %s", network.CIDR, err)
 		log.Error(msg)
 		return fmt.Errorf(msg)
 	}

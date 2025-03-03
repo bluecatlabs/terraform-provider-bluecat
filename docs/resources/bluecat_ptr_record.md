@@ -7,7 +7,7 @@ This resource will create a PTR record (reverse record) in Address Manager with 
 | view | Optional | The view which contains the details of the zone. If not provided, record will be created under default view | Internal |
 | zone | Required | The Zone in which you want to update a PTR record. If not provided, the absolute name must be FQDN ones | bluecatnetworks.com |
 | name | Required | The name of the host record | webapp |
-| ip4_address | Required | The IP address that will be created the PTR record for | 10.0.0.12 |
+| ip_address | Required | The IP address that will be created the PTR record for | 10.0.0.12 |
 | reverse_record | Required | To create a reverse record for the pass host | True/False |
 | ttl | Optional | The TTL value. Default is -1  | 300 |
 
@@ -18,7 +18,7 @@ This resource will create a PTR record (reverse record) in Address Manager with 
       view = "gg"
       zone = "gateway.com"
       name = "host30"
-      ip4_address = "30.0.0.30"
+      ip_address = "30.0.0.30"
       reverse_record = True
       ttl = 1
     }

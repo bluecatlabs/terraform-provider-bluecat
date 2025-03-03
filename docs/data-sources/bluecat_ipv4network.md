@@ -8,6 +8,7 @@ This data source allows to retrieve the following information
 | name | Optional |  The Network name | Server Farm |
 | cidr | Required | The Network address in CIDR format | 10.0.0.0/24 |
 | gateway | Optional |  This is the Gateway address for the Network | 10.0.0.1 |
+| ip_version | Optional |  Default is ipv4, options are ipv4 or ipv6 | ipv4 |
 | properties | Optional | The properties of the IPv4 Network | attribute=value |
 
 
@@ -19,10 +20,10 @@ This data source allows to retrieve the following information
       cidr="10.0.0.0/24"
     }
 
-    output "id" {
+    output "toronto_network_data" {
       value = data.bluecat_ipv4network.toronto_network
     }
 
-    output "cidr" {
+    output "toronto_network_cidr" {
       value = data.bluecat_ipv4network.toronto_network.cidr
     }

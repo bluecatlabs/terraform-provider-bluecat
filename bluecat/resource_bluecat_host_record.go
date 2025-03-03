@@ -8,7 +8,7 @@ import (
 	"terraform-provider-bluecat/bluecat/logging"
 	"terraform-provider-bluecat/bluecat/utils"
 
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/sirupsen/logrus"
 )
 
@@ -51,7 +51,7 @@ func ResourceHostRecord() *schema.Resource {
 					return checkDiffName(old, new, zone)
 				},
 			},
-			"ip4_address": {
+			"ip_address": {
 				Type:        schema.TypeString,
 				Required:    true,
 				Description: "The IP address that will be linked to the Host record",
@@ -71,7 +71,23 @@ func ResourceHostRecord() *schema.Resource {
 				},
 			},
 		},
+		Importer: &schema.ResourceImporter{
+			State: recordImporter,
+		},
 	}
+}
+
+func recordParseId(id string) (string, string, error) {
+	// this func will be used for host and CNAME records
+	parts := strings.SplitN(id, ".", 2)
+
+	if len(parts) != 2 || parts[0] == "" || parts[1] == "" {
+		return "", "", fmt.Errorf("unexpected format of host record ID (%s), expected zone.host_record_name", id)
+	}
+	recordName := parts[0]
+	zoneName := parts[1]
+
+	return zoneName, recordName, nil
 }
 
 // createHostRecord Create the new Host record
@@ -81,7 +97,7 @@ func createHostRecord(d *schema.ResourceData, m interface{}) error {
 	view := d.Get("view").(string)
 	zone := d.Get("zone").(string)
 	absoluteName := d.Get("absolute_name").(string)
-	ip4Address := d.Get("ip4_address").(string)
+	ipAddress := d.Get("ip_address").(string)
 	ttl := d.Get("ttl").(int)
 	properties := d.Get("properties").(string)
 
@@ -97,7 +113,7 @@ func createHostRecord(d *schema.ResourceData, m interface{}) error {
 		zone = getZoneFromRRName(fqdnName)
 	}
 
-	_, err := objMgr.CreateHostRecord(configuration, view, zone, fqdnName, ip4Address, ttl, properties)
+	_, err := objMgr.CreateHostRecord(configuration, view, zone, fqdnName, ipAddress, ttl, properties)
 	if err != nil {
 		msg := fmt.Sprintf("Error creating Host record %s: %s", fqdnName, err)
 		log.Debug(msg)
@@ -111,9 +127,9 @@ func createHostRecord(d *schema.ResourceData, m interface{}) error {
 // getHostRecord Get the Host record
 func getHostRecord(d *schema.ResourceData, m interface{}) error {
 	log.Debugf("Beginning to get Host record: %s", d.Get("absolute_name"))
+	absoluteName, err := getAbsoluteName(d)
 	configuration := d.Get("configuration").(string)
 	view := d.Get("view").(string)
-	absoluteName := d.Get("absolute_name").(string)
 
 	connector := m.(*utils.Connector)
 	objMgr := new(utils.ObjectManager)
@@ -121,13 +137,23 @@ func getHostRecord(d *schema.ResourceData, m interface{}) error {
 
 	hostRecord, err := objMgr.GetHostRecord(configuration, view, absoluteName)
 	if err != nil {
-		msg := fmt.Sprintf("Getting Host record %s failed: %s", absoluteName, err)
-		log.Debug(msg)
-		return fmt.Errorf(msg)
+		if d.Id() != "" {
+			err := createHostRecord(d, m)
+			if err != nil {
+				msg := fmt.Sprintf("Something gone wrong: %v", err)
+				return fmt.Errorf(msg)
+			}
+		} else {
+			msg := fmt.Sprintf("Getting Host record %s failed: %s", absoluteName, err)
+			log.Debug(msg)
+			return fmt.Errorf(msg)
+		}
 	}
 	d.SetId(hostRecord.AbsoluteName)
 	d.Set("absolute_name", hostRecord.AbsoluteName)
 	d.Set("properties", hostRecord.Properties)
+	// for import functionality ip4_address must be set for the host_record - required attribute
+	d.Set("ip_address", parseRecordPropertyValue(hostRecord.Properties, "addresses"))
 	log.Debugf("Completed reading Host record %s", d.Get("absolute_name"))
 	return nil
 }
@@ -139,7 +165,7 @@ func updateHostRecord(d *schema.ResourceData, m interface{}) error {
 	view := d.Get("view").(string)
 	zone := d.Get("zone").(string)
 	absoluteName := d.Get("absolute_name").(string)
-	ip4Address := d.Get("ip4_address").(string)
+	ipAddress := d.Get("ip_address").(string)
 	ttl := d.Get("ttl").(int)
 	properties := d.Get("properties").(string)
 
@@ -154,7 +180,11 @@ func updateHostRecord(d *schema.ResourceData, m interface{}) error {
 	} else {
 		zone = getZoneFromRRName(fqdnName)
 	}
-	_, err := objMgr.UpdateHostRecord(configuration, view, zone, fqdnName, ip4Address, ttl, properties)
+
+	var immutableProperties = []string{"parentId", "parentType"} // these properties will raise error on the rest-api
+	properties = utils.RemoveImmutableProperties(properties, immutableProperties)
+
+	_, err := objMgr.UpdateHostRecord(configuration, view, zone, fqdnName, ipAddress, ttl, properties)
 	if err != nil {
 		msg := fmt.Sprintf("Error updating Host record %s: %s", fqdnName, err)
 		log.Debug(msg)

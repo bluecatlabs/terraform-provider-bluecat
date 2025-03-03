@@ -6,14 +6,14 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 )
 
 func TestAccDataSourceZoneRecord(t *testing.T) {
 	resource.Test(t, resource.TestCase{
-		Providers: testAccProviders,
+		ProviderFactories: testAccProviders,
 		Steps: []resource.TestStep{
-			resource.TestStep{
+			{
 				Config: testAccDataSourceZoneRead,
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(fmt.Sprintf("data.bluecat_zone.%s", zoneDataSource), "zone", zoneName),
@@ -25,7 +25,7 @@ func TestAccDataSourceZoneRecord(t *testing.T) {
 }
 
 var zoneDataSource = "test_zone"
-var zoneName = "subzone_test.com"
+var zoneName = "test_zone_1.com"
 var zoneDeployable = "True"
 
 var testAccDataSourceZoneRead = fmt.Sprintf(
@@ -34,4 +34,5 @@ var testAccDataSourceZoneRead = fmt.Sprintf(
 		configuration = "%s"
 		view = "%s"
 		zone = "%s"
-	}`, server, zoneDataSource, configuration, view, zoneName)
+		deployable = "%s"
+		}`, server, zoneDataSource, configuration, view, zoneName, zoneDeployable)

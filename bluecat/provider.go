@@ -3,9 +3,12 @@
 package bluecat
 
 import (
+	"context"
+	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"terraform-provider-bluecat/bluecat/utils"
 
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 // Provider BlueCat provider
@@ -53,7 +56,9 @@ func Provider() *schema.Provider {
 			"bluecat_host_record":    ResourceHostRecord(),
 			"bluecat_configuration":  ResourceConfiguration(),
 			"bluecat_ipv4block":      ResourceBlock(),
+			"bluecat_ipv6block":      ResourceBlock(),
 			"bluecat_ipv4network":    ResourceNetwork(),
+			"bluecat_ipv6network":    ResourceNetwork(),
 			"bluecat_cname_record":   ResourceCNAMERecord(),
 			"bluecat_ip_allocation":  ResourceIPAllocation(),
 			"bluecat_ip_association": ResourceIPAssociation(),
@@ -62,19 +67,26 @@ func Provider() *schema.Provider {
 			"bluecat_generic_record": ResourceGenericRecord(),
 			"bluecat_dhcp_range":     ResourceDHCPRange(),
 			"bluecat_zone":           ResourceZone(),
+			"bluecat_view":           ResourceView(),
 		},
 		DataSourcesMap: map[string]*schema.Resource{
 			"bluecat_ipv4network":  DataSourceIPv4Network(),
+			"bluecat_ipv6network":  DataSourceIPv4Network(),
 			"bluecat_cname_record": DataSourceCNAMERecord(),
 			"bluecat_host_record":  DataSourceHostRecord(),
 			"bluecat_ipv4block":    DataSourceBlock(),
+			"bluecat_ipv6block":    DataSourceBlock(),
 			"bluecat_zone":         DataSourceZone(),
+			"bluecat_view":         DataSourceView(),
 		},
-		ConfigureFunc: providerConfigure,
+		ConfigureContextFunc: providerConfigure,
 	}
 }
 
-func providerConfigure(d *schema.ResourceData) (interface{}, error) {
+func providerConfigure(_ context.Context, d *schema.ResourceData) (interface{}, diag.Diagnostics) {
+	// Warning or errors can be collected in a slice type
+	var diags diag.Diagnostics
+
 	hostConfig := utils.HostConfig{
 		Host:            d.Get("server").(string),
 		Port:            d.Get("port").(string),
@@ -90,8 +102,18 @@ func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 
 	conn, err := utils.NewConnector(hostConfig, requestBuilder, requester)
 	if err != nil {
-		log.Debugf("Failed to initialize the provider: %s", err)
-		return nil, err
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  fmt.Sprintf("Failed to initialize the provider: %s", err),
+		})
+		return nil, diags
 	}
-	return conn, err
+	return conn, diags
+}
+
+func GetObjManager(m interface{}) *utils.ObjectManager {
+	connector := m.(*utils.Connector)
+	objMgr := new(utils.ObjectManager)
+	objMgr.Connector = connector
+	return objMgr
 }

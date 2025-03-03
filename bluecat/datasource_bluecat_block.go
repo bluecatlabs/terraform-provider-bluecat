@@ -6,7 +6,7 @@ import (
 	"strings"
 	"terraform-provider-bluecat/bluecat/utils"
 
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 func DataSourceBlock() *schema.Resource {
@@ -33,6 +33,11 @@ func DataSourceBlock() *schema.Resource {
 				Optional:    true,
 				Description: "IPv4 Block's properties",
 			},
+			"ip_version": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				Description: "Block IP version: ipv4 or ipv6",
+			},
 		},
 	}
 }
@@ -41,6 +46,7 @@ func dataSourceBlockRead(d *schema.ResourceData, m interface{}) error {
 
 	configuration := d.Get("configuration").(string)
 	cidr := d.Get("cidr").(string)
+	ipVersion := d.Get("ip_version").(string)
 
 	connector := m.(*utils.Connector)
 	objMgr := new(utils.ObjectManager)
@@ -55,7 +61,7 @@ func dataSourceBlockRead(d *schema.ResourceData, m interface{}) error {
 	cidrList := strings.Split(cidr, "/")
 	address, cidr := cidrList[0], cidrList[1]
 
-	block, err := objMgr.GetBlock(configuration, address, cidr)
+	block, err := objMgr.GetBlock(configuration, address, cidr, ipVersion)
 	if err != nil {
 		msg := fmt.Sprintf("Getting Block %s/%s failed: %s", address, cidr, err)
 		log.Error(msg)

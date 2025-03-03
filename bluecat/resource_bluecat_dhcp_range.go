@@ -4,13 +4,12 @@ package bluecat
 
 import (
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"strings"
-	"terraform-provider-bluecat/bluecat/utils"
-
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
+	"terraform-provider-bluecat/bluecat/entities"
 )
 
-// ResourceNetwork The IPv4 Network
+// ResourceDHCPRange The IPv4 ResourceDHCPRange
 func ResourceDHCPRange() *schema.Resource {
 
 	return &schema.Resource{
@@ -40,6 +39,11 @@ func ResourceDHCPRange() *schema.Resource {
 				Optional:    true,
 				Description: "End IP of the DHCP Range",
 			},
+			"name": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				Description: "The name of the DHCP Range",
+			},
 			"properties": {
 				Type:        schema.TypeString,
 				Optional:    true,
@@ -53,117 +57,126 @@ func ResourceDHCPRange() *schema.Resource {
 				Optional:    true,
 				Description: "IPv4 Template",
 			},
+			"ip_version": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				Description: "DHCPRange's IP version",
+			},
 		},
 	}
 }
 
 // createDHCPRange Create the new DHCP Range
 func createDHCPRange(d *schema.ResourceData, m interface{}) error {
-	log.Debugf("Beginning to create DHCP Range (%s - %s) in the network %s", d.Get("start"), d.Get("end"), d.Get("network"))
-	configuration := d.Get("configuration").(string)
-	network := d.Get("network").(string)
-	start := d.Get("start").(string)
-	end := d.Get("end").(string)
-	properties := d.Get("properties").(string)
-	template := d.Get("template").(string)
 
-	connector := m.(*utils.Connector)
-	objMgr := new(utils.ObjectManager)
-	objMgr.Connector = connector
+	objMgr := GetObjManager(m)
+
+	dhcpRange := entities.DHCPRange{}
+	if !dhcpRange.InitRange(d) {
+		log.Error(dhcpRange.InitRange)
+		return fmt.Errorf(dhcpRange.InitError)
+	}
+
+	log.Debugf("Beginning to create DHCP Range (%s - %s) in the network %s", dhcpRange.Start, dhcpRange.End, dhcpRange.Network)
+
 	//TODO: Check Network?
 
-	_, err := objMgr.CreateDHCPRange(configuration, template, network, start, end, properties)
+	_, err := objMgr.CreateDHCPRange(dhcpRange)
 	if err != nil {
-		msg := fmt.Sprintf("Error creating DHCP Range (%s - %s) in the network %s: %s", start, end, network, err)
+		msg := fmt.Sprintf("Error creating DHCP Range (%s - %s) in the network %s: %s", dhcpRange.Start, dhcpRange.End, dhcpRange.Network, err)
 		log.Error(msg)
 		return fmt.Errorf(msg)
 	}
 
-	log.Debugf("Successful to create DHCP Range (%s - %s) in the network %s", start, end, network)
+	log.Debugf("Successful to create DHCP Range (%s - %s) in the network %s", dhcpRange.Start, dhcpRange.End, dhcpRange.Network)
 
 	return getDHCPRange(d, m)
 }
 
 // getDHCPRange Get the DHCP Range
 func getDHCPRange(d *schema.ResourceData, m interface{}) error {
-	log.Debugf("Beginning to get DHCP Range (%s - %s)", d.Get("start"), d.Get("end"))
-	configuration := d.Get("configuration").(string)
-	network := d.Get("network").(string)
-	start := d.Get("start").(string)
-	end := d.Get("end").(string)
 
-	connector := m.(*utils.Connector)
-	objMgr := new(utils.ObjectManager)
-	objMgr.Connector = connector
+	objMgr := GetObjManager(m)
 
-	dhcpRange, err := objMgr.GetDHCPRange(configuration, network, start, end)
+	dhcpRange := entities.DHCPRange{}
+	if !dhcpRange.InitRange(d) {
+		log.Error(dhcpRange.InitRange)
+		return fmt.Errorf(dhcpRange.InitError)
+	}
+
+	log.Debugf("Beginning to get DHCP Range (%s - %s)", dhcpRange.Start, dhcpRange.End)
+
+	dhcpRangeEntity, err := objMgr.GetDHCPRange(dhcpRange)
 	if err != nil {
-		msg := fmt.Sprintf("Getting DHCP Range (%s - %s) failed: %s", start, end, err)
+		msg := fmt.Sprintf("Getting DHCP Range (%s - %s) failed: %s", dhcpRangeEntity.Start, dhcpRangeEntity.End, err)
+		msg += fmt.Sprintf("Subpath: %s", dhcpRangeEntity.SubPath())
 		log.Error(msg)
 		return fmt.Errorf(msg)
 	}
-	d.SetId(dhcpRange.Start + "-" + dhcpRange.End)
-	d.Set("network", dhcpRange.Network)
-	d.Set("template", dhcpRange.Template)
-	d.Set("properties", dhcpRange.Properties)
-	log.Debugf("Completed getting DHCP Range (%s - %s)", start, end)
+	d.SetId(dhcpRangeEntity.Start + "-" + dhcpRangeEntity.End)
+	d.Set("network", dhcpRangeEntity.Network)
+	d.Set("template", dhcpRangeEntity.Template)
+	d.Set("properties", dhcpRangeEntity.Properties)
+	log.Debugf("Completed getting DHCP Range (%s - %s)", dhcpRangeEntity.Start, dhcpRangeEntity.End)
 	return nil
 }
 
 // updateDHCPRange Update the existing DHCP Range
 func updateDHCPRange(d *schema.ResourceData, m interface{}) error {
-	log.Debugf("Beginning to update DHCP Range (%s - %s)", d.Get("start"), d.Get("end"))
-	configuration := d.Get("configuration").(string)
-	network := d.Get("network").(string)
-	start := d.Get("start").(string)
-	end := d.Get("end").(string)
-	properties := d.Get("properties").(string)
-	template := d.Get("template").(string)
-	if template == "" {
-		template = " "
+
+	objMgr := GetObjManager(m)
+
+	dhcpRange := entities.DHCPRange{}
+	if !dhcpRange.InitRange(d) {
+		log.Error(dhcpRange.InitRange)
+		return fmt.Errorf(dhcpRange.InitError)
 	}
 
-	connector := m.(*utils.Connector)
-	objMgr := new(utils.ObjectManager)
-	objMgr.Connector = connector
+	log.Debugf("Beginning to update DHCP Range (%s - %s)", dhcpRange.Start, dhcpRange.End)
 
-	_, err := objMgr.UpdateDHCPRange(configuration, template, network, start, end, properties)
+	dhcpRange.Template = d.Get("template").(string)
+	if dhcpRange.Template == "" {
+		dhcpRange.Template = " "
+	}
+
+	_, err := objMgr.UpdateDHCPRange(dhcpRange)
 	if err != nil {
-		msg := fmt.Sprintf("Error updating DHCP Range (%s - %s): %s", start, end, err)
+		msg := fmt.Sprintf("Error updating DHCP Range (%s - %s): %s", dhcpRange.Start, dhcpRange.End, err)
 		log.Error(msg)
 		return fmt.Errorf(msg)
 	}
 
-	startAfterUpdate := getAttributeFromProperties("start", properties)
-	endAfterUpdate := getAttributeFromProperties("end", properties)
+	startAfterUpdate := getAttributeFromProperties("start", dhcpRange.Properties)
+	endAfterUpdate := getAttributeFromProperties("end", dhcpRange.Properties)
 
 	if startAfterUpdate != "" && endAfterUpdate != "" {
-		start = startAfterUpdate
-		end = endAfterUpdate
+		dhcpRange.Start = startAfterUpdate
+		dhcpRange.End = endAfterUpdate
 	}
 
-	d.Set("start", start)
-	d.Set("end", end)
+	d.Set("start", dhcpRange.Start)
+	d.Set("end", dhcpRange.End)
 
-	log.Debugf("Completed to update DHCP Range (%s - %s)", start, end)
+	log.Debugf("Completed to update DHCP Range (%s - %s)", dhcpRange.Start, dhcpRange.End)
 	return getDHCPRange(d, m)
 }
 
 // deleteDHCPRange Delete the DHCP Range
 func deleteDHCPRange(d *schema.ResourceData, m interface{}) error {
-	log.Debugf("Beginning to delete DHCP Range (%s - %s)", d.Get("start"), d.Get("end"))
-	configuration := d.Get("configuration").(string)
-	network := d.Get("network").(string)
-	start := d.Get("start").(string)
-	end := d.Get("end").(string)
 
-	connector := m.(*utils.Connector)
-	objMgr := new(utils.ObjectManager)
-	objMgr.Connector = connector
+	objMgr := GetObjManager(m)
 
-	_, err := objMgr.DeleteDHCPRange(configuration, network, start, end)
+	dhcpRange := entities.DHCPRange{}
+	if !dhcpRange.InitRange(d) {
+		log.Error(dhcpRange.InitRange)
+		return fmt.Errorf(dhcpRange.InitError)
+	}
+
+	log.Debugf("Beginning to delete DHCP Range (%s - %s)", dhcpRange.Start, dhcpRange.End)
+
+	_, err := objMgr.DeleteDHCPRange(dhcpRange)
 	if err != nil {
-		msg := fmt.Sprintf("Delete DHCP Range (%s - %s) failed: %s", start, end, err)
+		msg := fmt.Sprintf("Delete DHCP Range (%s - %s) failed: %s", dhcpRange.Start, dhcpRange.End, err)
 		log.Error(msg)
 		return fmt.Errorf(msg)
 	}

@@ -7,7 +7,7 @@ import (
 	"strings"
 	"terraform-provider-bluecat/bluecat/utils"
 
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 // ResourceZone The Zone
@@ -54,6 +54,9 @@ func ResourceZone() *schema.Resource {
 					return checkDiffProperties(old, new)
 				},
 			},
+		},
+		Importer: &schema.ResourceImporter{
+			State: zoneImporter,
 		},
 	}
 }
@@ -139,9 +142,17 @@ func getZone(d *schema.ResourceData, m interface{}) error {
 
 	zoneObj, err := objMgr.GetZone(configuration, view, zone)
 	if err != nil {
-		msg := fmt.Sprintf("Getting Zone %s failed: %s", zone, err)
-		log.Debug(msg)
-		return fmt.Errorf(msg)
+		if d.Id() != "" {
+			err := createZone(d, m)
+			if err != nil {
+				msg := fmt.Sprintf("Something gone wrong: %v", err)
+				return fmt.Errorf(msg)
+			}
+		} else {
+			msg := fmt.Sprintf("Getting Zone %s failed: %s", zone, err)
+			log.Debug(msg)
+			return fmt.Errorf(msg)
+		}
 	}
 
 	d.SetId(zone)

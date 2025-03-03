@@ -3,87 +3,131 @@ package main
 import (
 	"fmt"
 	"strings"
+	"terraform-provider-bluecat/bluecat/entities"
 	"terraform-provider-bluecat/bluecat/utils"
 	"testing"
 
-	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/terraform"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
 func TestAccResourceNetwork(t *testing.T) {
 	// create with full fields and update without some optional fields
 	resource.Test(t, resource.TestCase{
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckNetworkDestroy,
+		ProviderFactories: testAccProviders,
+		CheckDestroy:      testAccCheckNetworkDestroy,
 		Steps: []resource.TestStep{
 			// create
-			resource.TestStep{
+			{
 				Config: testAccResourceNetworkCreateFullField,
 				Check: resource.ComposeTestCheckFunc(
-					testAccNetworkExists(t, fmt.Sprintf("bluecat_ipv4network.%s", netResource1), netName1, netCIDR1, netAllowDuplicateHost1, netGateway1, netReserveIPValue1, ""),
+					testAccNetworkExists(t, fmt.Sprintf("bluecat_ipv4network.%s", netResource1), netName1, netCIDR1, netAllowDuplicateHost1, netGateway1, netReserveIPValue1, "", entities.IPV4),
 				),
 			},
 			// update
-			resource.TestStep{
+			{
 				Config: testAccResourceNetworkUpdateNotFullField,
 				Check: resource.ComposeTestCheckFunc(
-					testAccNetworkExists(t, fmt.Sprintf("bluecat_ipv4network.%s", netResource1), "", netCIDR1, netAllowDuplicateHost2, netGateway2, netReserveIPValue1, ""),
+					testAccNetworkExists(t, fmt.Sprintf("bluecat_ipv4network.%s", netResource1), "", netCIDR1, netAllowDuplicateHost2, netGateway2, netReserveIPValue1, "", entities.IPV4),
+				),
+			},
+
+			// create ipv6 network inside created block Full Field
+			{
+				Config: testAccResourceIPv6NetworkCreateFullField,
+				Check: resource.ComposeTestCheckFunc(
+					testAccNetworkExists(
+						t,
+						"bluecat_ipv6network.ipv6_net_record_1",
+						"ipv6_net_name", "2040:B041::/64", "", "", "", "", entities.IPV6),
+				),
+			},
+			// create ipv6 network inside Unique Local Address Space block
+			{
+				Config: testAccResourceIPv6NetworkInsideUniqueLocal,
+				Check: resource.ComposeTestCheckFunc(
+					testAccNetworkExists(
+						t,
+						"bluecat_ipv6network.ipv6_net_record_2",
+						"ipv6_net_name", "FC00::/64", "", "", "", "", entities.IPV6),
 				),
 			},
 		},
 	})
+
 	// create without some optional fields and update with full fields
 	resource.Test(t, resource.TestCase{
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckNetworkDestroy,
+		ProviderFactories: testAccProviders,
+		CheckDestroy:      testAccCheckNetworkDestroy,
 		Steps: []resource.TestStep{
-			// create
-			resource.TestStep{
+			// create ipv4 network
+			{
 				Config: testAccResourceNetworkCreateNotFullField,
 				Check: resource.ComposeTestCheckFunc(
-					testAccNetworkExists(t, fmt.Sprintf("bluecat_ipv4network.%s", netResource1), "", netCIDR1, netAllowDuplicateHost1, netGateway1, netReserveIPValue1, ""),
+					testAccNetworkExists(t, fmt.Sprintf("bluecat_ipv4network.%s", netResource1), "", netCIDR1, netAllowDuplicateHost1, netGateway1, netReserveIPValue1, "", "ipv4"),
 				),
 			},
-			// update
-			resource.TestStep{
+			// update ipv4 network
+			{
 				Config: testAccResourceNetworkUpdateFullField,
 				Check: resource.ComposeTestCheckFunc(
-					testAccNetworkExists(t, fmt.Sprintf("bluecat_ipv4network.%s", netResource1), netName2, netCIDR1, netAllowDuplicateHost2, netGateway2, netReserveIPValue1, ""),
+					testAccNetworkExists(t, fmt.Sprintf("bluecat_ipv4network.%s", netResource1), netName2, netCIDR1, netAllowDuplicateHost2, netGateway2, netReserveIPValue1, "", entities.IPV4),
+				),
+			},
+
+			// create ipv6 network inside created block Not Full Field
+			{
+				Config: testAccResourceIPv6NetworkCreateNotFullField,
+				Check: resource.ComposeTestCheckFunc(
+					testAccNetworkExists(t, "bluecat_ipv6network.ipv6_net_record_1_not_full_field", "",
+						"FC00::/64", "", "", "", "", entities.IPV6),
+				),
+			},
+			// update ipv6 network inside created block Not Full Field
+			{
+				Config: testAccResourceIPv6NetworUpdateAddName,
+				Check: resource.ComposeTestCheckFunc(
+					testAccNetworkExists(t, "bluecat_ipv6network.ipv6_net_record_1_not_full_field", "new_name",
+						"FC00::/64", "", "", "", "", entities.IPV6),
 				),
 			},
 		},
 	})
-	// create with full fields include template field
+
+	// create ipv4 network with full fields include template field
+	// template is not supported for the ipv6 network
 	resource.Test(t, resource.TestCase{
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckNetworkDestroy,
+		ProviderFactories: testAccProviders,
+		CheckDestroy:      testAccCheckNetworkDestroy,
 		Steps: []resource.TestStep{
 			// create
-			resource.TestStep{
+			{
 				Config: testAccResourceNetworkCreateFullFieldWithTemplate,
 				Check: resource.ComposeTestCheckFunc(
-					testAccNetworkExists(t, fmt.Sprintf("bluecat_ipv4network.%s", netResource1), netName1, netCIDR1, netAllowDuplicateHost1, netGateway3, netReserveIPValue2, templateName),
+					testAccNetworkExists(t, fmt.Sprintf("bluecat_ipv4network.%s", netResource1), netName1, netCIDR1, netAllowDuplicateHost1, netGateway3, netReserveIPValue2, templateName, entities.IPV4),
 				),
 			},
 		},
 	})
+
 	// create next available network with full fields and update without some optional fields
+	// next available network is not supported for the ipv6 network
 	resource.Test(t, resource.TestCase{
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckNetworkDestroy,
+		ProviderFactories: testAccProviders,
+		CheckDestroy:      testAccCheckNetworkDestroy,
 		Steps: []resource.TestStep{
 			// create
-			resource.TestStep{
+			{
 				Config: testAccResourceNextNetworkCreateFullField,
 				Check: resource.ComposeTestCheckFunc(
-					testAccNetworkExists(t, fmt.Sprintf("bluecat_ipv4network.%s", nextNetResource1), nextNetName1, nextNetCIDRValue1, nextNetAllowDuplicateHost1, nextNetGatewayValue1, nextNetReserveIPValue1, ""),
+					testAccNetworkExists(t, fmt.Sprintf("bluecat_ipv4network.%s", nextNetResource1), nextNetName1, nextNetCIDRValue1, nextNetAllowDuplicateHost1, nextNetGatewayValue1, nextNetReserveIPValue1, "", entities.IPV4),
 				),
 			},
 			// update
-			resource.TestStep{
+			{
 				Config: testAccResourceNextNetworkUpdateNotFullField,
 				Check: resource.ComposeTestCheckFunc(
-					testAccNetworkExists(t, fmt.Sprintf("bluecat_ipv4network.%s", nextNetResource1), nextNetName2, nextNetCIDRValue1, nextNetAllowDuplicateHost1, nextNetGatewayValue1, nextNetReserveIPValue1, ""),
+					testAccNetworkExists(t, fmt.Sprintf("bluecat_ipv4network.%s", nextNetResource1), nextNetName2, nextNetCIDRValue1, nextNetAllowDuplicateHost1, nextNetGatewayValue1, nextNetReserveIPValue1, "", entities.IPV4),
 				),
 			},
 		},
@@ -95,18 +139,27 @@ func testAccCheckNetworkDestroy(s *terraform.State) error {
 	connector := meta.(*utils.Connector)
 	objMgr := new(utils.ObjectManager)
 	objMgr.Connector = connector
+
+	network := entities.Network{}
+	network.Configuration = configuration
+	network.IPVersion = entities.IPV4
+
 	for _, rs := range s.RootModule().Resources {
-		if rs.Type == "bluecat_ipv4network" {
-			_, err := objMgr.GetNetwork(configuration, rs.Primary.ID)
+		if rs.Type == "bluecat_ipv6network" || rs.Type == "bluecat_ipv6block" {
+			network.IPVersion = entities.IPV6
+		}
+		network.CIDR = rs.Primary.ID
+		if rs.Type == "bluecat_ipv4network" || rs.Type == "bluecat_ipv6network" {
+			_, err := objMgr.GetNetwork(&network)
 			if err == nil {
 				msg := fmt.Sprintf("Network %s is not removed", rs.Primary.ID)
 				log.Error(msg)
 				return fmt.Errorf(msg)
 			}
 
-		} else if rs.Type == "bluecat_ipv4block" {
+		} else if rs.Type == "bluecat_ipv4block" || rs.Type == "bluecat_ipv6block" {
 			cidr := strings.Split(rs.Primary.ID, "/")
-			_, err := objMgr.GetBlock(configuration, cidr[0], cidr[1])
+			_, err := objMgr.GetBlock(configuration, cidr[0], cidr[1], network.IPVersion)
 			if err == nil {
 				msg := fmt.Sprintf("Block %s is not removed", rs.Primary.ID)
 				log.Error(msg)
@@ -121,7 +174,7 @@ func testAccCheckNetworkDestroy(s *terraform.State) error {
 	return nil
 }
 
-func testAccNetworkExists(t *testing.T, resource string, name string, cidr string, allowDuplicateHost string, gateway string, netReserveIPValue string, template string) resource.TestCheckFunc {
+func testAccNetworkExists(t *testing.T, resource string, name string, cidr string, allowDuplicateHost string, gateway string, netReserveIPValue string, template string, ipVersion string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		rs, ok := s.RootModule().Resources[resource]
 		if !ok {
@@ -135,36 +188,53 @@ func testAccNetworkExists(t *testing.T, resource string, name string, cidr strin
 		connector := meta.(*utils.Connector)
 		objMgr := new(utils.ObjectManager)
 		objMgr.Connector = connector
-		network, err := objMgr.GetNetwork(configuration, cidr)
+
+		networkEntity := entities.Network{}
+		networkEntity.Configuration = configuration
+		networkEntity.CIDR = cidr
+		networkEntity.IPVersion = ipVersion
+
+		network, err := objMgr.GetNetwork(&networkEntity)
 		if err != nil {
 			msg := fmt.Sprintf("Getting Network %s failed: %s", rs.Primary.ID, err)
 			log.Error(msg)
 			return fmt.Errorf(msg)
 		}
 		allowDuplicateHostProperty := getPropertyValue("allowDuplicateHost", network.Properties)
-		gatewayPropertiy := getPropertyValue("gateway", network.Properties)
-		if allowDuplicateHostProperty != allowDuplicateHost || gatewayPropertiy != gateway || network.Name != name {
-			msg := fmt.Sprintf("Getting Network %s failed: %s. Expect allowDuplicateHost=%s gateway=%s in properties and name=%s, but received '%s' and name=%s", rs.Primary.ID, err, allowDuplicateHost, gateway, name, network.Properties, network.Name)
-			log.Error(msg)
-			return fmt.Errorf(msg)
-		}
-		ipAddress, err := objMgr.GetIPAddress(configuration, netReserveIPValue)
+		gatewayProperty := getPropertyValue("gateway", network.Properties)
+		ipAddress, err := objMgr.GetIPAddress(configuration, netReserveIPValue, entities.IPV4)
 		state := getPropertyValue("state", ipAddress.Properties)
-		if err != nil {
-			msg := fmt.Sprintf("Getting reverse ip of Network %s failed: %s", rs.Primary.ID, err)
-			log.Error(msg)
-			return fmt.Errorf(msg)
-		}
-		if state != "RESERVED" {
-			msg := fmt.Sprintf("Getting reverse ip of Network %s failed: %s. %s is not RESERVED", rs.Primary.ID, err, netReserveIPValue)
-			log.Error(msg)
-			return fmt.Errorf(msg)
-		}
-		templateId := getPropertyValue("template", network.Properties)
-		if template != "" && templateId == "" {
-			msg := fmt.Sprintf("Assign %s template of Network %s failed", template, rs.Primary.ID)
-			log.Error(msg)
-			return fmt.Errorf(msg)
+
+		if ipVersion == entities.IPV4 {
+			if allowDuplicateHostProperty != allowDuplicateHost || gatewayProperty != gateway || network.Name != name {
+				msg := fmt.Sprintf("Getting Network %s failed: %s. Expect allowDuplicateHost=%s gateway=%s in properties and name=%s, but received '%s' and name=%s", rs.Primary.ID, err, allowDuplicateHost, gateway, name, network.Properties, network.Name)
+				log.Error(msg)
+				return fmt.Errorf(msg)
+			}
+
+			if err != nil {
+				msg := fmt.Sprintf("Getting reverse ip of Network %s failed: %s", rs.Primary.ID, err)
+				log.Error(msg)
+				return fmt.Errorf(msg)
+			}
+
+			if state != "RESERVED" {
+				msg := fmt.Sprintf("Getting reverse ip of Network %s failed: %s. %s is not RESERVED", rs.Primary.ID, err, netReserveIPValue)
+				log.Error(msg)
+				return fmt.Errorf(msg)
+			}
+			templateId := getPropertyValue("template", network.Properties)
+			if template != "" && templateId == "" {
+				msg := fmt.Sprintf("Assign %s template of Network %s failed", template, rs.Primary.ID)
+				log.Error(msg)
+				return fmt.Errorf(msg)
+			}
+		} else if ipVersion == entities.IPV6 {
+			if network.Name != name {
+				msg := fmt.Sprintf("Getting Network %s failed: %s. Expect name=%s, but received name=%s", rs.Primary.ID, err, name, network.Name)
+				log.Error(msg)
+				return fmt.Errorf(msg)
+			}
 		}
 		return nil
 	}
@@ -265,7 +335,6 @@ var testAccResourceNetworkCreateFullFieldWithTemplate = fmt.Sprintf(
 
 var nextNetResource1 = "next_net_record"
 
-// var nextNetName1 = ""
 var nextNetName1 = "next network1"
 var nextNetReserveIP1 = "1"
 var nextNetParentBlock1 = "30.0.0.0/24"
@@ -287,7 +356,6 @@ var testAccResourceNextNetworkCreateFullField = fmt.Sprintf(
 		properties = "%s"
 		parent_block = "%s"
 		size = %s
-		allocated_id = timestamp()
 		depends_on = [bluecat_ipv4block.%s]
 		}`, testAccresourceBlockCreate, nextNetResource1, configuration, nextNetName1, nextNetReserveIP1, nextNetProperties1, nextNetParentBlock1, nextNetSize1, blockNetResource1)
 
@@ -302,6 +370,57 @@ var testAccResourceNextNetworkUpdateNotFullField = fmt.Sprintf(
 		properties = "%s"
 		parent_block = "%s"
 		size = %s
-		allocated_id = timestamp()
 		depends_on = [bluecat_ipv4block.%s]
 		}`, testAccresourceBlockCreate, nextNetResource1, configuration, nextNetName2, nextNetReserveIP1, nextNetProperties1, nextNetParentBlock1, nextNetSize1, blockNetResource1)
+
+var testAccResourceIPv6BlockCreate = fmt.Sprintf(
+	`%s
+	resource "bluecat_ipv6block" "ipv6_block_record_1" {
+		configuration = "%s"
+		name = "ipv6_block_name"
+		parent_block = ""
+		address = "2040:B041::"
+		cidr = "64"
+		properties = ""
+		ip_version = "ipv6"
+	  }`, server, configuration)
+
+var testAccResourceIPv6NetworkCreateFullField = fmt.Sprintf(
+	`%s
+	resource "bluecat_ipv6network" "ipv6_net_record_1" {
+		configuration = "%s"
+		name = "ipv6_net_name"
+		cidr = "2040:B041::/64"
+		properties = ""
+		ip_version = "ipv6"
+		depends_on = [bluecat_ipv6block.ipv6_block_record_1]
+		}`, testAccResourceIPv6BlockCreate, configuration)
+
+var testAccResourceIPv6NetworkInsideUniqueLocal = fmt.Sprintf(
+	`%s
+	resource "bluecat_ipv6network" "ipv6_net_record_2" {
+		configuration = "%s"
+		name = "ipv6_net_name"
+		cidr = "FC00::/64"
+		properties = ""
+		ip_version = "ipv6"
+		}`, server, configuration)
+
+// do not send name and properties option
+var testAccResourceIPv6NetworkCreateNotFullField = fmt.Sprintf(
+	`%s
+	resource "bluecat_ipv6network" "ipv6_net_record_1_not_full_field" {
+		configuration = "%s"
+		cidr = "FC00::/64"
+		ip_version = "ipv6"
+		}`, server, configuration)
+
+// do not send name and properties option
+var testAccResourceIPv6NetworUpdateAddName = fmt.Sprintf(
+	`%s
+	resource "bluecat_ipv6network" "ipv6_net_record_1_not_full_field" {
+		configuration = "%s"
+		cidr = "FC00::/64"
+		name = "new_name"
+		ip_version = "ipv6"
+		}`, server, configuration)

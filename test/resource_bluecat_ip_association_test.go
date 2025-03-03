@@ -2,30 +2,30 @@ package main
 
 import (
 	"fmt"
-	"testing"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"terraform-provider-bluecat/bluecat/utils"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/terraform"
+	"testing"
 )
 
 func TestAccResourceIPAssociation(t *testing.T) {
 	// create with full fields and update
 	resource.Test(t, resource.TestCase{
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckIPAssociationDestroy,
+		ProviderFactories: testAccProviders,
+		CheckDestroy:      testAccCheckIPAssociationDestroy,
 		Steps: []resource.TestStep{
-			resource.TestStep{
-				Config:             testAccresourceHostRecordCreate2,
+			{
+				Config: testAccresourceHostRecordCreate2,
 			},
 			// create
-			resource.TestStep{
+			{
 				Config: testAccresourceIPAssocitionCreateFullField,
 				Check: resource.ComposeTestCheckFunc(
 					testAccIPAssociationExists(t, fmt.Sprintf("bluecat_ip_association.%s", IPAssociateResource1), IPAssociateName1, IPAssociateIP1, IPAssociateMac1),
 				),
 			},
 			// update
-			resource.TestStep{
+			{
 				Config: testAccresourceIPAssocitionUpdateFullField,
 				Check: resource.ComposeTestCheckFunc(
 					testAccIPAssociationExists(t, fmt.Sprintf("bluecat_ip_association.%s", IPAssociateResource1), IPAssociateName1, IPAssociateIP1, IPAssociateMac2),
@@ -35,11 +35,11 @@ func TestAccResourceIPAssociation(t *testing.T) {
 	})
 	// create without some optional fields and update
 	resource.Test(t, resource.TestCase{
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckIPAssociationDestroy,
+		ProviderFactories: testAccProviders,
+		CheckDestroy:      testAccCheckIPAssociationDestroy,
 		Steps: []resource.TestStep{
 			resource.TestStep{
-				Config:             testAccresourceHostRecordCreate2,
+				Config: testAccresourceHostRecordCreate2,
 			},
 			// create
 			resource.TestStep{
@@ -96,7 +96,7 @@ func testAccIPAssociationExists(t *testing.T, resource string, name string, ip s
 		connector := meta.(*utils.Connector)
 		objMgr := new(utils.ObjectManager)
 		objMgr.Connector = connector
-		ipAddress, err := objMgr.GetIPAddress(configuration, ip)
+		ipAddress, err := objMgr.GetIPAddress(configuration, ip, "ipv4")
 		if err != nil {
 			msg := fmt.Sprintf("Getting IP %s failed: %s", ip, err)
 			log.Error(msg)
@@ -119,7 +119,7 @@ var testAccresourceHostRecordCreate2 = fmt.Sprintf(
 		configuration = "%s"
 		view = "%s"
 		absolute_name = "a1.example.com"
-		ip4_address = "1.1.0.10"
+		ip_address = "1.1.0.10"
 		ttl = 200
 		properties = ""
 		}`, server, configuration, view)
@@ -139,7 +139,7 @@ var testAccresourceIPAssocitionCreateFullField = fmt.Sprintf(
 		zone = "%s"
 		name = "%s"
 		network = "%s"
-		ip4_address = "%s"
+		ip_address = "%s"
 		mac_address = "%s"
 		properties = "%s"
 	  }`, testAccresourceHostRecordCreate2, IPAssociateResource1, configuration, view, zone, IPAssociateName1, IPAssociateNet1, IPAssociateIP1, IPAssociateMac1, IPAssociateProperties1)
@@ -151,7 +151,7 @@ var testAccresourceIPAssocitionCreateNotZone = fmt.Sprintf(
 		view = "%s"
 		name = "%s"
 		network = "%s"
-		ip4_address = "%s"
+		ip_address = "%s"
 		mac_address = "%s"
 		properties = "%s"
 		}`, testAccresourceHostRecordCreate2, IPAssociateResource1, configuration, view, IPAssociateName1, IPAssociateNet1, IPAssociateIP1, IPAssociateMac1, IPAssociateProperties1)
@@ -165,7 +165,7 @@ var testAccresourceIPAssocitionUpdateFullField = fmt.Sprintf(
 		zone = "%s"
 		name = "%s"
 		network = "%s"
-		ip4_address = "%s"
+		ip_address = "%s"
 		mac_address = "%s"
 		properties = "%s"
 	  }`, testAccresourceHostRecordCreate2, IPAssociateResource1, configuration, view, zone, IPAssociateName1, IPAssociateNet1, IPAssociateIP1, IPAssociateMac2, IPAssociateProperties1)
@@ -177,7 +177,7 @@ var testAccresourceIPAssocitionUpdateNotZone = fmt.Sprintf(
 		view = "%s"
 		name = "%s"
 		network = "%s"
-		ip4_address = "%s"
+		ip_address = "%s"
 		mac_address = "%s"
 		properties = "%s"
 		}`, testAccresourceHostRecordCreate2, IPAssociateResource1, configuration, view, IPAssociateName1, IPAssociateNet1, IPAssociateIP1, IPAssociateMac2, IPAssociateProperties1)

@@ -2,15 +2,14 @@ package bluecat
 
 import (
 	"fmt"
-	"strconv"
 	"terraform-provider-bluecat/bluecat/utils"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-func DataSourceZone() *schema.Resource {
+func DataSourceView() *schema.Resource {
 	return &schema.Resource{
-		Read: dataSourceZoneRead,
+		Read: dataSourceViewRead,
 		Schema: map[string]*schema.Schema{
 			"configuration": {
 				Type:        schema.TypeString,
@@ -21,11 +20,6 @@ func DataSourceZone() *schema.Resource {
 				Type:        schema.TypeString,
 				Optional:    true,
 				Description: "The view which contains the details of the zone. If not provided, zone will be got under default view",
-			},
-			"zone": {
-				Type:        schema.TypeString,
-				Required:    true,
-				Description: "The absolute name of zone or sub zone",
 			},
 			"deployable": {
 				Type:        schema.TypeString,
@@ -47,47 +41,31 @@ func DataSourceZone() *schema.Resource {
 	}
 }
 
-func dataSourceZoneRead(d *schema.ResourceData, m interface{}) error {
+func dataSourceViewRead(d *schema.ResourceData, m interface{}) error {
 
 	configuration := d.Get("configuration").(string)
-	view := d.Get("view").(string)
-	zone := d.Get("zone").(string)
+	viewName := d.Get("view").(string)
 
 	connector := m.(*utils.Connector)
 	objMgr := new(utils.ObjectManager)
 	objMgr.Connector = connector
 
-	zoneObj, err := objMgr.GetZone(configuration, view, zone)
+	viewObj, err := objMgr.GetView(configuration, viewName)
 	if err != nil {
-		msg := fmt.Sprintf("Getting Zone %s failed: %s", zone, err)
+		msg := fmt.Sprintf("Getting Zone %s failed: %s", viewName, err)
 		log.Debug(msg)
 		return fmt.Errorf(msg)
 	}
 
-	d.SetId(strconv.Itoa(zoneObj.ZoneId))
-	d.Set("properties", zoneObj.Properties)
+	d.SetId(viewObj.Name)
+	d.Set("properties", viewObj.Properties)
 
-	deployable := getPropertyValue("deployable", zoneObj.Properties)
+	deployable := getPropertyValue("deployable", viewObj.Properties)
 	if deployable == "true" {
 		d.Set("deployable", "True")
 	} else {
 		d.Set("deployable", "False")
 	}
-
-	serverRoles, err := objMgr.GetDeploymentRoles(configuration, view, zone)
-	if err != nil {
-		msg := fmt.Sprintf("error get all deployment roles on the zone: %s", err)
-		log.Debug(msg)
-		return fmt.Errorf(msg)
-	}
-
-	var serverRolesRaw []string
-	for _, serverRole := range serverRoles.ServerRoles {
-		serverRoleRaw := fmt.Sprintf("%s, %s", getRoleNameInTerraform(serverRole.Role), serverRole.ServerFQDN)
-		serverRolesRaw = append(serverRolesRaw, serverRoleRaw)
-	}
-
-	d.Set("server_roles", serverRolesRaw)
 
 	return nil
 }

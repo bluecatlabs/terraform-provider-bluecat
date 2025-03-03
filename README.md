@@ -1,7 +1,7 @@
 # Requirements
 ---
-- Go version: 1.14
-- Terraform version: 0.13.1
+- Go version: 1.20
+- Terraform version: 1.6.4
 
 # Compile the source code as a Terraform's provider
 ---
@@ -322,8 +322,60 @@ In case of you're using the local build of the provider, you need to prepare the
 ### Checking out the plan
 `terraform plan`
 
-### Adding/updating the resource as the plan
+### Adding/updating resources as the plan
+If your configuration resources need to be created in order that you have written them in main.tf file:
+`terraform apply -parallelism=1`
+If the order of resources' creation is not important use:
 `terraform apply`
+Option for automatic creation without getting the prompt for approving the creation:
+`terraform apply -auto-approve`
 
-### Removing the resource
+### Removing resources
 `terraform destroy`
+
+### Importing resources
+#### 1. Creating imports.tf configuration
+Create a new file called imports.tf and define the resource blocks that you want to import.
+
+Resource import definition:
+```
+import {
+  to = <RESOURCE_TYPE>.<RESOURCE_CUSTOM_NAME>
+  id = "<RESOURCE_ID>"
+}
+```
+Example of importing two blocks and one network:
+```
+import {
+  to = bluecat_ipv4block.block_record_import_1
+  id = "2.0.0.0/8"
+}
+
+import {
+  to = bluecat_ipv4block.block_record_import_2
+  id = "2.2.0.0/16"
+}
+
+import {
+  to = bluecat_ipv4network.network_record_import_1
+  id = "2.2.2.0/24"
+}
+```
+Notice: You need to check if every resource specified in the blocks above exists as a real object in BAM.
+
+#### 2. Generating configuration for resources that you want to import
+`terraform plan -generate-config-out=generated_resources.tf` \
+Review the generated configuration to see if everything is as it is expected for a certain type of the resource.
+
+#### 3. Apply generated configuration to import your infrastructure
+`terraform apply -auto-approve` \
+You can use only `apply` without `-auto-approve` if you want to revise once again if everything is ok and manually type `yes` to approve that you want to import resources.
+
+Notice: When you want to create additional resources that you want to import you can:
+1. Leave the generated_resources.tf file and generate newly one with different name \
+or
+2. Use following steps:
+   * Copy generated resources from the generated_resources.tf file and copy them to the main config file (main.tf file)
+   * Delete the generated_resources.tf file and create the same one with command from Step 2 (`terraform plan -generate-config-out=generated_resources.tf`)
+
+Also, you need to remove imports block if that resources are already imported.

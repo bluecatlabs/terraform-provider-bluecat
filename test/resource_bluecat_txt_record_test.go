@@ -2,8 +2,8 @@ package main
 
 import (
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/terraform"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"terraform-provider-bluecat/bluecat/utils"
 	"testing"
 )
@@ -11,8 +11,8 @@ import (
 func TestAccResourceTXTRecord(t *testing.T) {
 	// create with full fields and update
 	resource.Test(t, resource.TestCase{
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTXTRecordDestroy,
+		ProviderFactories: testAccProviders,
+		CheckDestroy:      testAccCheckTXTRecordDestroy,
 		Steps: []resource.TestStep{
 			// create
 			resource.TestStep{
@@ -32,8 +32,8 @@ func TestAccResourceTXTRecord(t *testing.T) {
 	})
 	// create without some optional fields
 	resource.Test(t, resource.TestCase{
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTXTRecordDestroy,
+		ProviderFactories: testAccProviders,
+		CheckDestroy:      testAccCheckTXTRecordDestroy,
 		Steps: []resource.TestStep{
 			// create
 			resource.TestStep{

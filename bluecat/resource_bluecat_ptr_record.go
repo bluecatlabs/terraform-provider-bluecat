@@ -7,7 +7,7 @@ import (
 	"strings"
 	"terraform-provider-bluecat/bluecat/utils"
 
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 // ResourcePTRRecord The PTR record
@@ -43,7 +43,7 @@ func ResourcePTRRecord() *schema.Resource {
 					return checkDiffName(old, new, zone)
 				},
 			},
-			"ip4_address": {
+			"ip_address": {
 				Type:        schema.TypeString,
 				Required:    true,
 				Description: "The IP address that will be created the PTR record for",
@@ -79,11 +79,11 @@ func createPTRRecord(d *schema.ResourceData, m interface{}) error {
 	view := d.Get("view").(string)
 	zone := d.Get("zone").(string)
 	name := d.Get("name").(string)
-	ip4Address := d.Get("ip4_address").(string)
+	ipAddress := d.Get("ip_address").(string)
 	ttl := d.Get("ttl").(int)
 	reverseRecord := d.Get("reverse_record").(string)
 	properties := d.Get("properties").(string)
-	fqdnName, err := updatePTR(m, configuration, view, zone, name, ip4Address, reverseRecord, properties, ttl)
+	fqdnName, err := updatePTR(m, configuration, view, zone, name, ipAddress, reverseRecord, properties, ttl)
 	if err != nil {
 		return err
 	}
@@ -123,12 +123,12 @@ func updatePTRRecord(d *schema.ResourceData, m interface{}) error {
 	view := d.Get("view").(string)
 	zone := d.Get("zone").(string)
 	name := d.Get("name").(string)
-	ip4Address := d.Get("ip4_address").(string)
+	ipAddress := d.Get("ip_address").(string)
 	ttl := d.Get("ttl").(int)
 	reverseRecord := d.Get("reverse_record").(string)
 	properties := d.Get("properties").(string)
 
-	fqdnName, err := updatePTR(m, configuration, view, zone, name, ip4Address, reverseRecord, properties, ttl)
+	fqdnName, err := updatePTR(m, configuration, view, zone, name, ipAddress, reverseRecord, properties, ttl)
 	if err != nil {
 		return err
 	}
@@ -152,21 +152,14 @@ func updatePTR(m interface{}, configuration, view, zone, name, ip4Address, rever
 	}
 
 	// Get the host
-	hostRecord, err := objMgr.GetHostRecord(configuration, view, fqdnName)
+	_, err := objMgr.GetHostRecord(configuration, view, fqdnName)
 	if err != nil {
 		msg := fmt.Sprintf("Getting Host record %s failed: %s", fqdnName, err)
 		log.Debug(msg)
 		return "", fmt.Errorf(msg)
 	}
-	// Validate the data
-	associateIPs := getAttributeFromProperties("addresses", hostRecord.Properties)
-	if !strings.Contains(associateIPs, ip4Address) {
-		msg := fmt.Sprintf("No matching PTR record found for %s : %s", fqdnName, err)
-		log.Debug(msg)
-		return "", fmt.Errorf(msg)
-	}
-	// Update the host record
 
+	// Update the host record
 	reverseValues := []string{"yes", "true", "1"}
 	notReversedValues := []string{"no", "false", "0", ""}
 	isReverse := contains(reverseValues, strings.ToLower(strings.Trim(reverseRecord, " ")))
@@ -181,7 +174,10 @@ func updatePTR(m interface{}, configuration, view, zone, name, ip4Address, rever
 		return "", fmt.Errorf(msg)
 	}
 
-	_, err = objMgr.UpdateHostRecord(configuration, view, zone, fqdnName, associateIPs, ttl, properties)
+	var immutableProperties = []string{"parentId", "parentType"} // these properties will raise error on the rest-api
+	properties = utils.RemoveImmutableProperties(properties, immutableProperties)
+
+	_, err = objMgr.UpdateHostRecord(configuration, view, zone, fqdnName, ip4Address, ttl, properties)
 	if err != nil {
 		msg := fmt.Sprintf("Error updating PTR record %s: %s", fqdnName, err)
 		log.Debug(msg)
@@ -198,12 +194,12 @@ func deletePTRRecord(d *schema.ResourceData, m interface{}) error {
 	view := d.Get("view").(string)
 	zone := d.Get("zone").(string)
 	name := d.Get("name").(string)
-	ip4Address := d.Get("ip4_address").(string)
+	ipAddress := d.Get("ip_address").(string)
 	ttl := d.Get("ttl").(int)
 	reverseRecord := "false"
 	properties := d.Get("properties").(string)
 
-	_, err := updatePTR(m, configuration, view, zone, name, ip4Address, reverseRecord, properties, ttl)
+	_, err := updatePTR(m, configuration, view, zone, name, ipAddress, reverseRecord, properties, ttl)
 	if err != nil {
 		return err
 	}
