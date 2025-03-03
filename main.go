@@ -3,16 +3,24 @@
 package main
 
 import (
+	"flag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/plugin"
 	"terraform-provider-bluecat/bluecat"
-
-	"github.com/hashicorp/terraform-plugin-sdk/plugin"
-	"github.com/hashicorp/terraform-plugin-sdk/terraform"
 )
 
 func main() {
-	plugin.Serve(&plugin.ServeOpts{
-		ProviderFunc: func() terraform.ResourceProvider {
+	var debugMode bool
+	flag.BoolVar(&debugMode, "debug", false, "set to true to run the provider with support for debuggers like delve")
+	flag.Parse()
+
+	opts := &plugin.ServeOpts{
+		ProviderFunc: func() *schema.Provider {
 			return bluecat.Provider()
 		},
-	})
+		ProviderAddr: "terraform-provider-bluecat/bluecat",
+		Debug:        debugMode,
+	}
+
+	plugin.Serve(opts)
 }

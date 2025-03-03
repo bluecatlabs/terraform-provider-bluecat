@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"terraform-provider-bluecat/bluecat/utils"
 
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 // ResourceCNAMERecord The CNAME record
@@ -40,7 +40,7 @@ func ResourceCNAMERecord() *schema.Resource {
 				DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
 					zone := d.Get("zone").(string)
 					return checkDiffName(old, new, zone)
-				  },
+				},
 			},
 			"linked_record": {
 				Type:        schema.TypeString,
@@ -49,7 +49,7 @@ func ResourceCNAMERecord() *schema.Resource {
 				DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
 					zone := d.Get("zone").(string)
 					return checkDiffName(old, new, zone)
-				  },
+				},
 			},
 			"ttl": {
 				Type:        schema.TypeInt,
@@ -63,8 +63,11 @@ func ResourceCNAMERecord() *schema.Resource {
 				Description: "CNAME record's properties. Example: attribute=value|",
 				DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
 					return checkDiffProperties(old, new)
-				  },
+				},
 			},
+		},
+		Importer: &schema.ResourceImporter{
+			State: recordImporter,
 		},
 	}
 }
@@ -108,9 +111,9 @@ func createCNAMERecord(d *schema.ResourceData, m interface{}) error {
 // getCNAMERecord Get the CNAME record
 func getCNAMERecord(d *schema.ResourceData, m interface{}) error {
 	log.Debugf("Beginning to get CNAME record: %s", d.Get("absolute_name"))
+	absoluteName, err := getAbsoluteName(d)
 	configuration := d.Get("configuration").(string)
 	view := d.Get("view").(string)
-	absoluteName := d.Get("absolute_name").(string)
 
 	connector := m.(*utils.Connector)
 	objMgr := new(utils.ObjectManager)
@@ -118,13 +121,23 @@ func getCNAMERecord(d *schema.ResourceData, m interface{}) error {
 
 	cnameRecord, err := objMgr.GetCNAMERecord(configuration, view, absoluteName)
 	if err != nil {
-		msg := fmt.Sprintf("Getting CNAME record %s failed: %s", absoluteName, err)
-		log.Debug(msg)
-		return fmt.Errorf(msg)
+		if d.Id() != "" {
+			err := createCNAMERecord(d, m)
+			if err != nil {
+				msg := fmt.Sprintf("Something gone wrong: %v", err)
+				return fmt.Errorf(msg)
+			}
+		} else {
+			msg := fmt.Sprintf("Getting CNAME record %s failed: %s", absoluteName, err)
+			log.Debug(msg)
+			return fmt.Errorf(msg)
+		}
 	}
 	d.SetId(cnameRecord.AbsoluteName)
 	d.Set("absolute_name", cnameRecord.AbsoluteName)
 	d.Set("properties", cnameRecord.Properties)
+	// for import functionality linked_record must be set for the cname_record - required attribute
+	d.Set("linked_record", parseRecordPropertyValue(cnameRecord.Properties, "linkedRecordName"))
 	log.Debugf("Completed reading CNAME record %s", d.Get("absolute_name"))
 	return nil
 }
@@ -153,6 +166,9 @@ func updateCNAMERecord(d *schema.ResourceData, m interface{}) error {
 	}
 
 	linkedRecord = getFQDN(linkedRecord, zone)
+
+	var immutableProperties = []string{"parentId", "parentType"} // these properties will raise error on the rest-api
+	properties = utils.RemoveImmutableProperties(properties, immutableProperties)
 
 	_, err := objMgr.UpdateCNAMERecord(configuration, view, zone, fqdnName, linkedRecord, ttl, properties)
 	if err != nil {

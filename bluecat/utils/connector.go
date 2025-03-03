@@ -203,7 +203,14 @@ func (arb *APIRequestBuilder) buildBaseURL() url.URL {
 
 func (arb *APIRequestBuilder) buildURL(subPath string, objectType string) (urlStr string) {
 	u := arb.buildBaseURL()
-	urlStr = u.String() + subPath + "/"
+	if strings.Contains(subPath, "/dhcp_range/") {
+		// this is used for getting the dhcp v6 range where we have exact start and end ip address
+		// and the end ip address cannot have / as the last URI char
+		urlStr = u.String() + subPath
+	} else {
+		urlStr = u.String() + subPath + "/"
+	}
+
 	if len(objectType) > 0 {
 		urlStr = urlStr + objectType + "/"
 	}

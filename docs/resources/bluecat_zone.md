@@ -15,7 +15,7 @@ This will allow creation or update of a Zone or Sub zone in Address Manager. The
 
     resource "bluecat_zone" "sub_zone" {
       configuration = "terraform_demo"
-      view = "Internal"
+      view = "InternalView"
       zone = "example.com"
       deployable = "True"
       server_roles = [“primary, server1”, “secondary, server2”]

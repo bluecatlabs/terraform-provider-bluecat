@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"terraform-provider-bluecat/bluecat/utils"
 
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 // ResourceTXTRecord The TXT record
@@ -66,6 +66,9 @@ func ResourceTXTRecord() *schema.Resource {
 				},
 			},
 		},
+		Importer: &schema.ResourceImporter{
+			State: recordImporter,
+		},
 	}
 }
 
@@ -106,9 +109,9 @@ func createTXTRecord(d *schema.ResourceData, m interface{}) error {
 // getTXTRecord Get the TXT record
 func getTXTRecord(d *schema.ResourceData, m interface{}) error {
 	log.Debugf("Beginning to get TXT record: %s", d.Get("absolute_name"))
+	absoluteName, err := getAbsoluteName(d)
 	configuration := d.Get("configuration").(string)
 	view := d.Get("view").(string)
-	absoluteName := d.Get("absolute_name").(string)
 
 	connector := m.(*utils.Connector)
 	objMgr := new(utils.ObjectManager)
@@ -116,13 +119,24 @@ func getTXTRecord(d *schema.ResourceData, m interface{}) error {
 
 	txtRecord, err := objMgr.GetTXTRecord(configuration, view, absoluteName)
 	if err != nil {
-		msg := fmt.Sprintf("Getting TXT record %s failed: %s", absoluteName, err)
-		log.Debug(msg)
-		return fmt.Errorf(msg)
+		if d.Id() != "" {
+			err := createTXTRecord(d, m)
+			if err != nil {
+				msg := fmt.Sprintf("Something gone wrong: %v", err)
+				return fmt.Errorf(msg)
+			}
+		} else {
+			msg := fmt.Sprintf("Getting TXT record %s failed: %s", absoluteName, err)
+			log.Debug(msg)
+			return fmt.Errorf(msg)
+		}
 	}
 	d.SetId(txtRecord.AbsoluteName)
 	d.Set("absolute_name", txtRecord.AbsoluteName)
 	d.Set("properties", txtRecord.Properties)
+	// for import functionality text must be set for the txt_record - required attribute
+	d.Set("text", parseRecordPropertyValue(txtRecord.Properties, "txt"))
+
 	log.Debugf("Completed reading TXT record %s", d.Get("absolute_name"))
 	return nil
 }
@@ -149,6 +163,9 @@ func updateTXTRecord(d *schema.ResourceData, m interface{}) error {
 	} else {
 		zone = getZoneFromRRName(fqdnName)
 	}
+
+	var immutableProperties = []string{"parentId", "parentType"} // these properties will raise error on the rest-api
+	properties = utils.RemoveImmutableProperties(properties, immutableProperties)
 
 	_, err := objMgr.UpdateTXTRecord(configuration, view, zone, fqdnName, text, ttl, properties)
 	if err != nil {

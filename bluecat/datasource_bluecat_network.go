@@ -3,9 +3,10 @@ package bluecat
 import (
 	"fmt"
 	"strconv"
+	"terraform-provider-bluecat/bluecat/entities"
 	"terraform-provider-bluecat/bluecat/utils"
 
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 func DataSourceIPv4Network() *schema.Resource {
@@ -37,33 +38,41 @@ func DataSourceIPv4Network() *schema.Resource {
 				Optional:    true,
 				Description: "IPv4 Network's properties",
 			},
+			"ip_version": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				Description: "Network's IP version",
+			},
 		},
 	}
 }
 
 func dataSourceIPv4NetworkRead(d *schema.ResourceData, m interface{}) error {
 
-	configuration := d.Get("configuration").(string)
-	cidr := d.Get("cidr").(string)
+	network := entities.Network{}
+	if !network.InitNetwork(d) {
+		log.Error(network.InitError)
+		return fmt.Errorf(network.InitError)
+	}
 
 	connector := m.(*utils.Connector)
 	objMgr := new(utils.ObjectManager)
 	objMgr.Connector = connector
 
-	network, err := objMgr.GetNetwork(configuration, cidr)
+	retrievedNetwork, err := objMgr.GetNetwork(&network)
 	if err != nil {
-		msg := fmt.Sprintf("Getting Network %s failed: %s", cidr, err)
+		msg := fmt.Sprintf("Getting Network %s failed: %s", retrievedNetwork.CIDR, err)
 		log.Error(msg)
 		return fmt.Errorf(msg)
 	}
 
-	gateway := getPropertyValue("gateway", network.Properties)
+	gateway := getPropertyValue("gateway", retrievedNetwork.Properties)
 
-	d.SetId(strconv.Itoa(network.NetWorkId))
+	d.SetId(strconv.Itoa(retrievedNetwork.NetWorkId))
 
-	d.Set("name", network.Name)
+	d.Set("name", retrievedNetwork.Name)
 	d.Set("gateway", gateway)
-	d.Set("properties", network.Properties)
+	d.Set("properties", retrievedNetwork.Properties)
 
 	return nil
 }

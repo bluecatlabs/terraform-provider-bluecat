@@ -1,28 +1,28 @@
 package main
 
 import (
-	"testing"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"terraform-provider-bluecat/bluecat/utils"
-	"github.com/hashicorp/terraform-plugin-sdk/terraform"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
+	"testing"
 )
 
 func TestAccResourceCNAMERecord(t *testing.T) {
 	// create with full fields and update
 	resource.Test(t, resource.TestCase{
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckCNAMERecordDestroy,
+		ProviderFactories: testAccProviders,
+		CheckDestroy:      testAccCheckCNAMERecordDestroy,
 		Steps: []resource.TestStep{
 			// create
-			resource.TestStep{
+			{
 				Config: testAccresourceCNAMERecordCreateFullField,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCNAMERecordExists(t, fmt.Sprintf("bluecat_cname_record.%s", cnameResource1), cnameName1, cnameTTL1, cnameLink1),
 				),
 			},
 			// // update
-			resource.TestStep{
+			{
 				Config: testAccresourceCNAMERecordUpdateFullField,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCNAMERecordExists(t, fmt.Sprintf("bluecat_cname_record.%s", cnameResource1), cnameName1, cnameTTL2, cnameLink2),
@@ -32,11 +32,11 @@ func TestAccResourceCNAMERecord(t *testing.T) {
 	})
 	// create without some optional fields
 	resource.Test(t, resource.TestCase{
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckCNAMERecordDestroy,
+		ProviderFactories: testAccProviders,
+		CheckDestroy:      testAccCheckCNAMERecordDestroy,
 		Steps: []resource.TestStep{
 			// create
-			resource.TestStep{
+			{
 				Config: testAccresourceCNAMERecordCreateNotFullField,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCNAMERecordExists(t, fmt.Sprintf("bluecat_cname_record.%s", cnameResource1), cnameName1, cnameTTL1, cnameLink1),
@@ -114,7 +114,7 @@ var testAccresourceHostRecordCreate1 = fmt.Sprintf(
 		configuration = "%s"
 		view = "%s"
 		absolute_name = "a2.example.com"
-		ip4_address = "1.1.0.2"
+		ip_address = "1.1.0.2"
 		ttl = 200
 		properties = ""
 		}
@@ -123,7 +123,7 @@ var testAccresourceHostRecordCreate1 = fmt.Sprintf(
 		configuration = "%s"
 		view = "%s"
 		absolute_name = "a3.example.com"
-		ip4_address = "1.1.0.3"
+		ip_address = "1.1.0.3"
 		ttl = 300
 		properties = ""
 		}`, server, hostCnameResource1, configuration, view, hostCnameResource2, configuration, view)

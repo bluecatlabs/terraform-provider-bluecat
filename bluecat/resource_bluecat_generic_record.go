@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"terraform-provider-bluecat/bluecat/utils"
 
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 // ResourceGenericRecord The Generic record
@@ -71,6 +71,9 @@ func ResourceGenericRecord() *schema.Resource {
 				},
 			},
 		},
+		Importer: &schema.ResourceImporter{
+			State: recordImporter,
+		},
 	}
 }
 
@@ -112,9 +115,9 @@ func createGenericRecord(d *schema.ResourceData, m interface{}) error {
 // getGenericRecord Get the Generic record
 func getGenericRecord(d *schema.ResourceData, m interface{}) error {
 	log.Debugf("Beginning to get Generic record: %s", d.Get("absolute_name"))
+	absoluteName, err := getAbsoluteName(d)
 	configuration := d.Get("configuration").(string)
 	view := d.Get("view").(string)
-	absoluteName := d.Get("absolute_name").(string)
 
 	connector := m.(*utils.Connector)
 	objMgr := new(utils.ObjectManager)
@@ -122,9 +125,17 @@ func getGenericRecord(d *schema.ResourceData, m interface{}) error {
 
 	genericRecord, err := objMgr.GetGenericRecord(configuration, view, absoluteName)
 	if err != nil {
-		msg := fmt.Sprintf("Getting Generic record %s failed: %s", absoluteName, err)
-		log.Debug(msg)
-		return fmt.Errorf(msg)
+		if d.Id() != "" {
+			err := createGenericRecord(d, m)
+			if err != nil {
+				msg := fmt.Sprintf("Something gone wrong: %v", err)
+				return fmt.Errorf(msg)
+			}
+		} else {
+			msg := fmt.Sprintf("Getting Generic record %s failed: %s", absoluteName, err)
+			log.Debug(msg)
+			return fmt.Errorf(msg)
+		}
 	}
 	d.SetId(genericRecord.AbsoluteName)
 	d.Set("absolute_name", genericRecord.AbsoluteName)
@@ -156,6 +167,9 @@ func updateGenericRecord(d *schema.ResourceData, m interface{}) error {
 	} else {
 		zone = getZoneFromRRName(fqdnName)
 	}
+
+	var immutableProperties = []string{"parentId", "parentType"} // these properties will raise error on the rest-api
+	properties = utils.RemoveImmutableProperties(properties, immutableProperties)
 
 	_, err := objMgr.UpdateGenericRecord(configuration, view, zone, typerr, fqdnName, data, ttl, properties)
 	if err != nil {

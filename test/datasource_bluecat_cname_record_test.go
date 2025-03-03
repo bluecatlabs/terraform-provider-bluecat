@@ -6,13 +6,13 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 )
 
 func TestAccDataSourceCNAMERecord(t *testing.T) {
 	// getting with full field
 	resource.Test(t, resource.TestCase{
-		Providers: testAccProviders,
+		ProviderFactories: testAccProviders,
 		Steps: []resource.TestStep{
 			resource.TestStep{
 				Config: testAccDataSourceCNAMERecordsReadFullField,
@@ -26,7 +26,7 @@ func TestAccDataSourceCNAMERecord(t *testing.T) {
 		},
 	})
 	resource.Test(t, resource.TestCase{
-		Providers: testAccProviders,
+		ProviderFactories: testAccProviders,
 		Steps: []resource.TestStep{
 			// getting without some optional fields
 			resource.TestStep{
@@ -49,7 +49,7 @@ var resourceHostCreateFullField = fmt.Sprintf(
 		view = "%s"
 		zone = "%s"
 		absolute_name = "host1.example.com"
-		ip4_address = "1.1.0.9"
+		ip_address = "1.1.0.9"
 		ttl = 200
 		properties = ""
 	}`, server, configuration, view, zone)
@@ -87,7 +87,7 @@ var resourceHostCreateNotFullField = fmt.Sprintf(
 		view = "%s"
 		zone = "%s"
 		absolute_name = "host2.example.com"
-		ip4_address = "1.1.0.9"
+		ip_address = "1.1.0.9"
 		ttl = 200
 		properties = ""
 	}`, server, configuration, view, zone)

@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"terraform-provider-bluecat/bluecat/utils"
 
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 // ResourceConfiguration The Configuration resource
@@ -29,7 +29,7 @@ func ResourceConfiguration() *schema.Resource {
 				Description: "Configuration's properties. Example: attribute=value|",
 				DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
 					return checkDiffProperties(old, new)
-				  },
+				},
 			},
 		},
 	}

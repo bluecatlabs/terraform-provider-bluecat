@@ -1,18 +1,18 @@
 package main
 
 import (
-	"testing"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"terraform-provider-bluecat/bluecat/utils"
-	"github.com/hashicorp/terraform-plugin-sdk/terraform"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
+	"testing"
 )
 
 func TestAccResourceConfiguration(t *testing.T) {
 	// create with full fields and update
 	resource.Test(t, resource.TestCase{
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckConfigurationDestroy,
+		ProviderFactories: testAccProviders,
+		CheckDestroy:      testAccCheckConfigurationDestroy,
 		Steps: []resource.TestStep{
 			// create
 			resource.TestStep{
@@ -43,7 +43,7 @@ func testAccCheckConfigurationDestroy(s *terraform.State) error {
 			log.Error(msg)
 			return fmt.Errorf(msg)
 		}
-		_, err := objMgr.GetConfiguration("terraform_test_configuration")
+		_, err := objMgr.GetConfiguration("terraform_test_configuration_1")
 		if err == nil {
 			msg := fmt.Sprintf("Configuration %s is not removed", rs.Primary.ID)
 			log.Error(msg)
@@ -84,7 +84,7 @@ func testAccConfigurationExists(t *testing.T, resource string, name string, conf
 }
 
 var confResource1 = "conf_record"
-var confName1 = "terraform_test_configuration"
+var confName1 = "terraform_test_configuration_1"
 var confProperties1 = "description=terraform testing config|"
 var confDescriptionProperty1 = "terraform testing config"
 var testAccresourceConfigurationCreateFullField = fmt.Sprintf(
@@ -102,4 +102,3 @@ var testAccresourceConfigurationUpdateFullField = fmt.Sprintf(
 		name = "%s"
 		properties = "%s"
 		}`, server, confResource1, confName1, confProperties2)
-		

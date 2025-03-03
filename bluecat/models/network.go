@@ -7,15 +7,6 @@ import (
 	"terraform-provider-bluecat/bluecat/entities"
 )
 
-const (
-	// AllocateStatic Allocate the static IP Address
-	AllocateStatic string = "MAKE_STATIC"
-	// AllocateReserved Reserve the IP Address
-	AllocateReserved string = "MAKE_RESERVED"
-	// AllocateDHCPReserved Allocate the IP Address for DHCP
-	AllocateDHCPReserved string = "MAKE_DHCP_RESERVED"
-)
-
 func getPath(configuration string) string {
 	result := ""
 	if len(configuration) > 0 {
@@ -35,53 +26,53 @@ func getIPPath(configuration string) string {
 }
 
 // NewBlock Initialize the new IPv4 Block to be added
-func NewBlock(block entities.Block) *entities.Block {
+func NewBlock(block entities.Block, ipVersion string) entities.Block {
 	res := block
-	res.SetObjectType("ipv4_blocks")
+	// ipVersion should be ipv4 or ipv6
+	res.SetObjectType(fmt.Sprintf("%s_blocks", ipVersion))
 
 	path := getPath(res.Configuration)
 
 	if len(block.ParentBlock) == 0 {
 		res.SetSubPath(path)
 	} else {
-		res.SetSubPath(fmt.Sprintf("%s/ipv4_blocks/%s", path, block.ParentBlock))
+		res.SetSubPath(fmt.Sprintf("%s/%s_blocks/%s", path, ipVersion, block.ParentBlock))
 	}
-	return &res
+	return res
 }
 
-// Block Initialize the IPv4 Block to be loaded, updated or deleted
-func Block(block entities.Block) *entities.Block {
-	res := block
-	res.SetObjectType("")
-	res.SetSubPath(fmt.Sprintf("%s/ipv4_blocks/%s", getPath(res.Configuration), block.AddressCIDR()))
-	return &res
+// IPBlock Initialize the IPv4/IPv6 Block to be loaded, updated or deleted
+func IPBlock(block entities.Block) *entities.Block {
+	block.SetObjectType("")
+	block.SetSubPath(fmt.Sprintf("%s/%s_blocks/%s", getPath(block.Configuration), block.IPVersion, block.AddressCIDR()))
+	return &block
 }
 
 // Network
 
 // NewNetwork Initialize the new IPv4 Network to be added
-func NewNetwork(network entities.Network) *entities.Network {
+func NewNetwork(network entities.Network) entities.Network {
 	res := network
 	res.SetObjectType("create_network")
-	res.SetSubPath(fmt.Sprintf("%s/ipv4_blocks/%s", getPath(res.Configuration), network.BlockAddr))
+	res.SetSubPath(fmt.Sprintf("%s/%s_blocks/%s", getPath(res.Configuration), network.IPVersion, network.BlockAddr))
 
-	return &res
+	return res
 }
 
 // NewNextAvailableNetwork Initialize the new next available IPv4 Network to be added
 func NewNextAvailableNetwork(network entities.Network) *entities.Network {
 	res := network
 	res.SetObjectType("get_next_network")
-	res.SetSubPath(fmt.Sprintf("%s/ipv4_blocks/%s", getPath(res.Configuration), network.BlockAddr))
+	res.SetSubPath(fmt.Sprintf("%s/%s_blocks/%s", getPath(res.Configuration), network.IPVersion, network.BlockAddr))
 
 	return &res
 }
 
-// Network Initialize the IPv4 Network to be loaded, updated or deleted
+// Network Initialize the IPv4/IP Network to be loaded, updated or deleted
 func Network(network entities.Network) *entities.Network {
 	res := network
 	res.SetObjectType("")
-	res.SetSubPath(fmt.Sprintf("%s/ipv4_networks/%s", getPath(res.Configuration), network.CIDR))
+	res.SetSubPath(fmt.Sprintf("%s/%s_networks/%s", getPath(res.Configuration), network.IPVersion, network.CIDR))
 
 	return &res
 }
@@ -101,10 +92,12 @@ func NetworkByAllocatedId(network entities.Network) *entities.Network {
 func GetNextIPAddress(ipAddr entities.IPAddress) *entities.IPAddress {
 	res := ipAddr
 	if len(ipAddr.Action) == 0 {
-		res.Action = AllocateStatic
+		res.Action = entities.AllocateStatic
 	}
 	res.SetObjectType("")
-	res.SetSubPath(fmt.Sprintf("%s/ipv4_networks/%s/get_next_ip", getIPPath(res.Configuration), ipAddr.CIDR))
+	res.SetSubPath(
+		fmt.Sprintf("%s/%s_networks/%s/get_next_ip", getIPPath(res.Configuration), ipAddr.IPVersion, ipAddr.CIDR),
+	)
 
 	return &res
 }
@@ -113,7 +106,7 @@ func GetNextIPAddress(ipAddr entities.IPAddress) *entities.IPAddress {
 func IPAddress(ipAddr entities.IPAddress) *entities.IPAddress {
 	res := ipAddr
 	res.SetObjectType("")
-	res.SetSubPath(fmt.Sprintf("%s/ipv4_address/%s", getIPPath(res.Configuration), ipAddr.Address))
+	res.SetSubPath(fmt.Sprintf("%s/%s_address/%s", getIPPath(res.Configuration), ipAddr.IPVersion, ipAddr.Address))
 
 	return &res
 }
@@ -124,7 +117,9 @@ func IPAddress(ipAddr entities.IPAddress) *entities.IPAddress {
 func NewDHCPRange(dhcpRange entities.DHCPRange) *entities.DHCPRange {
 	res := dhcpRange
 	res.SetObjectType("")
-	res.SetSubPath(fmt.Sprintf("%s/ipv4_networks/%s/dhcp_ranges", getPath(res.Configuration), dhcpRange.Network))
+	res.SetSubPath(
+		fmt.Sprintf("%s/%s_networks/%s/dhcp_ranges", getPath(res.Configuration), dhcpRange.IPVersion, dhcpRange.Network),
+	)
 
 	return &res
 }
@@ -133,7 +128,42 @@ func NewDHCPRange(dhcpRange entities.DHCPRange) *entities.DHCPRange {
 func DHCPRange(dhcpRange entities.DHCPRange) *entities.DHCPRange {
 	res := dhcpRange
 	res.SetObjectType("")
-	res.SetSubPath(fmt.Sprintf("%s/ipv4_networks/%s/start/%s/end/%s/dhcp_ranges", getPath(res.Configuration), dhcpRange.Network, dhcpRange.Start, dhcpRange.End))
+	if dhcpRange.IPVersion == entities.IPV4 {
+		res.SetSubPath(
+			fmt.Sprintf(
+				"%s/ipv4_networks/%s/start/%s/end/%s/dhcp_ranges",
+				getPath(res.Configuration),
+				dhcpRange.Network,
+				dhcpRange.Start,
+				dhcpRange.End,
+			),
+		)
+	} else if dhcpRange.IPVersion == entities.IPV6 {
+		res.SetSubPath(
+			fmt.Sprintf(
+				"%s/ipv6_networks/%s/dhcp_range/start/%s/end/%s",
+				getPath(res.Configuration),
+				dhcpRange.Network,
+				dhcpRange.Start,
+				dhcpRange.End,
+			),
+		)
+	}
 
+	return &res
+}
+
+// NewView Initialize the new View to be added
+func NewView(view *entities.View) *entities.View {
+	path := getPath(view.Configuration)
+	view.SetSubPath(fmt.Sprintf("%s/views", path))
+	return view
+}
+
+// View Initialize the View to be loaded, updated or deleted
+func View(view entities.View) *entities.View {
+	res := view
+	res.SetObjectType("")
+	res.SetSubPath(fmt.Sprintf("%s/views/%s", getPath(res.Configuration), view.Name))
 	return &res
 }
