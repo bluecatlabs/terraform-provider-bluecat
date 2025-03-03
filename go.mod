@@ -1,9 +1,9 @@
 module terraform-provider-bluecat
 
-go 1.17
+go 1.20
 
 require (
-	github.com/hashicorp/terraform-plugin-sdk/v2 v2.30.0
+	github.com/hashicorp/terraform-plugin-sdk/v2/plugin
 	github.com/sirupsen/logrus v1.9.0
 	golang.org/x/net v0.17.0
 	gopkg.in/yaml.v2 v2.4.0
