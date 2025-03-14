@@ -27,5 +27,5 @@ This resource will allow the allocation of an IP Address (or next available) fro
       ip_version = "ipv4"
       mac_address = "223344556688"
       properties = ""
-      depends_on = [bluecat_ipv4network.net_record]
+      depends_on = [bluecat_network.net_record]
     }
