@@ -14,7 +14,7 @@ This will allow creation or update to an IPv6 Block in Address Manager. The attr
 
 ## Example of a IPv6 Block resource
 
-    resource "bluecat_ipv6block" "block_record" {
+    resource "bluecat_block" "block_record" {
       configuration = "terraform_demo"
       name = "block1"
       parent_block = ""
