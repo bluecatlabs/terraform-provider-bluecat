@@ -7,8 +7,9 @@ This resource will create a DHCPv6 Range for the specified IPv6 Network in Addre
 | network | Required |  The network address in CIDR format | 2003:1000::/64 |
 | start | Required | Start IP of the DHCP Range | 2003:1000::1   |
 | end | Required | End IP of the DHCP Range | 2003:1000::100 |
+| name          | Optional | The name of the DHCP Range | DHCP Floor 1   |
+| ip_version    | Optional | Options are ivp4 and ipv6. If left blank, ipv4 will be used. | ipv6           |
 | properties | Optional | Records properties to be passed | key=value      |
-| ip_version | Optional | Options are ivp4 and ipv6. For this creation, ipv6 should be used                                                    | ipv6              |
 
 
 ## Example of a DHCPv6 Range Record resource
