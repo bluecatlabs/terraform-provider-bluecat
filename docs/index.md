@@ -1,6 +1,6 @@
 # BlueCat Provider for Terraform
 
-The Terraform provider uses BlueCat's REST API version 23.2.1 or above.  
+The Terraform provider uses BlueCat's REST API version 25.0.0 or above.  
 
 The following is an example contents of a provider configuration file named main.tf:
 
@@ -47,25 +47,40 @@ Once this is complete, you can use the .encrypted_password value in the BlueCat 
 Below are the available resources for the following objectTypes:
 
 -   Configuration - (bluecat_configuration)
--   IPv4 Block (bluecat_ipv4block)
--   IPv4 Network (bluecat_ipv4network)
--   IPv4 DHCP Range (bluecat_dhcp_range)
--   IPv4 IP Address (bluecat_ip_allocation, bluecat_ip_association)
+-   Block (bluecat_block)
+-   Network (bluecat_network)
+-   DHCP Range (bluecat_dhcp_range)
+-   IP Address (bluecat_ip_allocation, bluecat_ip_association)
 -   Host Record (bluecat_host_record)
 -   PTR Record (bluecat_ptr_record)
 -   CNAME Record (bluecat_cname_record)
 -   TXT Record (bluecat_txt_record)
 -   Generic Record (bluecat_generic_record)
 -   DNS Zone (bluecat_zone)
+-   View (bluecat_view)
 
 ## Data Sources
 
 Below are the available BlueCat data sources:
 
--   IPv4 Block (bluecat_ipv4block)
--   IPv4 Network (bluecat_ipv4network)
+-   Block - IPv4/IPv6 (bluecat_block)
+-   Network - IPv4/IPv6 (bluecat_network)
 -   Host Record (bluecat_host_record)
 -   CNAME Record (bluecat_cname_record)
 -   DNS Zone (bluecat_zone)
+-   View (bluecat_view)
+
+## Import Capabilities
+
+You can now import existing BlueCat data into Terraform state. The available BlueCat Objects you can import are:
+
+-  Block
+-  Network
+-  Zone
+-  CNAME
+-  Generic Record
+-  Host Record
+-  TXT Record
+-  View
 
 For the latest updates, please see the BlueCat Product Documents.
