@@ -13,16 +13,16 @@ This data source allows to retrieve the following information
 
 ## Example of a IPv6 Network Record dataset
 
-    data "bluecat_ipv6network" "toronto_ipv6_network" {
+    data "bluecat_network" "toronto_ipv6_network" {
       configuration="terraform_demo"
       ip_version="ipv6"
       cidr="2003:1000::/65"
     }
 
     output "toronto_ipv6_network_id" {
-      value = data.bluecat_ipv6network.toronto_ipv6_network.id
+      value = data.bluecat_network.toronto_ipv6_network.id
     }
 
     output "toronto_ipv6_network_cidr" {
-      value = data.bluecat_ipv6network.toronto_ipv6_network.cidr
+      value = data.bluecat_network.toronto_ipv6_network.cidr
     }
