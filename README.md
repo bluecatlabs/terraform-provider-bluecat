@@ -48,7 +48,7 @@ resource "bluecat_configuration" "conf_record" {
 ```
 ### Resource IPv4 Block:
 ```
-resource "bluecat_ipv4block" "block_record" {
+resource "bluecat_block" "block_record" {
   configuration = "terraform_demo"
   name = "block1"
   parent_block = ""
@@ -60,7 +60,7 @@ resource "bluecat_ipv4block" "block_record" {
 ```
 ### Resource IPv4 Network:
 ```
-resource "bluecat_ipv4network" "net_record" {
+resource "bluecat_network" "net_record" {
   configuration = "terraform_demo"
   name = "network1"
   cidr = "30.0.0.0/24"
@@ -71,7 +71,7 @@ resource "bluecat_ipv4network" "net_record" {
 }
 ```
 ```
-resource "bluecat_ipv4network" "next_available_net_record" {
+resource "bluecat_network" "next_available_net_record" {
   configuration = "terraform_demo"
   name = "next available network1"
   reserve_ip = 3
@@ -90,7 +90,7 @@ resource "bluecat_ip_allocation" "host_allocate" {
   zone = "gateway.com"
   name = "testhost"
   network = "30.0.0.0/24"
-  ip4_address = "30.0.0.22"
+  ip_address = "30.0.0.22"
   mac_address = "223344556688"
   properties = ""
   depends_on = [bluecat_ipv4network.net_record]
@@ -103,7 +103,7 @@ resource "bluecat_ip_allocation" "address_allocate" {
   zone = ""
   name = "testaddress"
   network = "30.0.0.0/24"
-  ip4_address = "30.0.0.22"
+  ip_address = "30.0.0.22"
   mac_address = "223344556688"
   properties = ""
   depends_on = [bluecat_ipv4network.net_record]
@@ -117,7 +117,7 @@ resource "bluecat_ip_association" "address_associaion" {
   zone = "gateway.com"
   name = "testaddress"
   network = "30.0.0.0/24"
-  ip4_address = "30.0.0.22"
+  ip_address = "30.0.0.22"
   mac_address = "223344556688"
   properties = ""
   depends_on = [bluecat_ip_allocation.host_allocate]
@@ -130,7 +130,7 @@ resource "bluecat_host_record" "host_record" {
   view = "gg"
   zone = "gateway.com"
   absolute_name = "testhost"
-  ip4_address = "30.0.0.124"
+  ip_address = "30.0.0.124"
   ttl = 123
   properties = ""
   depends_on = [bluecat_ipv4network.net_record]
@@ -143,7 +143,7 @@ resource "bluecat_ptr_record" "ptr_record" {
   view = "gg"
   zone = "gateway.com"
   name = "host30"
-  ip4_address = "30.0.0.30"
+  ip_address = "30.0.0.30"
   ttl = 1
   reverse_record = "True"
   properties = ""
@@ -215,24 +215,24 @@ resource "bluecat_zone" "sub_zone" {
 
 ### Datasource IPv4 Block:
 ```
-data "bluecat_ipv4block" "test_ip4block" {
+data "bluecat_block" "test_ip4block" {
   configuration = "terraform_demo"
   cidr = "20.0.0.0/24"
 }
 
 output "output_block" {
-  value = data.bluecat_ipv4block.test_ip4block
+  value = data.bluecat_block.test_ip4block
 }
 ```
 ### Datasource IPv4 Network:
 ```
-data "bluecat_ipv4network" "test_ip4network" {
+data "bluecat_network" "test_ip4network" {
   configuration = "terraform_demo"
   cidr = "20.0.0.0/24"
 }
 
 output "output_network" {
-  value = data.bluecat_ipv4network.test_ip4network
+  value = data.bluecat_network.test_ip4network
 }
 ```
 ### Datasource Host Record:
@@ -379,3 +379,4 @@ or
    * Delete the generated_resources.tf file and create the same one with command from Step 2 (`terraform plan -generate-config-out=generated_resources.tf`)
 
 Also, you need to remove imports block if that resources are already imported.
+
