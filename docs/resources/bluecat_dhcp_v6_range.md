@@ -21,5 +21,5 @@ This resource will create a DHCPv6 Range for the specified IPv6 Network in Addre
       end = "2003:1000::100"
       ip_version = "ipv6"
       properties = ""
-      depends_on = [bluecat_ipv6network.net_record]
+      depends_on = [bluecat_network.net_record]
     }
