@@ -14,16 +14,16 @@ This data source allows to retrieve the following information
 
 ## Example of a IPv4 Network Record dataset
 
-    data "bluecat_ipv4network" "toronto_network" {
+    data "bluecat_network" "toronto_network" {
       configuration="terraform_demo"
       name="Toronto 1st Floor"
       cidr="10.0.0.0/24"
     }
 
     output "toronto_network_data" {
-      value = data.bluecat_ipv4network.toronto_network
+      value = data.bluecat_network.toronto_network
     }
 
     output "toronto_network_cidr" {
-      value = data.bluecat_ipv4network.toronto_network.cidr
+      value = data.bluecat_network.toronto_network.cidr
     }
