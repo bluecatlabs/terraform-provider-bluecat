@@ -10,6 +10,7 @@ This will allow creation or update to an IPv4 Network in Address Manager. The at
 | reserve_ip | Optional | Reserves the number of IP's for later use | 3 |
 | template | Optional | IPv4 Template to apply | NetworkTemplateIPv4 |
 | parent_block | Optional | The parent block of the network in CIDR format. Required if create next available network | 30.0.0.0/24 |
+| ip_version    | Optional | Options are ivp4 and ipv6. If left blank, ipv4 will be used                                                  | ipv4                       |
 | size | Optional | The size of the network expressed in the power of 2. Required if create next available network | 256 |
 | allocated_id | Optional | The allocated id of the next available network. Required if create next available network | timestamp() |
 | properties | Optional | Records properties to be passed | comment=My comments |

@@ -8,6 +8,7 @@ This will allow creation or update to an IPv4 Block in Address Manager. The attr
 | parent_block | Optional | The parent Block. Specified to creating the child Block. THe Block in CIDR format |  |
 | address | Required | IPv4 Block's address | 10.0.0.0 |
 | cidr | Required | IPv4 Block's CIDR | 24 |
+| ip_version    | Optional | Options are ivp4 and ipv6. If left blank, ipv4 will be used                                                  | ipv4                       |
 | properties | Optional | Records properties to be passed | comment=My comments |
 
 
@@ -19,6 +20,7 @@ This will allow creation or update to an IPv4 Block in Address Manager. The attr
       parent_block = ""
       address = "30.0.0.0"
       cidr = "24"
+      ip_version = "ipv4"
       properties = "allowDuplicateHost=enable"
       depends_on = [bluecat_configuration.conf_record]
     }

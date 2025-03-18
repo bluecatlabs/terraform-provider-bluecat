@@ -6,7 +6,8 @@ This data source allows to retrieve the following information
 | --- | --- |-------------------------------------------------------------------------------------------------|-----------------|
 | configuration | Optional | The Configuration. Getting the IPv6Block record in the default Configuration if doesn't specify | Demo            |
 | name | Optional | The Block name                                                                                  | Server Farm     |
-| ip_version | Optional | Default is ipv4. Options are ipv4 or ipv6                |                 |
+| ip_version | Optional | Default is ipv4. Options are ipv4 or ipv6                | ipv6            |
+| parent_block | Optional |  The parent block of the IPv4/IPv6 Block. Specify this field to retrieve the child IPv4/IPv6 Block. The parent_block must be in CIDR format | 2000::/3        |
 | cidr | Required | IPv6 Block's CIDR                                                                               | 2003:1000::/65  |
 | properties | Optional | The properties of the IPv6 Block                                                                | attribute=value |
 
