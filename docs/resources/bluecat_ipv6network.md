@@ -15,11 +15,11 @@ This will allow creation or update to an IPv6 Network in Address Manager. The at
 
 ## Example of a IPv6 Network Record resource
 
-    resource "bluecat_network" "net_record" {
+    resource "bluecat_ipv6network" "net_record" {
       configuration = "terraform_demo"
       name = "network1"
       cidr = "2003:1000::/65"
       ip_version = "ipv6"
       properties = ""
-      depends_on = [bluecat_network.block_record]
+      depends_on = [bluecat_ipv6network.block_record]
     }
