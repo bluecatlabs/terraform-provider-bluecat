@@ -47,8 +47,8 @@ Once this is complete, you can use the .encrypted_password value in the BlueCat 
 Below are the available resources for the following objectTypes:
 
 -   Configuration - (bluecat_configuration)
--   Block (bluecat_block)
--   Network (bluecat_network)
+-   Block (bluecat_ipv4block/bluecat_ipv6block)
+-   Network (bluecat_ipv4network/bluecat_ipv6network)
 -   DHCP Range (bluecat_dhcp_range)
 -   IP Address (bluecat_ip_allocation, bluecat_ip_association)
 -   Host Record (bluecat_host_record)
@@ -63,8 +63,8 @@ Below are the available resources for the following objectTypes:
 
 Below are the available BlueCat data sources:
 
--   Block - IPv4/IPv6 (bluecat_block)
--   Network - IPv4/IPv6 (bluecat_network)
+-   Block - IPv4/IPv6 (bluecat_ipv4block/bluecat_ipv6block)
+-   Network - IPv4/IPv6 (bluecat_ipv4network/bluecat_ipv6network)
 -   Host Record (bluecat_host_record)
 -   CNAME Record (bluecat_cname_record)
 -   DNS Zone (bluecat_zone)
@@ -84,3 +84,4 @@ You can now import existing BlueCat data into Terraform state. The available Blu
 -  View
 
 For the latest updates, please see the BlueCat Product Documents.
+
