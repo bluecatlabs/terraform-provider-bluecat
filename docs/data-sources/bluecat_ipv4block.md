@@ -14,16 +14,16 @@ This data source allows to retrieve the following information
 
 ## Example of a IPv4 Block dataset
 
-    data "bluecat_block" "toronto_block" {
+    data "bluecat_ipv4block" "toronto_block" {
       configuration="terraform_demo"
       ip_version="ipv4"
       cidr="10.0.0.0/16"
     }
 
     output "toronto_block_data" {
-      value = data.bluecat_block.toronto_block
+      value = data.bluecat_ipv4block.toronto_block
     }
 
     output "toronto_block_id" {
-      value = data.bluecat_block.toronto_block.id
+      value = data.bluecat_ipv4block.toronto_block.id
     }
