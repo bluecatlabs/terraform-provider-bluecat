@@ -48,7 +48,7 @@ resource "bluecat_configuration" "conf_record" {
 ```
 ### Resource IPv4 Block:
 ```
-resource "bluecat_block" "block_record" {
+resource "bluecat_ipv4block" "block_record" {
   configuration = "terraform_demo"
   name = "block1"
   parent_block = ""
@@ -60,7 +60,7 @@ resource "bluecat_block" "block_record" {
 ```
 ### Resource IPv4 Network:
 ```
-resource "bluecat_network" "net_record" {
+resource "bluecat_ipv4network" "net_record" {
   configuration = "terraform_demo"
   name = "network1"
   cidr = "30.0.0.0/24"
@@ -71,7 +71,7 @@ resource "bluecat_network" "net_record" {
 }
 ```
 ```
-resource "bluecat_network" "next_available_net_record" {
+resource "bluecat_ipv4network" "next_available_net_record" {
   configuration = "terraform_demo"
   name = "next available network1"
   reserve_ip = 3
@@ -226,13 +226,13 @@ output "output_block" {
 ```
 ### Datasource IPv4 Network:
 ```
-data "bluecat_network" "test_ip4network" {
+data "bluecat_ipv4network" "test_ip4network" {
   configuration = "terraform_demo"
   cidr = "20.0.0.0/24"
 }
 
 output "output_network" {
-  value = data.bluecat_network.test_ip4network
+  value = data.bluecat_ipv4network.test_ip4network
 }
 ```
 ### Datasource Host Record:
