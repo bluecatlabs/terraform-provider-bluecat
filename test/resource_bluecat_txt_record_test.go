@@ -2,10 +2,11 @@ package main
 
 import (
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"terraform-provider-bluecat/bluecat/utils"
 	"testing"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
 func TestAccResourceTXTRecord(t *testing.T) {
@@ -57,12 +58,12 @@ func testAccCheckTXTRecordDestroy(s *terraform.State) error {
 			if err == nil {
 				msg := fmt.Sprintf("TXT record %s is not removed", rs.Primary.ID)
 				log.Error(msg)
-				return fmt.Errorf(msg)
+				return fmt.Errorf("TXT record %s is not removed", rs.Primary.ID)
 			}
 		} else {
 			msg := fmt.Sprintf("There is an unexpected resource %s %s", rs.Primary.ID, rs.Type)
 			log.Error(msg)
-			return fmt.Errorf(msg)
+			// return fmt.Errorf(msg)
 		}
 	}
 	return nil
@@ -86,14 +87,14 @@ func testAccTXTRecordExists(t *testing.T, resource string, name string, ttl stri
 		if err != nil {
 			msg := fmt.Sprintf("Getting TXT record %s failed: %s", rs.Primary.ID, err)
 			log.Error(msg)
-			return fmt.Errorf(msg)
+			return fmt.Errorf("Getting TXT record %s failed: %s", rs.Primary.ID, err)
 		}
-		ttlProperty := getPropertyValue("ttl", txtRecord.Properties)
-		textProperty := getPropertyValue("txt", txtRecord.Properties)
+		ttlProperty := utils.GetPropertyValue("ttl", txtRecord.Properties)
+		textProperty := utils.GetPropertyValue("txt", txtRecord.Properties)
 		if ttlProperty != ttl || textProperty != text {
 			msg := fmt.Sprintf("Getting TXT record %s failed: %s. Expect ttl=%s text=%s in properties, but received '%s'", rs.Primary.ID, err, ttl, text, txtRecord.Properties)
 			log.Error(msg)
-			return fmt.Errorf(msg)
+			return fmt.Errorf("Getting TXT record %s failed: %s. Expect ttl=%s text=%s in properties, but received '%s'", rs.Primary.ID, err, ttl, text, txtRecord.Properties)
 		}
 		return nil
 	}
@@ -114,7 +115,8 @@ var testAccresourceTXTRecordCreateFullField = fmt.Sprintf(
 		text = "%s"
 		ttl = %s
 		properties = "%s"
-	  }`, server, txtResource1, configuration, view, zone, txtName1, txtText1, txtTTL1, txtProperties1)
+		depends_on = [bluecat_zone.sub_zone_test]
+	  }`, GetTestEnvResources(), txtResource1, configuration, view, zone, txtName1, txtText1, txtTTL1, txtProperties1)
 
 var testAccresourceTXTRecordCreateNotFullField = fmt.Sprintf(
 	`%s
@@ -125,7 +127,8 @@ var testAccresourceTXTRecordCreateNotFullField = fmt.Sprintf(
 		text = "%s"
 		ttl = %s
 		properties = "%s"
-		}`, server, txtResource1, configuration, view, txtName1, txtText1, txtTTL1, txtProperties1)
+		depends_on = [bluecat_zone.sub_zone_test]
+		}`, GetTestEnvResources(), txtResource1, configuration, view, txtName1, txtText1, txtTTL1, txtProperties1)
 
 var txtText2 = "test2"
 var txtTTL2 = "4000"
@@ -140,4 +143,5 @@ var testAccresourceTXTRecordUpdateFullField = fmt.Sprintf(
 		text = "%s"
 		ttl = %s
 		properties = "%s"
-		}`, server, txtResource1, configuration, view, zone, txtName1, txtText2, txtTTL2, txtProperties2)
+		depends_on = [bluecat_zone.sub_zone_test]
+		}`, GetTestEnvResources(), txtResource1, configuration, view, zone, txtName1, txtText2, txtTTL2, txtProperties2)

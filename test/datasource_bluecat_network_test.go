@@ -33,4 +33,5 @@ var testAccDataSourceNetworkRead = fmt.Sprintf(
 	data "bluecat_ipv4network" "%s" {
 		configuration = "%s"
 		cidr = "%s"
-		}`, server, ipNetworkDataSource, configuration, cidrNetwork)
+		depends_on = [bluecat_ipv4network.network_test]
+		}`, GetTestEnvResources(), ipNetworkDataSource, configuration, cidrNetwork)

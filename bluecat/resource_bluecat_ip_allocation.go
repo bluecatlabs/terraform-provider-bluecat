@@ -313,7 +313,7 @@ func updateAllocatedResource(d *schema.ResourceData, m interface{}) error {
 		if err == nil {
 			// Keeps values as in the server
 			log.Debugf(hostRecord.Properties)
-			TTL := getPropertyValue("ttl", hostRecord.Properties)
+			TTL := utils.GetPropertyValue("ttl", hostRecord.Properties)
 			rrTTL, err := strconv.Atoi(TTL)
 			if err != nil {
 				msg := fmt.Sprintf("Convert Host record TTL %s failed: %s", TTL, err)
@@ -322,7 +322,7 @@ func updateAllocatedResource(d *schema.ResourceData, m interface{}) error {
 			}
 
 			associateIPs := address.Address
-			currentAssociateIPs := getPropertyValue("addresses", hostRecord.Properties)
+			currentAssociateIPs := utils.GetPropertyValue("addresses", hostRecord.Properties)
 			if len(currentAssociateIPs) > 0 {
 				associateIPs = fmt.Sprintf("%s,%s", currentAssociateIPs, address.Address)
 			}
@@ -379,17 +379,4 @@ func updateAllocatedResource(d *schema.ResourceData, m interface{}) error {
 
 	log.Debugf("Completed to update the allocated resource in network %s", d.Get("network"))
 	return nil
-}
-
-// getPropertyValue Get the property value by key from the properties string
-func getPropertyValue(key, props string) (val string) {
-	properties := strings.Split(props, "|")
-	for i := 0; i < len(properties); i++ {
-		prop := strings.Split(properties[i], "=")
-		if prop[0] == key {
-			val = prop[1]
-			return
-		}
-	}
-	return
 }

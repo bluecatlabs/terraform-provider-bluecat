@@ -25,5 +25,5 @@ This data source allows to retrieve the following information
     }
 
     output "toronto_ipv6_block_id" {
-      value = data.bluecat_ipv6block.toronto_ipv6_block.id
+      value = data.bluecat_block.toronto_ipv6_block.id
     }

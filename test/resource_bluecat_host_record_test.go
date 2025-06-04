@@ -2,12 +2,12 @@ package main
 
 import (
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"strings"
 	"terraform-provider-bluecat/bluecat/entities"
 	"terraform-provider-bluecat/bluecat/utils"
 	"testing"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
 func TestAccResourceHostRecord(t *testing.T) {
@@ -57,13 +57,13 @@ func testAccCheckHostRecordDestroy(s *terraform.State) error {
 		if rs.Type != "bluecat_host_record" {
 			msg := fmt.Sprintf("There is an unexpected resource %s %s", rs.Primary.ID, rs.Type)
 			log.Error(msg)
-			return fmt.Errorf(msg)
+			// return fmt.Errorf("There is an unexpected resource %s %s", rs.Primary.ID, rs.Type)
 		}
 		_, err := objMgr.GetHostRecord(configuration, view, rs.Primary.ID)
 		if err == nil {
 			msg := fmt.Sprintf("Host record %s is not removed", rs.Primary.ID)
 			log.Error(msg)
-			return fmt.Errorf(msg)
+			return fmt.Errorf("Host record %s is not removed", rs.Primary.ID)
 		}
 	}
 	return nil
@@ -87,33 +87,21 @@ func testAccHostRecordExists(t *testing.T, resource string, name string, ttl str
 		if err != nil {
 			msg := fmt.Sprintf("Getting Host record %s failed: %s", rs.Primary.ID, err)
 			log.Error(msg)
-			return fmt.Errorf(msg)
+			return fmt.Errorf("Getting Host record %s failed: %s", rs.Primary.ID, err)
 		}
 		if checkValidHostRecord(*hostRecord, ttl, ip, hostReverseProperty) == false {
 			msg := fmt.Sprintf("Getting Host record %s failed: %s. Expect ttl=%s addresses=%s reverseRecord=%s in properties, but received '%s'", rs.Primary.ID, err, ttl, ip, hostReverseProperty, hostRecord.Properties)
 			log.Error(msg)
-			return fmt.Errorf(msg)
+			return fmt.Errorf("Getting Host record %s failed: %s. Expect ttl=%s addresses=%s reverseRecord=%s in properties, but received '%s'", rs.Primary.ID, err, ttl, ip, hostReverseProperty, hostRecord.Properties)
 		}
 		return nil
 	}
 }
 
-func getPropertyValue(key, props string) (val string) {
-	properties := strings.Split(props, "|")
-	for i := 0; i < len(properties); i++ {
-		prop := strings.Split(properties[i], "=")
-		if prop[0] == key {
-			val = prop[1]
-			return
-		}
-	}
-	return
-}
-
 func checkValidHostRecord(hostRecord entities.HostRecord, ttl string, ip string, hostReverseProperty string) bool {
-	ttlProperty := getPropertyValue("ttl", hostRecord.Properties)
-	ipProperty := getPropertyValue("addresses", hostRecord.Properties)
-	reverseProperty := getPropertyValue("reverseRecord", hostRecord.Properties)
+	ttlProperty := utils.GetPropertyValue("ttl", hostRecord.Properties)
+	ipProperty := utils.GetPropertyValue("addresses", hostRecord.Properties)
+	reverseProperty := utils.GetPropertyValue("reverseRecord", hostRecord.Properties)
 	if ttlProperty != ttl || ipProperty != ip || reverseProperty != hostReverseProperty {
 		return false
 	}
@@ -136,7 +124,8 @@ var testAccresourceHostRecordCreateFullField = fmt.Sprintf(
 		ip_address = "%s"
 		ttl = %s
 		properties = "%s"
-	  }`, server, hostResource1, configuration, view, zone, hostName1, hostIP1, hostTTL1, hostProperties1)
+		depends_on = [bluecat_zone.sub_zone_test, bluecat_ipv4network.network_test]
+	  }`, GetTestEnvResources(), hostResource1, configuration, view, zone, hostName1, hostIP1, hostTTL1, hostProperties1)
 
 var testAccresourceHostRecordCreateNotFullField = fmt.Sprintf(
 	`%s
@@ -147,7 +136,8 @@ var testAccresourceHostRecordCreateNotFullField = fmt.Sprintf(
 		ip_address = "%s"
 		ttl = %s
 		properties = "%s"
-		}`, server, hostResource1, configuration, view, hostName1, hostIP1, hostTTL1, hostProperties1)
+		depends_on = [bluecat_zone.sub_zone_test, bluecat_ipv4network.network_test]
+		}`, GetTestEnvResources(), hostResource1, configuration, view, hostName1, hostIP1, hostTTL1, hostProperties1)
 
 var hostIP2 = "1.1.0.3"
 var hostTTL2 = "300"
@@ -163,4 +153,5 @@ var testAccresourceHostRecordUpdateFullField = fmt.Sprintf(
 		ip_address = "%s"
 		ttl = %s
 		properties = "%s"
-		}`, server, hostResource1, configuration, view, zone, hostName1, hostIP2, hostTTL2, hostProperties2)
+		depends_on = [bluecat_zone.sub_zone_test, bluecat_ipv4network.network_test]
+		}`, GetTestEnvResources(), hostResource1, configuration, view, zone, hostName1, hostIP2, hostTTL2, hostProperties2)

@@ -75,7 +75,7 @@ func dataSourceCNAMERecordRead(d *schema.ResourceData, m interface{}) error {
 		return fmt.Errorf(msg)
 	}
 
-	currentLinkedRecord := getPropertyValue("linkedRecordName", cnameRecord.Properties)
+	currentLinkedRecord := utils.GetPropertyValue("linkedRecordName", cnameRecord.Properties)
 
 	if linkedRecord != currentLinkedRecord {
 		msg := fmt.Sprintf("Getting CNAME record %s failed: linkedRecordName %s isn't matching", canonical, linkedRecord)
@@ -88,7 +88,7 @@ func dataSourceCNAMERecordRead(d *schema.ResourceData, m interface{}) error {
 	}
 
 	ttl := -1
-	ttlStr := getPropertyValue("ttl", cnameRecord.Properties)
+	ttlStr := utils.GetPropertyValue("ttl", cnameRecord.Properties)
 	if ttlStr != "" {
 		if ttlInt, err := strconv.Atoi(ttlStr); err == nil {
 			ttl = ttlInt

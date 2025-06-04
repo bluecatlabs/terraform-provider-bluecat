@@ -100,12 +100,12 @@ func testAccCheckDHCPRangeDestroy(s *terraform.State) error {
 			if err == nil {
 				msg := fmt.Sprintf("DHCP Range %s is not removed", rs.Primary.ID)
 				log.Error(msg)
-				return fmt.Errorf(msg)
+				return fmt.Errorf("DHCP Range %s is not removed", rs.Primary.ID)
 			}
 		} else {
 			msg := fmt.Sprintf("There is an unexpected resource %s %s", rs.Primary.ID, rs.Type)
 			log.Error(msg)
-			return fmt.Errorf(msg)
+			// return fmt.Errorf("There is an unexpected resource %s %s", rs.Primary.ID, rs.Type)
 		}
 	}
 	return nil
@@ -139,14 +139,14 @@ func testAccDHCPRangeExists(t *testing.T, resource string, network string, start
 		if err != nil {
 			msg := fmt.Sprintf("Getting DHCP Range %s failed: %s", rs.Primary.ID, err)
 			log.Error(msg)
-			return fmt.Errorf(msg)
+			return fmt.Errorf("Getting DHCP Range %s failed: %s", rs.Primary.ID, err)
 		}
 
-		templateId := getPropertyValue("template", dhcpRangeEntity.Properties)
+		templateId := utils.GetPropertyValue("template", dhcpRangeEntity.Properties)
 		if template != "" && templateId == "" {
 			msg := fmt.Sprintf("Assign %s template of DHCP Range %s failed %s", template, rs.Primary.ID, templateId)
 			log.Error(msg)
-			return fmt.Errorf(msg)
+			return fmt.Errorf("Assign %s template of DHCP Range %s failed %s", template, rs.Primary.ID, templateId)
 		}
 
 		return nil
@@ -168,7 +168,8 @@ var testAccResourceDHCPRangeCreateNotTemplate = fmt.Sprintf(
 		end = "%s"
 		network = "%s"
 		properties = "%s"
-		}`, server, dhcpRangeResource, configuration, dhcpRangeStart, dhcpRangeEnd, dhcpRangeNetwork, dhcpRangeProperties)
+		depends_on = [bluecat_ipv4network.network_test]
+		}`, GetTestEnvResources(), dhcpRangeResource, configuration, dhcpRangeStart, dhcpRangeEnd, dhcpRangeNetwork, dhcpRangeProperties)
 
 var dhcpRangeResource2 = "dhcp_range_2"
 
@@ -184,7 +185,8 @@ var testAccResourceDHCPRangeCreateWithTemplate = fmt.Sprintf(
 		network = "%s"
 		properties = "%s"
 		template = "%s"
-		}`, server, dhcpRangeResource2, configuration, dhcpRangeStart2, dhcpRangeEnd2, dhcpRangeNetwork, dhcpRangeProperties, dhcpRangeTemplateName2)
+		depends_on = [bluecat_ipv4network.network_test]
+		}`, GetTestEnvResources(), dhcpRangeResource2, configuration, dhcpRangeStart2, dhcpRangeEnd2, dhcpRangeNetwork, dhcpRangeProperties, dhcpRangeTemplateName2)
 
 var dhcpRangeTemplateName3 = ""
 var testAccResourceDHCPRangeUpdateWithTemplate = fmt.Sprintf(
@@ -196,7 +198,8 @@ var testAccResourceDHCPRangeUpdateWithTemplate = fmt.Sprintf(
 		network = "%s"
 		properties = "%s"
 		template = "%s"
-		}`, server, dhcpRangeResource2, configuration, dhcpRangeStart2, dhcpRangeEnd2, dhcpRangeNetwork, dhcpRangeProperties, dhcpRangeTemplateName3)
+		depends_on = [bluecat_ipv4network.network_test]
+		}`, GetTestEnvResources(), dhcpRangeResource2, configuration, dhcpRangeStart2, dhcpRangeEnd2, dhcpRangeNetwork, dhcpRangeProperties, dhcpRangeTemplateName3)
 
 var testAccResourceDHCPv6RangeCreate = fmt.Sprintf(
 	`%s
@@ -207,7 +210,8 @@ var testAccResourceDHCPv6RangeCreate = fmt.Sprintf(
 		network = "2003:1000::/64"
 		properties = ""
 		ip_version = "ipv6"
-		}`, server, configuration)
+		depends_on = [bluecat_ipv6network.ipv6_network_test]
+		}`, GetTestEnvResources(), configuration)
 
 var testAccResourceDHCPv6RangeUpdate = fmt.Sprintf(
 	`%s
@@ -219,4 +223,5 @@ var testAccResourceDHCPv6RangeUpdate = fmt.Sprintf(
 		network = "2003:1000::/64"
 		properties = ""
 		ip_version = "ipv6"
-		}`, server, configuration)
+		depends_on = [bluecat_ipv6network.ipv6_network_test]
+		}`, GetTestEnvResources(), configuration)

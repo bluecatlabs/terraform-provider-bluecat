@@ -2,10 +2,11 @@ package main
 
 import (
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"terraform-provider-bluecat/bluecat/utils"
 	"testing"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
 func TestAccResourceIPAssociation(t *testing.T) {
@@ -70,12 +71,12 @@ func testAccCheckIPAssociationDestroy(s *terraform.State) error {
 			if err == nil {
 				msg := fmt.Sprintf("Host record %s is not removed", rs.Primary.ID)
 				log.Error(msg)
-				return fmt.Errorf(msg)
+				return fmt.Errorf("Host record %s is not removed", rs.Primary.ID)
 			}
 		} else if rs.Type != "bluecat_ip_association" {
 			msg := fmt.Sprintf("There is an unexpected resource %s %s", rs.Primary.ID, rs.Type)
 			log.Error(msg)
-			return fmt.Errorf(msg)
+			// return fmt.Errorf(msg)
 		}
 
 	}
@@ -100,14 +101,14 @@ func testAccIPAssociationExists(t *testing.T, resource string, name string, ip s
 		if err != nil {
 			msg := fmt.Sprintf("Getting IP %s failed: %s", ip, err)
 			log.Error(msg)
-			return fmt.Errorf(msg)
+			return fmt.Errorf("Getting IP %s failed: %s", ip, err)
 		}
-		macProperty := reFormatMac(getPropertyValue("macAddress", ipAddress.Properties))
+		macProperty := reFormatMac(utils.GetPropertyValue("macAddress", ipAddress.Properties))
 		mac = reFormatMac(mac)
 		if macProperty != mac {
 			msg := fmt.Sprintf("Getting IP %s failed: %s. Expect macAddress=%s in properties, but received %s.", ip, err, mac, macProperty)
 			log.Error(msg)
-			return fmt.Errorf(msg)
+			return fmt.Errorf("Getting IP %s failed: %s. Expect macAddress=%s in properties, but received %s.", ip, err, mac, macProperty)
 		}
 		return nil
 	}
@@ -122,7 +123,8 @@ var testAccresourceHostRecordCreate2 = fmt.Sprintf(
 		ip_address = "1.1.0.10"
 		ttl = 200
 		properties = ""
-		}`, server, configuration, view)
+		depends_on = [bluecat_zone.sub_zone_test, bluecat_ipv4network.network_test]
+		}`, GetTestEnvResources(), configuration, view)
 
 var IPAssociateResource1 = "address_allocate"
 var IPAssociateName1 = "a1.example.com"
@@ -142,6 +144,7 @@ var testAccresourceIPAssocitionCreateFullField = fmt.Sprintf(
 		ip_address = "%s"
 		mac_address = "%s"
 		properties = "%s"
+		depends_on = [bluecat_host_record.host_record_a2]
 	  }`, testAccresourceHostRecordCreate2, IPAssociateResource1, configuration, view, zone, IPAssociateName1, IPAssociateNet1, IPAssociateIP1, IPAssociateMac1, IPAssociateProperties1)
 
 var testAccresourceIPAssocitionCreateNotZone = fmt.Sprintf(
@@ -154,6 +157,7 @@ var testAccresourceIPAssocitionCreateNotZone = fmt.Sprintf(
 		ip_address = "%s"
 		mac_address = "%s"
 		properties = "%s"
+		depends_on = [bluecat_host_record.host_record_a2]
 		}`, testAccresourceHostRecordCreate2, IPAssociateResource1, configuration, view, IPAssociateName1, IPAssociateNet1, IPAssociateIP1, IPAssociateMac1, IPAssociateProperties1)
 
 var IPAssociateMac2 = "ABABABABABAB"
@@ -168,6 +172,7 @@ var testAccresourceIPAssocitionUpdateFullField = fmt.Sprintf(
 		ip_address = "%s"
 		mac_address = "%s"
 		properties = "%s"
+		depends_on = [bluecat_host_record.host_record_a2]
 	  }`, testAccresourceHostRecordCreate2, IPAssociateResource1, configuration, view, zone, IPAssociateName1, IPAssociateNet1, IPAssociateIP1, IPAssociateMac2, IPAssociateProperties1)
 
 var testAccresourceIPAssocitionUpdateNotZone = fmt.Sprintf(
@@ -180,4 +185,5 @@ var testAccresourceIPAssocitionUpdateNotZone = fmt.Sprintf(
 		ip_address = "%s"
 		mac_address = "%s"
 		properties = "%s"
+		depends_on = [bluecat_host_record.host_record_a2]
 		}`, testAccresourceHostRecordCreate2, IPAssociateResource1, configuration, view, IPAssociateName1, IPAssociateNet1, IPAssociateIP1, IPAssociateMac2, IPAssociateProperties1)

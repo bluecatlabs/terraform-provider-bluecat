@@ -60,7 +60,7 @@ func dataSourceViewRead(d *schema.ResourceData, m interface{}) error {
 	d.SetId(viewObj.Name)
 	d.Set("properties", viewObj.Properties)
 
-	deployable := getPropertyValue("deployable", viewObj.Properties)
+	deployable := utils.GetPropertyValue("deployable", viewObj.Properties)
 	if deployable == "true" {
 		d.Set("deployable", "True")
 	} else {

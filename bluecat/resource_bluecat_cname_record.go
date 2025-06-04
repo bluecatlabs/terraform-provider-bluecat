@@ -95,8 +95,6 @@ func createCNAMERecord(d *schema.ResourceData, m interface{}) error {
 		zone = getZoneFromRRName(fqdnName)
 	}
 
-	linkedRecord = getFQDN(linkedRecord, zone)
-
 	_, err := objMgr.CreateCNAMERecord(configuration, view, zone, fqdnName, linkedRecord, ttl, properties)
 	if err != nil {
 		msg := fmt.Sprintf("Error creating CNAME record %s: %s", fqdnName, err)
@@ -164,8 +162,6 @@ func updateCNAMERecord(d *schema.ResourceData, m interface{}) error {
 	} else {
 		zone = getZoneFromRRName(fqdnName)
 	}
-
-	linkedRecord = getFQDN(linkedRecord, zone)
 
 	var immutableProperties = []string{"parentId", "parentType"} // these properties will raise error on the rest-api
 	properties = utils.RemoveImmutableProperties(properties, immutableProperties)

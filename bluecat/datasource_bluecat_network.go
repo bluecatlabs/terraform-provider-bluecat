@@ -66,7 +66,7 @@ func dataSourceIPv4NetworkRead(d *schema.ResourceData, m interface{}) error {
 		return fmt.Errorf(msg)
 	}
 
-	gateway := getPropertyValue("gateway", retrievedNetwork.Properties)
+	gateway := utils.GetPropertyValue("gateway", retrievedNetwork.Properties)
 
 	d.SetId(strconv.Itoa(retrievedNetwork.NetWorkId))
 

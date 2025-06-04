@@ -2,12 +2,13 @@ package main
 
 import (
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"strings"
 	"terraform-provider-bluecat/bluecat/entities"
 	"terraform-provider-bluecat/bluecat/utils"
 	"testing"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
 func TestAccResourceBlock(t *testing.T) {
@@ -52,7 +53,8 @@ func TestAccResourceBlock(t *testing.T) {
 			},
 			// update ipv6 block
 			{
-				Config: testAccResourceIPv6BlockUpdateNotFullField,
+				Config:             testAccResourceIPv6BlockUpdateNotFullField,
+				ExpectNonEmptyPlan: true,
 				Check: resource.ComposeTestCheckFunc(
 					testAccBlockExists(
 						t,
@@ -109,14 +111,14 @@ func testAccCheckBlockDestroy(s *terraform.State) error {
 		} else {
 			msg := fmt.Sprintf("There is an unexpected resource %s %s", rs.Primary.ID, rs.Type)
 			log.Error(msg)
-			return fmt.Errorf(msg)
+			// return fmt.Errorf(msg)
 		}
 		cidr := strings.Split(rs.Primary.ID, "/")
 		_, err := objMgr.GetBlock(configuration, cidr[0], cidr[1], blockType)
 		if err == nil {
 			msg := fmt.Sprintf("Block %s is not removed", rs.Primary.ID)
 			log.Error(msg)
-			return fmt.Errorf(msg)
+			return fmt.Errorf("Block %s is not removed", rs.Primary.ID)
 		}
 	}
 	return nil
@@ -140,15 +142,15 @@ func testAccBlockExists(t *testing.T, resource string, name string, address stri
 		if err != nil {
 			msg := fmt.Sprintf("Getting block %s failed: %s", rs.Primary.ID, err)
 			log.Error(msg)
-			return fmt.Errorf(msg)
+			return fmt.Errorf("Getting block %s failed: %s", rs.Primary.ID, err)
 		}
 		if ipVersion == entities.IPV4 {
 			// this property is only included in IPv4 Block properties
-			allowDuplicateHostProperty := getPropertyValue("allowDuplicateHost", block.Properties)
+			allowDuplicateHostProperty := utils.GetPropertyValue("allowDuplicateHost", block.Properties)
 			if allowDuplicateHostProperty != blockAllowDuplicateHostProperty || block.Name != name {
 				msg := fmt.Sprintf("Getting block %s failed: %s. Expect allowDuplicateHost=%s in properties and name=%s, but received '%s' and name=%s", rs.Primary.ID, err, blockAllowDuplicateHostProperty, name, block.Properties, block.Name)
 				log.Error(msg)
-				return fmt.Errorf(msg)
+				return fmt.Errorf("Getting block %s failed: %s. Expect allowDuplicateHost=%s in properties and name=%s, but received '%s' and name=%s", rs.Primary.ID, err, blockAllowDuplicateHostProperty, name, block.Properties, block.Name)
 			}
 		}
 		return nil

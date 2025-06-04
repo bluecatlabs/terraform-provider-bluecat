@@ -30,4 +30,5 @@ var testAccDataSourceBlockRead = fmt.Sprintf(
 	data "bluecat_ipv4block" "%s" {
 		configuration = "%s"
 		cidr = "%s"
-	}`, server, ipBlockDataSource, configuration, cidrBlock)
+		depends_on = [bluecat_ipv4block.block_test]
+	}`, GetTestEnvResources(), ipBlockDataSource, configuration, cidrBlock)

@@ -1,4 +1,4 @@
-# Configuration Record
+# DHCP Range Record
  This will create or update a BlueCat Configuration in Address Manager. The attributes are:
 
 | Attribute | Required/optional | Description | Example |

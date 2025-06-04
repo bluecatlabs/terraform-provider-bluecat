@@ -67,7 +67,7 @@ func dataSourceZoneRead(d *schema.ResourceData, m interface{}) error {
 	d.SetId(strconv.Itoa(zoneObj.ZoneId))
 	d.Set("properties", zoneObj.Properties)
 
-	deployable := getPropertyValue("deployable", zoneObj.Properties)
+	deployable := utils.GetPropertyValue("deployable", zoneObj.Properties)
 	if deployable == "true" {
 		d.Set("deployable", "True")
 	} else {

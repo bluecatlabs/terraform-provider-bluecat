@@ -14,7 +14,7 @@ This will allow creation or update to an IPv4 Block in Address Manager. The attr
 
 ## Example of a IPv4 Block resource
 
-    resource "bluecat_ipv4block" "block_record" {
+    resource "bluecat_ip4block" "block_record" {
       configuration = "terraform_demo"
       name = "block1"
       parent_block = ""

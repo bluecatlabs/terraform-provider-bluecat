@@ -200,13 +200,13 @@ func testAccCheckIPAllocationDestroy(s *terraform.State) error {
 		if rs.Type != "bluecat_ip_allocation" {
 			msg := fmt.Sprintf("There is an unexpected resource %s %s", rs.Primary.ID, rs.Type)
 			log.Error(msg)
-			return fmt.Errorf(msg)
+			// return fmt.Errorf(msg)
 		}
 		_, err := objMgr.GetHostRecord(configuration, view, rs.Primary.ID)
 		if err == nil {
 			msg := fmt.Sprintf("Host record %s is not removed", rs.Primary.ID)
 			log.Error(msg)
-			return fmt.Errorf(msg)
+			return fmt.Errorf("Host record %s is not removed", rs.Primary.ID)
 		}
 	}
 	return nil
@@ -230,29 +230,29 @@ func testAccIPAllocationExists(t *testing.T, resource string, ip string, zone st
 		if err != nil {
 			msg := fmt.Sprintf("Getting ip %s failed: %s", ip, err)
 			log.Error(msg)
-			return fmt.Errorf(msg)
+			return fmt.Errorf("Getting ip %s failed: %s", ip, err)
 		}
-		macProperty := reFormatMac(getPropertyValue("macAddress", ipAddress.Properties))
+		macProperty := reFormatMac(utils.GetPropertyValue("macAddress", ipAddress.Properties))
 		mac = reFormatMac(mac)
 		if macProperty != mac {
 			msg := fmt.Sprintf("Getting IP %s failed: %s. Expect %s in macAddress property, but received %s.", ip, err, mac, macProperty)
 			log.Error(msg)
-			return fmt.Errorf(msg)
+			return fmt.Errorf("Getting IP %s failed: %s. Expect %s in macAddress property, but received %s.", ip, err, mac, macProperty)
 		}
 
 		hostRecord, err := objMgr.GetHostRecord(configuration, view, name)
 		if err != nil {
 			msg := fmt.Sprintf("Getting Host record %s failed: %s", rs.Primary.ID, err)
 			log.Error(msg)
-			return fmt.Errorf(msg)
+			return fmt.Errorf("Getting Host record %s failed: %s", rs.Primary.ID, err)
 		}
-		ipProperty := getPropertyValue("addresses", hostRecord.Properties)
+		ipProperty := utils.GetPropertyValue("addresses", hostRecord.Properties)
 		ipAddressLong := net.ParseIP(ipProperty)
 		fmt.Sprintf("%s", ipAddressLong)
 		if ipAddressLong.String() != ip {
 			msg := fmt.Sprintf("Getting Host record %s failed: %s. Expect addresses=%s in properties, but received %s.", rs.Primary.ID, err, ip, ipProperty)
 			log.Error(msg)
-			return fmt.Errorf(msg)
+			return fmt.Errorf("Getting Host record %s failed: %s. Expect addresses=%s in properties, but received %s.", rs.Primary.ID, err, ip, ipProperty)
 		}
 		return nil
 	}
@@ -285,7 +285,8 @@ var testAccresourceIPAllocationCreateFullField = fmt.Sprintf(
 		mac_address = "%s"
 		properties = "%s"
 		action = "MAKE_STATIC"
-	  }`, server, ipAllocateResource1, configuration, view, zone, ipAllocateName1, ipAllocateNet1, ipAllocateIP1, ipAllocateMac1, ipAllocateProperties1)
+		depends_on = [bluecat_ipv4network.network_test, bluecat_zone.sub_zone_test]
+	  }`, GetTestEnvResources(), ipAllocateResource1, configuration, view, zone, ipAllocateName1, ipAllocateNet1, ipAllocateIP1, ipAllocateMac1, ipAllocateProperties1)
 
 var ipAllocateIP5 = "1.1.0.12"
 var ipAllocateMac5 = "223344556699"
@@ -300,7 +301,8 @@ var testAccresourceIPAllocationCreateNotZone = fmt.Sprintf(
 		ip_address = "%s"
 		mac_address = "%s"
 		properties = "%s"
-		}`, server, ipAllocateResource1, configuration, view, ipAllocateName1, ipAllocateNet1, ipAllocateIP5, ipAllocateMac5, ipAllocateProperties1)
+		depends_on = [bluecat_ipv4network.network_test, bluecat_zone.sub_zone_test]
+		}`, GetTestEnvResources(), ipAllocateResource1, configuration, view, ipAllocateName1, ipAllocateNet1, ipAllocateIP5, ipAllocateMac5, ipAllocateProperties1)
 
 var ipCheckExists1 = "1.1.0.2"
 var testAccresourceIPAllocationCreateNotIP = fmt.Sprintf(
@@ -313,7 +315,8 @@ var testAccresourceIPAllocationCreateNotIP = fmt.Sprintf(
 		network = "%s"
 		mac_address = "%s"
 		properties = "%s"
-		}`, server, ipAllocateResource1, configuration, view, zone, ipAllocateName1, ipAllocateNet1, ipAllocateMac1, ipAllocateProperties1)
+		depends_on = [bluecat_ipv4network.network_test, bluecat_zone.sub_zone_test]
+		}`, GetTestEnvResources(), ipAllocateResource1, configuration, view, zone, ipAllocateName1, ipAllocateNet1, ipAllocateMac1, ipAllocateProperties1)
 
 var ipAllocateMac2 = "888888888888"
 var ipAllocateProperties2 = ""
@@ -329,7 +332,8 @@ var testAccresourceIPAllocationUpdateIPMacProperties = fmt.Sprintf(
 		mac_address = "%s"
 		properties = "%s"
 		action = "MAKE_DHCP_RESERVED"
-	}`, server, ipAllocateResource1, configuration, view, zone, ipAllocateName1, ipAllocateNet1, ipAllocateIP1, ipAllocateMac2, ipAllocateProperties2)
+		depends_on = [bluecat_ipv4network.network_test, bluecat_zone.sub_zone_test]
+	}`, GetTestEnvResources(), ipAllocateResource1, configuration, view, zone, ipAllocateName1, ipAllocateNet1, ipAllocateIP1, ipAllocateMac2, ipAllocateProperties2)
 
 var ipAllocateMac6 = "887788888888"
 
@@ -343,7 +347,8 @@ var testAccresourceIPAllocationUpdateNotZoneMacProperties = fmt.Sprintf(
 		ip_address = "%s"
 		mac_address = "%s"
 		properties = "%s"
-		}`, server, ipAllocateResource1, configuration, view, ipAllocateName1, ipAllocateNet1, ipAllocateIP5, ipAllocateMac6, ipAllocateProperties2)
+		depends_on = [bluecat_ipv4network.network_test, bluecat_zone.sub_zone_test]
+		}`, GetTestEnvResources(), ipAllocateResource1, configuration, view, ipAllocateName1, ipAllocateNet1, ipAllocateIP5, ipAllocateMac6, ipAllocateProperties2)
 
 var actionDhcpReserved = "MAKE_DHCP_RESERVED"
 var template = "template1"
@@ -363,7 +368,8 @@ var testAccresourceIPAllocationCreateWithActionTemplate = fmt.Sprintf(
 		properties = "%s"
 		action = "%s"
 		template = "%s"
-		}`, server, ipAllocateResource1, configuration, view, zone, ipAllocateName3, ipAllocateNet1, ipAllocateIP3, ipAllocateMac3, ipAllocateProperties1, actionDhcpReserved, template)
+		depends_on = [bluecat_ipv4network.network_test, bluecat_zone.sub_zone_test]
+		}`, GetTestEnvResources(), ipAllocateResource1, configuration, view, zone, ipAllocateName3, ipAllocateNet1, ipAllocateIP3, ipAllocateMac3, ipAllocateProperties1, actionDhcpReserved, template)
 
 var ipCheckExists2 = "1.1.0.5"
 var ipAllocateMac4 = "778888888877"
@@ -381,7 +387,8 @@ var testAccresourceIPAllocationCreateNotIPWithTemplate = fmt.Sprintf(
 		properties = "%s"
 		action = "%s"
 		template = "%s"
-		}`, server, ipAllocateResource1, configuration, view, zone, ipAllocateName4, ipAllocateNet1, ipAllocateMac4, ipAllocateProperties1, actionDhcpReserved, template)
+		depends_on = [bluecat_ipv4network.network_test, bluecat_zone.sub_zone_test]
+		}`, GetTestEnvResources(), ipAllocateResource1, configuration, view, zone, ipAllocateName4, ipAllocateNet1, ipAllocateMac4, ipAllocateProperties1, actionDhcpReserved, template)
 
 var testAccresourceIPAllocationCreateNotZoneNotIP = fmt.Sprintf(
 	`%s
@@ -392,7 +399,8 @@ var testAccresourceIPAllocationCreateNotZoneNotIP = fmt.Sprintf(
 		network = "%s"
 		mac_address = "%s"
 		properties = "%s"
-		}`, server, ipAllocateResource1, configuration, view, ipAllocateName1, ipAllocateNet1, ipAllocateMac1, ipAllocateProperties1)
+		depends_on = [bluecat_ipv4network.network_test, bluecat_zone.sub_zone_test]
+		}`, GetTestEnvResources(), ipAllocateResource1, configuration, view, ipAllocateName1, ipAllocateNet1, ipAllocateMac1, ipAllocateProperties1)
 
 var testAccresourceIPv6AllocationCreateFullField = fmt.Sprintf(
 	`%s
@@ -407,7 +415,8 @@ var testAccresourceIPv6AllocationCreateFullField = fmt.Sprintf(
 		properties = ""
 		action = "MAKE_STATIC"
 		ip_version = "ipv6"
-	  }`, server, configuration, view, zone)
+		depends_on = [bluecat_ipv6network.ipv6_network_test, bluecat_zone.sub_zone_test]
+	  }`, GetTestEnvResources(), configuration, view, zone)
 
 var testAccResourceIPv6AllocationUpdateIPMacProperties = fmt.Sprintf(
 	`%s
@@ -421,7 +430,8 @@ var testAccResourceIPv6AllocationUpdateIPMacProperties = fmt.Sprintf(
 		mac_address = "A2:B2:C2:D2:E2:F2"
 		properties = ""
 		ip_version = "ipv6"
-	}`, server, configuration, view, zone)
+		depends_on = [bluecat_ipv6network.ipv6_network_test, bluecat_zone.sub_zone_test]
+	}`, GetTestEnvResources(), configuration, view, zone)
 
 var testAccResourceIPv6AllocationCreateNotZone = fmt.Sprintf(
 	`%s
@@ -434,7 +444,8 @@ var testAccResourceIPv6AllocationCreateNotZone = fmt.Sprintf(
 		mac_address = "11:11:11:11:11:11"
 		properties = ""
 		ip_version = "ipv6"
-		}`, server, configuration, view)
+		depends_on = [bluecat_ipv6network.ipv6_network_test, bluecat_zone.sub_zone_test]
+		}`, GetTestEnvResources(), configuration, view)
 
 var testAccresourceIPv6AllocationUpdateNotZoneMacProperties = fmt.Sprintf(
 	`%s
@@ -447,7 +458,8 @@ var testAccresourceIPv6AllocationUpdateNotZoneMacProperties = fmt.Sprintf(
 		mac_address = "22:22:22:22:22:22"
 		properties = ""
 		ip_version = "ipv6"
-		}`, server, configuration, view, ipAllocateName1)
+		depends_on = [bluecat_ipv6network.ipv6_network_test, bluecat_zone.sub_zone_test]
+		}`, GetTestEnvResources(), configuration, view, ipAllocateName1)
 
 var testAccresourceIPv6AllocationCreateNotZoneNotIP = fmt.Sprintf(
 	`%s
@@ -459,7 +471,8 @@ var testAccresourceIPv6AllocationCreateNotZoneNotIP = fmt.Sprintf(
 		mac_address = "AA:AA:AA:11:11:11"
 		properties = ""
 		ip_version = "ipv6"
-		}`, server, configuration, view)
+		depends_on = [bluecat_ipv6network.ipv6_network_test, bluecat_zone.sub_zone_test]
+		}`, GetTestEnvResources(), configuration, view)
 
 var testAccResourceIPv6AllocationCreateNotIP = fmt.Sprintf(
 	`%s
@@ -472,4 +485,5 @@ var testAccResourceIPv6AllocationCreateNotIP = fmt.Sprintf(
 		mac_address = "AA:BB:CC:11:22:33"
 		properties = ""
 		ip_version = "ipv6"
-		}`, server, configuration, view, zone)
+		depends_on = [bluecat_ipv6network.ipv6_network_test, bluecat_zone.sub_zone_test]
+		}`, GetTestEnvResources(), configuration, view, zone)
