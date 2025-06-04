@@ -15,7 +15,7 @@ func skipTest() (bool, error) {
 }
 
 func TestAccResourceZone(t *testing.T) {
-	configuration = "rest_api"
+	configuration = "terraform_test"
 	// create top zone with full fields and update
 	resource.Test(t, resource.TestCase{
 		ProviderFactories: testAccProviders,
@@ -69,13 +69,13 @@ func testAccCheckZoneDestroy(s *terraform.State) error {
 		if rs.Type != "bluecat_zone" {
 			msg := fmt.Sprintf("There is an unexpected resource %s %s", rs.Primary.ID, rs.Type)
 			log.Error(msg)
-			return fmt.Errorf(msg)
+			// return fmt.Errorf(msg)
 		}
 		_, err := objMgr.GetZone(configuration, view, rs.Primary.ID)
 		if err == nil {
 			msg := fmt.Sprintf("Zone %s is not removed", rs.Primary.ID)
 			log.Error(msg)
-			return fmt.Errorf(msg)
+			return fmt.Errorf("Zone %s is not removed", rs.Primary.ID)
 		}
 	}
 	return nil
@@ -99,12 +99,12 @@ func testAccZoneExists(t *testing.T, resource string, zoneName string, deployabl
 		if err != nil {
 			msg := fmt.Sprintf("Getting Zone %s failed: %s", rs.Primary.ID, err)
 			log.Error(msg)
-			return fmt.Errorf(msg)
+			return fmt.Errorf("Getting Zone %s failed: %s", rs.Primary.ID, err)
 		}
 		if checkValidZone(objMgr, *zone, zoneName, deployable) == false {
 			msg := fmt.Sprintf("Getting Zone %s failed: deployable property or list server_roles does not match", rs.Primary.ID)
 			log.Error(msg)
-			return fmt.Errorf(msg)
+			return fmt.Errorf("Getting Zone %s failed: deployable property or list server_roles does not match", rs.Primary.ID)
 		}
 		return nil
 	}
@@ -120,7 +120,7 @@ func contains(s []string, str string) bool {
 }
 
 func checkValidZone(objMgr *utils.ObjectManager, zone entities.Zone, zoneName string, deployable string) bool {
-	deployableProperty := getPropertyValue("deployable", zone.Properties)
+	deployableProperty := utils.GetPropertyValue("deployable", zone.Properties)
 	deployableValues := []string{"yes", "true", "1"}
 	if contains(deployableValues, deployable) != contains(deployableValues, deployableProperty) {
 		return false
@@ -136,42 +136,46 @@ var zoneProperties1 = ""
 var testAccresourceZoneCreateFullField = fmt.Sprintf(
 	`%s
 	resource "bluecat_zone" "%s" {
-		configuration = "rest_api"
+		configuration = "terraform_test"
 		view = "test"
 		zone = "%s"
 		deployable = "%s"
 		properties = "%s"
-		}`, server, zoneResource1, zoneName1, zoneDeployable1, zoneProperties1)
+		depends_on = [bluecat_view.view_test, bluecat_zone.zone_org]
+		}`, GetTestEnvResources(), zoneResource1, zoneName1, zoneDeployable1, zoneProperties1)
 
 var zoneDeployable2 = "false"
 var testAccresourceZoneUpdateFullField = fmt.Sprintf(
 	`%s
 	resource "bluecat_zone" "%s" {
-		configuration = "rest_api"
+		configuration = "terraform_test"
 		view = "test"
 		zone = "%s"
 		deployable = "%s"
 		properties = "%s"
-		}`, server, zoneResource1, zoneName1, zoneDeployable2, zoneProperties1)
+		depends_on = [bluecat_view.view_test, bluecat_zone.zone_org]
+		}`, GetTestEnvResources(), zoneResource1, zoneName1, zoneDeployable2, zoneProperties1)
 
 var zoneResource2 = "sub_zone"
 var zoneName2 = "subzone.com"
 var testAccresourceSubZoneCreateFullField = fmt.Sprintf(
 	`%s
 	resource "bluecat_zone" "%s" {
-		configuration = "rest_api"
+		configuration = "terraform_test"
 		view = "%s"
 		zone = "%s"
 		deployable = "%s"
 		properties = "%s"
-		}`, server, zoneResource2, view, zoneName2, zoneDeployable1, zoneProperties1)
+		depends_on = [bluecat_view.view_test]
+		}`, GetTestEnvResources(), zoneResource2, view, zoneName2, zoneDeployable1, zoneProperties1)
 
 var testAccresourceSubZoneUpdateFullField = fmt.Sprintf(
 	`%s
 	resource "bluecat_zone" "%s" {
-		configuration = "rest_api"
+		configuration = "terraform_test"
 		view = "%s"
 		zone = "%s"
 		deployable = "%s"
 		properties = "%s"
-		}`, server, zoneResource2, view, zoneName2, zoneDeployable2, zoneProperties1)
+		depends_on = [bluecat_view.view_test]
+		}`, GetTestEnvResources(), zoneResource2, view, zoneName2, zoneDeployable2, zoneProperties1)

@@ -2,6 +2,7 @@ package utils
 
 import (
 	"fmt"
+	"strings"
 	"terraform-provider-bluecat/bluecat/entities"
 )
 
@@ -23,4 +24,16 @@ func RemoveImmutableProperties(properties string, immutableProperties []string) 
 		}
 	}
 	return GetStringFromProperties(propertiesMap)
+}
+
+func GetPropertyValue(key, props string) (val string) {
+	properties := strings.Split(props, "|")
+	for i := 0; i < len(properties); i++ {
+		prop := strings.Split(properties[i], "=")
+		if prop[0] == key {
+			val = prop[1]
+			return
+		}
+	}
+	return
 }

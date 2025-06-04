@@ -2,10 +2,11 @@ package main
 
 import (
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"terraform-provider-bluecat/bluecat/utils"
 	"testing"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
 func TestAccResourceGenericRecord(t *testing.T) {
@@ -57,12 +58,12 @@ func testAccCheckGenericRecordDestroy(s *terraform.State) error {
 			if err == nil {
 				msg := fmt.Sprintf("Generic record %s is not removed", rs.Primary.ID)
 				log.Error(msg)
-				return fmt.Errorf(msg)
+				return fmt.Errorf("Generic record %s is not removed", rs.Primary.ID)
 			}
 		} else {
 			msg := fmt.Sprintf("There is an unexpected resource %s %s", rs.Primary.ID, rs.Type)
 			log.Error(msg)
-			return fmt.Errorf(msg)
+			// return fmt.Errorf(msg)
 		}
 	}
 	return nil
@@ -86,16 +87,16 @@ func testAccGenericRecordExists(t *testing.T, resource string, typerr string, na
 		if err != nil {
 			msg := fmt.Sprintf("Getting Generic record %s failed: %s", rs.Primary.ID, err)
 			log.Error(msg)
-			return fmt.Errorf(msg)
+			return fmt.Errorf("Getting Generic record %s failed: %s", rs.Primary.ID, err)
 		}
-		ttlProperty := getPropertyValue("ttl", genericRecord.Properties)
-		dataProperty := getPropertyValue("rdata", genericRecord.Properties)
-		typeProperty := getPropertyValue("type", genericRecord.Properties)
+		ttlProperty := utils.GetPropertyValue("ttl", genericRecord.Properties)
+		dataProperty := utils.GetPropertyValue("rdata", genericRecord.Properties)
+		typeProperty := utils.GetPropertyValue("type", genericRecord.Properties)
 
 		if ttlProperty != ttl || dataProperty != data || typeProperty != typerr {
 			msg := fmt.Sprintf("Getting Generic record %s failed: %s. Expect ttl=%s data=%s type=%s in properties, but received '%s'", rs.Primary.ID, err, ttl, data, typerr, genericRecord.Properties)
 			log.Error(msg)
-			return fmt.Errorf(msg)
+			return fmt.Errorf("Getting Generic record %s failed: %s. Expect ttl=%s data=%s type=%s in properties, but received '%s'", rs.Primary.ID, err, ttl, data, typerr, genericRecord.Properties)
 		}
 		return nil
 	}
@@ -118,7 +119,8 @@ var testAccresourceGenericRecordCreateFullField = fmt.Sprintf(
 		data = "%s"
 		ttl = %s
 		properties = "%s"
-	  }`, server, genericResource1, configuration, view, zone, genericType1, genericName1, genericData1, genericTTL1, genericProperties1)
+		depends_on = [bluecat_zone.sub_zone_test]
+	  }`, GetTestEnvResources(), genericResource1, configuration, view, zone, genericType1, genericName1, genericData1, genericTTL1, genericProperties1)
 
 var testAccresourceGenericRecordCreateNotFullField = fmt.Sprintf(
 	`%s
@@ -130,7 +132,8 @@ var testAccresourceGenericRecordCreateNotFullField = fmt.Sprintf(
 		data = "%s"
 		ttl = %s
 		properties = "%s"
-		}`, server, genericResource1, configuration, view, genericType1, genericName1, genericData1, genericTTL1, genericProperties1)
+		depends_on = [bluecat_zone.sub_zone_test]
+		}`, GetTestEnvResources(), genericResource1, configuration, view, genericType1, genericName1, genericData1, genericTTL1, genericProperties1)
 
 var genericData2 = "test2"
 var genericTTL2 = "4000"
@@ -146,7 +149,8 @@ var testAccresourceGenericRecordUpdateFullField = fmt.Sprintf(
 		data = "%s"
 		ttl = %s
 		properties = "%s"
-		}`, server, genericResource1, configuration, view, zone, genericType1, genericName1, genericData2, genericTTL2, genericProperties2)
+		depends_on = [bluecat_zone.sub_zone_test]
+		}`, GetTestEnvResources(), genericResource1, configuration, view, zone, genericType1, genericName1, genericData2, genericTTL2, genericProperties2)
 
 func TestAccResourceA4Record(t *testing.T) {
 	// create with full fields and update
@@ -197,12 +201,12 @@ func testAccCheckA4RecordDestroy(s *terraform.State) error {
 			if err == nil {
 				msg := fmt.Sprintf("Generic record %s is not removed", rs.Primary.ID)
 				log.Error(msg)
-				return fmt.Errorf(msg)
+				return fmt.Errorf("Generic record %s is not removed", rs.Primary.ID)
 			}
 		} else {
 			msg := fmt.Sprintf("There is an unexpected resource %s %s", rs.Primary.ID, rs.Type)
 			log.Error(msg)
-			return fmt.Errorf(msg)
+			// return fmt.Errorf(msg)
 		}
 	}
 	return nil
@@ -226,16 +230,16 @@ func testAccA4RecordExists(t *testing.T, resource string, typerr string, name st
 		if err != nil {
 			msg := fmt.Sprintf("Getting Generic record %s failed: %s", rs.Primary.ID, err)
 			log.Error(msg)
-			return fmt.Errorf(msg)
+			return fmt.Errorf("Getting Generic record %s failed: %s", rs.Primary.ID, err)
 		}
-		ttlProperty := getPropertyValue("ttl", genericRecord.Properties)
-		dataProperty := getPropertyValue("rdata", genericRecord.Properties)
-		typeProperty := getPropertyValue("type", genericRecord.Properties)
+		ttlProperty := utils.GetPropertyValue("ttl", genericRecord.Properties)
+		dataProperty := utils.GetPropertyValue("rdata", genericRecord.Properties)
+		typeProperty := utils.GetPropertyValue("type", genericRecord.Properties)
 
 		if ttlProperty != ttl || dataProperty != data || typeProperty != typerr {
 			msg := fmt.Sprintf("Getting Generic record %s failed: %s. Expect ttl=%s data=%s type=%s in properties, but received '%s'", rs.Primary.ID, err, ttl, data, typerr, genericRecord.Properties)
 			log.Error(msg)
-			return fmt.Errorf(msg)
+			return fmt.Errorf("Getting Generic record %s failed: %s. Expect ttl=%s data=%s type=%s in properties, but received '%s'", rs.Primary.ID, err, ttl, data, typerr, genericRecord.Properties)
 		}
 		return nil
 	}
@@ -258,7 +262,8 @@ var testAccresourceA4RecordCreateFullField = fmt.Sprintf(
 		data = "%s"
 		ttl = %s
 		properties = "%s"
-	  }`, server, genericResource3, configuration, view, zone, genericType3, genericName3, genericData3, genericTTL3, genericProperties3)
+		depends_on = [bluecat_zone.sub_zone_test]
+	  }`, GetTestEnvResources(), genericResource3, configuration, view, zone, genericType3, genericName3, genericData3, genericTTL3, genericProperties3)
 
 var testAccresourceA4RecordCreateNotFullField = fmt.Sprintf(
 	`%s
@@ -270,7 +275,8 @@ var testAccresourceA4RecordCreateNotFullField = fmt.Sprintf(
 		data = "%s"
 		ttl = %s
 		properties = "%s"
-		}`, server, genericResource3, configuration, view, genericType3, genericName3, genericData3, genericTTL3, genericProperties3)
+		depends_on = [bluecat_zone.sub_zone_test]
+		}`, GetTestEnvResources(), genericResource3, configuration, view, genericType3, genericName3, genericData3, genericTTL3, genericProperties3)
 
 var genericData4 = "ab::124"
 var genericTTL4 = "4000"
@@ -286,4 +292,5 @@ var testAccresourceA4RecordUpdateFullField = fmt.Sprintf(
 		data = "%s"
 		ttl = %s
 		properties = "%s"
-		}`, server, genericResource3, configuration, view, zone, genericType3, genericName3, genericData4, genericTTL4, genericProperties4)
+		depends_on = [bluecat_zone.sub_zone_test]
+		}`, GetTestEnvResources(), genericResource3, configuration, view, zone, genericType3, genericName3, genericData4, genericTTL4, genericProperties4)

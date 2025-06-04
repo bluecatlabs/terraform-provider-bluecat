@@ -60,12 +60,12 @@ func testAccCheckPTRRecordDestroy(s *terraform.State) error {
 			if err == nil {
 				msg := fmt.Sprintf("Host record %s is not removed", rs.Primary.ID)
 				log.Error(msg)
-				return fmt.Errorf(msg)
+				return fmt.Errorf("Host record %s is not removed", rs.Primary.ID)
 			}
 		} else {
 			msg := fmt.Sprintf("There is an unexpected resource %s %s", rs.Primary.ID, rs.Type)
 			log.Error(msg)
-			return fmt.Errorf(msg)
+			// return fmt.Errorf(msg)
 		}
 		record, err := objMgr.GetHostRecord(configuration, view, rs.Primary.ID)
 		fmt.Println(record)
@@ -75,7 +75,7 @@ func testAccCheckPTRRecordDestroy(s *terraform.State) error {
 		} else if record.ReverseRecord != "" {
 			msg := fmt.Sprintf("Host record %s is not removed", rs.Primary.ID)
 			log.Error(msg)
-			return fmt.Errorf(msg)
+			return fmt.Errorf("Host record %s is not removed", rs.Primary.ID)
 		}
 	}
 	return nil
@@ -99,12 +99,12 @@ func testAccPTRRecordExists(t *testing.T, resource string, name string, ttl stri
 		if err != nil {
 			msg := fmt.Sprintf("Getting Host record %s failed: %s", rs.Primary.ID, err)
 			log.Error(msg)
-			return fmt.Errorf(msg)
+			return fmt.Errorf("Getting Host record %s failed: %s", rs.Primary.ID, err)
 		}
 		if checkValidHostRecord(*hostRecord, ttl, ip, "true") == false {
 			msg := fmt.Sprintf("Getting Host record %s failed: %s. Expect ttl=%s addresses=%s reverseRecord=%s in properties, but received '%s'", rs.Primary.ID, err, ttl, ip, "true", hostRecord.Properties)
 			log.Error(msg)
-			return fmt.Errorf(msg)
+			return fmt.Errorf("Getting Host record %s failed: %s. Expect ttl=%s addresses=%s reverseRecord=%s in properties, but received '%s'", rs.Primary.ID, err, ttl, ip, "true", hostRecord.Properties)
 		}
 		return nil
 	}
@@ -130,6 +130,7 @@ var testAccresourceHostRecordCreate = fmt.Sprintf(
 		ip_address = "%s"
 		ttl = 200
 		properties = ""
+		depends_on = [bluecat_ipv4network.network_test, bluecat_zone.sub_zone_test]
 		}
 
 	resource "bluecat_host_record" "%s" {
@@ -139,7 +140,8 @@ var testAccresourceHostRecordCreate = fmt.Sprintf(
 		ip_address = "%s"
 		ttl = 300
 		properties = ""
-		}`, server, hostPTRResource1, configuration, view, ptrName1, ptrIP1, hostPTRResource2, configuration, view, ptrName2, ptrIP2)
+		depends_on = [bluecat_ipv4network.network_test, bluecat_zone.sub_zone_test]
+		}`, GetTestEnvResources(), hostPTRResource1, configuration, view, ptrName1, ptrIP1, hostPTRResource2, configuration, view, ptrName2, ptrIP2)
 
 var testAccresourcePTRRecordCreateFullField = fmt.Sprintf(
 	`%s

@@ -52,7 +52,8 @@ var resourceHostCreateFullField = fmt.Sprintf(
 		ip_address = "1.1.0.9"
 		ttl = 200
 		properties = ""
-	}`, server, configuration, view, zone)
+		depends_on = [bluecat_zone.sub_zone_test, bluecat_ipv4network.network_test]
+	}`, GetTestEnvResources(), configuration, view, zone)
 
 var dataCNAMEResource1 = "cname_record_1"
 var cnameDataSource1 = "test_cname_record_1"
@@ -90,7 +91,8 @@ var resourceHostCreateNotFullField = fmt.Sprintf(
 		ip_address = "1.1.0.9"
 		ttl = 200
 		properties = ""
-	}`, server, configuration, view, zone)
+		depends_on = [bluecat_zone.sub_zone_test, bluecat_ipv4network.network_test]
+	}`, GetTestEnvResources(), configuration, view, zone)
 
 var dataCNAMEResource2 = "cname_record_2"
 var cnameDataSource2 = "test_cname_record_2"

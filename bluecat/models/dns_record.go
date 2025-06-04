@@ -113,3 +113,39 @@ func NewGenericRecord(genericRecord entities.GenericRecord) *entities.GenericRec
 	res.SetSubPath(sPath)
 	return &res
 }
+
+// SRVRecord Initialize the SRV record to be loaded, updated or deleted
+func SRVRecord(srvRecord entities.SRVRecord) *entities.SRVRecord {
+	res := srvRecord
+	res.SetObjectType("")
+	res.SetSubPath(fmt.Sprintf("%s/srv_records/%s", getRRPrefixPath(srvRecord.Configuration, srvRecord.View), srvRecord.AbsoluteName))
+	return &res
+}
+
+// NewSRVRecord Initialize the new SRV record to be added
+func NewSRVRecord(srvRecord entities.SRVRecord) *entities.SRVRecord {
+	res := srvRecord
+	res.SetObjectType("srv_records")
+	sPath := getRRPrefixPath(srvRecord.Configuration, srvRecord.View)
+	if len(srvRecord.Zone) > 0 {
+		sPath = fmt.Sprintf("%s/zones/%s", sPath, srvRecord.Zone)
+	}
+	res.SetSubPath(sPath)
+	return &res
+}
+
+// ExternalHostRecord Initialize the SRV record to be loaded, updated or deleted
+func ExternalHostRecord(externalHostRecord entities.ExternalHostRecord) *entities.ExternalHostRecord {
+	res := externalHostRecord
+	res.SetObjectType("")
+	res.SetSubPath(fmt.Sprintf("%s/external_host_records/%s", getRRPrefixPath(externalHostRecord.Configuration, externalHostRecord.View), externalHostRecord.AbsoluteName))
+	return &res
+}
+
+// NewExternalHostRecord Initialize the new SRV record to be added
+func NewExternalHostRecord(externalHostRecord entities.ExternalHostRecord) *entities.ExternalHostRecord {
+	res := externalHostRecord
+	res.SetObjectType("")
+	res.SetSubPath(fmt.Sprintf("%s/external_host_records", getRRPrefixPath(externalHostRecord.Configuration, externalHostRecord.View)))
+	return &res
+}

@@ -5,8 +5,9 @@ package bluecat
 import (
 	"context"
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"terraform-provider-bluecat/bluecat/utils"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
@@ -53,21 +54,23 @@ func Provider() *schema.Provider {
 			},
 		},
 		ResourcesMap: map[string]*schema.Resource{
-			"bluecat_host_record":    ResourceHostRecord(),
-			"bluecat_configuration":  ResourceConfiguration(),
-			"bluecat_ipv4block":      ResourceBlock(),
-			"bluecat_ipv6block":      ResourceBlock(),
-			"bluecat_ipv4network":    ResourceNetwork(),
-			"bluecat_ipv6network":    ResourceNetwork(),
-			"bluecat_cname_record":   ResourceCNAMERecord(),
-			"bluecat_ip_allocation":  ResourceIPAllocation(),
-			"bluecat_ip_association": ResourceIPAssociation(),
-			"bluecat_ptr_record":     ResourcePTRRecord(),
-			"bluecat_txt_record":     ResourceTXTRecord(),
-			"bluecat_generic_record": ResourceGenericRecord(),
-			"bluecat_dhcp_range":     ResourceDHCPRange(),
-			"bluecat_zone":           ResourceZone(),
-			"bluecat_view":           ResourceView(),
+			"bluecat_host_record":          ResourceHostRecord(),
+			"bluecat_configuration":        ResourceConfiguration(),
+			"bluecat_ipv4block":            ResourceBlock(),
+			"bluecat_ipv6block":            ResourceBlock(),
+			"bluecat_ipv4network":          ResourceNetwork(),
+			"bluecat_ipv6network":          ResourceNetwork(),
+			"bluecat_cname_record":         ResourceCNAMERecord(),
+			"bluecat_ip_allocation":        ResourceIPAllocation(),
+			"bluecat_ip_association":       ResourceIPAssociation(),
+			"bluecat_ptr_record":           ResourcePTRRecord(),
+			"bluecat_txt_record":           ResourceTXTRecord(),
+			"bluecat_srv_record":           ResourceSRVRecord(),
+			"bluecat_external_host_record": ResourceExternalHostRecord(),
+			"bluecat_generic_record":       ResourceGenericRecord(),
+			"bluecat_dhcp_range":           ResourceDHCPRange(),
+			"bluecat_zone":                 ResourceZone(),
+			"bluecat_view":                 ResourceView(),
 		},
 		DataSourcesMap: map[string]*schema.Resource{
 			"bluecat_ipv4network":  DataSourceIPv4Network(),

@@ -18,17 +18,17 @@ This will allow creation or update to an IPv4 Network in Address Manager. The at
 
 ## Example of a IPv4 Network Record resource
 
-    resource "bluecat_ipv4network" "net_record" {
+    resource "bluecat_ip4network" "net_record" {
       configuration = "terraform_demo"
       name = "network1"
       cidr = "30.0.0.0/24"
       gateway = "30.0.0.12"
       reserve_ip = 3
       properties = ""
-      depends_on = [bluecat_block.block_record]
+      depends_on = [bluecat_ip4block.block_record]
     }
     
-    resource "bluecat_ipv4network" "next_available_net_record" {
+    resource "bluecat_ip4network" "next_available_net_record" {
       configuration = "terraform_demo"
       name = "next available network1"
       reserve_ip = 3
@@ -36,5 +36,5 @@ This will allow creation or update to an IPv4 Network in Address Manager. The at
       size = 256
       allocated_id = timestamp()
       properties = ""
-      depends_on = [bluecat_ipv4block.block_record]
+      depends_on = [bluecat_ip4block.block_record]
     }

@@ -5,8 +5,9 @@ package bluecat
 import (
 	"errors"
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"terraform-provider-bluecat/bluecat/utils"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 // ResourceZone The Zone
@@ -74,8 +75,6 @@ func getView(d *schema.ResourceData, m interface{}) error {
 	}
 
 	configuration := d.Get("configuration").(string)
-	name := d.Get("name").(string)
-	fmt.Println("%v", name)
 
 	connector := m.(*utils.Connector)
 	objMgr := new(utils.ObjectManager)

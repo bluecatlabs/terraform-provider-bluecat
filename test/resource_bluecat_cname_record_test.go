@@ -2,10 +2,11 @@ package main
 
 import (
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"terraform-provider-bluecat/bluecat/utils"
 	"testing"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
 func TestAccResourceCNAMERecord(t *testing.T) {
@@ -53,23 +54,25 @@ func testAccCheckCNAMERecordDestroy(s *terraform.State) error {
 	objMgr.Connector = connector
 	for _, rs := range s.RootModule().Resources {
 		if rs.Type == "bluecat_host_record" {
+			fmt.Println("Checking for host, ", rs.Primary.ID)
 			_, err := objMgr.GetHostRecord(configuration, view, rs.Primary.ID)
 			if err == nil {
 				msg := fmt.Sprintf("Host record %s is not removed", rs.Primary.ID)
 				log.Error(msg)
-				return fmt.Errorf(msg)
+				return fmt.Errorf("Host record %s is not removed", rs.Primary.ID)
 			}
 		} else if rs.Type == "bluecat_cname_record" {
+			fmt.Println("Checking for cname, ", rs.Primary.ID)
 			_, err := objMgr.GetCNAMERecord(configuration, view, rs.Primary.ID)
 			if err == nil {
 				msg := fmt.Sprintf("CNAME record %s is not removed", rs.Primary.ID)
 				log.Error(msg)
-				return fmt.Errorf(msg)
+				return fmt.Errorf("CNAME record %s is not removed", rs.Primary.ID)
 			}
 		} else {
 			msg := fmt.Sprintf("There is an unexpected resource %s %s", rs.Primary.ID, rs.Type)
 			log.Error(msg)
-			return fmt.Errorf(msg)
+			// return fmt.Errorf("There is an unexpected resource %s %s", rs.Primary.ID, rs.Type)
 		}
 	}
 	return nil
@@ -93,14 +96,14 @@ func testAccCNAMERecordExists(t *testing.T, resource string, name string, ttl st
 		if err != nil {
 			msg := fmt.Sprintf("Getting CNAME record %s failed: %s", rs.Primary.ID, err)
 			log.Error(msg)
-			return fmt.Errorf(msg)
+			return fmt.Errorf("Getting CNAME record %s failed: %s", rs.Primary.ID, err)
 		}
-		ttlProperty := getPropertyValue("ttl", cnameRecord.Properties)
-		linkProperty := getPropertyValue("linkedRecordName", cnameRecord.Properties)
+		ttlProperty := utils.GetPropertyValue("ttl", cnameRecord.Properties)
+		linkProperty := utils.GetPropertyValue("linkedRecordName", cnameRecord.Properties)
 		if ttlProperty != ttl || linkProperty != link {
 			msg := fmt.Sprintf("Getting CNAME record %s failed: %s. Expect ttl=%s linkedRecordName=%s in properties, but received '%s'", rs.Primary.ID, err, ttl, link, cnameRecord.Properties)
 			log.Error(msg)
-			return fmt.Errorf(msg)
+			return fmt.Errorf("Getting CNAME record %s failed: %s. Expect ttl=%s linkedRecordName=%s in properties, but received '%s'", rs.Primary.ID, err, ttl, link, cnameRecord.Properties)
 		}
 		return nil
 	}
@@ -117,6 +120,7 @@ var testAccresourceHostRecordCreate1 = fmt.Sprintf(
 		ip_address = "1.1.0.2"
 		ttl = 200
 		properties = ""
+		depends_on = [bluecat_zone.sub_zone_test, bluecat_ipv4network.network_test]
 		}
 
 	resource "bluecat_host_record" "%s" {
@@ -126,7 +130,8 @@ var testAccresourceHostRecordCreate1 = fmt.Sprintf(
 		ip_address = "1.1.0.3"
 		ttl = 300
 		properties = ""
-		}`, server, hostCnameResource1, configuration, view, hostCnameResource2, configuration, view)
+		depends_on = [bluecat_zone.sub_zone_test, bluecat_ipv4network.network_test]
+		}`, GetTestEnvResources(), hostCnameResource1, configuration, view, hostCnameResource2, configuration, view)
 
 var cnameResource1 = "cname_record_a4"
 var cnameName1 = "a4.example.com"
@@ -143,7 +148,7 @@ var testAccresourceCNAMERecordCreateFullField = fmt.Sprintf(
 		linked_record = "%s"
 		ttl = %s
 		properties = "%s"
-		depends_on = [bluecat_host_record.%s, bluecat_host_record.%s]
+		depends_on = [bluecat_host_record.%s, bluecat_host_record.%s, bluecat_ipv4network.network_test]
 	  }`, testAccresourceHostRecordCreate1, cnameResource1, configuration, view, zone, cnameName1, cnameLink1, cnameTTL1, cnameProperties1, hostCnameResource1, hostCnameResource2)
 
 var testAccresourceCNAMERecordCreateNotFullField = fmt.Sprintf(
@@ -155,7 +160,7 @@ var testAccresourceCNAMERecordCreateNotFullField = fmt.Sprintf(
 		linked_record = "%s"
 		ttl = %s
 		properties = "%s"
-		depends_on = [bluecat_host_record.%s, bluecat_host_record.%s]
+		depends_on = [bluecat_host_record.%s, bluecat_host_record.%s, bluecat_ipv4network.network_test]
 		}`, testAccresourceHostRecordCreate1, cnameResource1, configuration, view, cnameName1, cnameLink1, cnameTTL1, cnameProperties1, hostCnameResource1, hostCnameResource2)
 
 var cnameLink2 = "a3.example.com"
@@ -171,5 +176,5 @@ var testAccresourceCNAMERecordUpdateFullField = fmt.Sprintf(
 		linked_record = "%s"
 		ttl = %s
 		properties = "%s"
-		depends_on = [bluecat_host_record.%s, bluecat_host_record.%s]
+		depends_on = [bluecat_host_record.%s, bluecat_host_record.%s, bluecat_ipv4network.network_test]
 		}`, testAccresourceHostRecordCreate1, cnameResource1, configuration, view, zone, cnameName1, cnameLink2, cnameTTL2, cnameProperties2, hostCnameResource1, hostCnameResource2)
