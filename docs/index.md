@@ -55,6 +55,7 @@ Below are the available resources for the following objectTypes:
 -   PTR Record (bluecat_ptr_record)
 -   CNAME Record (bluecat_cname_record)
 -   TXT Record (bluecat_txt_record)
+-   SRV Record (bluecat_srv_record)
 -   Generic Record (bluecat_generic_record)
 -   DNS Zone (bluecat_zone)
 -   View (bluecat_view)
@@ -84,4 +85,3 @@ You can now import existing BlueCat data into Terraform state. The available Blu
 -  View
 
 For the latest updates, please see the BlueCat Product Documents.
-

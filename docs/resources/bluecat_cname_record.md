@@ -7,7 +7,7 @@ This resource will create a CNAME record (Alias) in Address Manager with the spe
 | view | Optional | The view which contains the details of the zone. If not provided, record will be created under default view | Internal |
 | zone | Optional | The Zone in which you want to update a CNAME record. If not provided, the absolute name must be FQDN ones | bluecatnetworks.com |
 | absolute_name | Required | The name of the CNAME record. Must be FQDN if the Zone is not provided | webapp.bluecatnetworks.com |
-| linked_record | Required | The record name that will be linked to the CNAME record | server1.bluecatnetworks.com |
+| linked_record | Required | The record that will be linked to the CNAME record, must be a full valid FQDN of an existing record. | server1.bluecatnetworks.com |
 | ttl | Optional | The TTL value. Default is -1 | 300 |
 | properties | Optional | Records properties to be passed | comment=My comments |
 

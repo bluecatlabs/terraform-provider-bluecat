@@ -67,3 +67,30 @@ type GenericRecord struct {
 	TTL           int    `json:"ttl,omitempty"`
 	Properties    string `json:"properties,omitempty"`
 }
+
+// SRVRecord SRV record entity
+type SRVRecord struct {
+	BAMBase       `json:"-"`
+	Configuration string `json:"-"`
+	View          string `json:"-"`
+	Zone          string `json:"-"`
+	AbsoluteName  string `json:"absolute_name,omitempty"`
+	LinkedRecord  string `json:"linked_record,omitempty"`
+	Priority      int    `json:"priority,omitempty"`
+	Port          int    `json:"port,omitempty"`
+	TTL           int    `json:"ttl,omitempty"`
+	Weight        int    `json:"weight,omitempty"`
+	Properties    string `json:"properties,omitempty"`
+	Name          string `json:"name,omitempty"`
+	SrvID         int    `json:"id,omitempty"`
+}
+
+// External Host Record record entity
+type ExternalHostRecord struct {
+	BAMBase       `json:"-"`
+	Configuration string `json:"-"`
+	View          string `json:"-"`
+	AbsoluteName  string `json:"name,omitempty"`
+	Addresses     string `json:"addresses,omitempty"`
+	Properties    string `json:"properties,omitempty"`
+}

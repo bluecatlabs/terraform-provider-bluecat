@@ -2,10 +2,11 @@ package main
 
 import (
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"terraform-provider-bluecat/bluecat/utils"
 	"testing"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
 func TestAccResourceConfiguration(t *testing.T) {
@@ -73,7 +74,7 @@ func testAccConfigurationExists(t *testing.T, resource string, name string, conf
 			log.Error(msg)
 			return fmt.Errorf(msg)
 		}
-		descriptionProperty := getPropertyValue("description", conf.Properties)
+		descriptionProperty := utils.GetPropertyValue("description", conf.Properties)
 		if descriptionProperty != confDescriptionProperty {
 			msg := fmt.Sprintf("Getting configuration %s failed: %s. Expect description='%s' in properties, but received '%s'", rs.Primary.ID, err, confDescriptionProperty, descriptionProperty)
 			log.Error(msg)

@@ -25,5 +25,5 @@ This data source allows to retrieve the following information
     }
 
     output "toronto_network_cidr" {
-      value = data.bluecat_ipv4network.toronto_network.cidr
+      value = data.bluecat_network.toronto_network.cidr
     }

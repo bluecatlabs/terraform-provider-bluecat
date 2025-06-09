@@ -142,10 +142,6 @@ func getBlock(d *schema.ResourceData, m interface{}) error {
 	if cidrStr == "" {
 		cidrStr = d.Get("cidr").(string)
 	}
-	name := d.Get("name").(string)
-	fmt.Println("%v", name)
-	cidr, err := strconv.Atoi(cidrStr)
-	fmt.Println("%v", cidr)
 	if err != nil {
 		msg := fmt.Sprintf("Error converting the CIDR (%s): %s", cidrStr, err)
 		log.Error(msg)

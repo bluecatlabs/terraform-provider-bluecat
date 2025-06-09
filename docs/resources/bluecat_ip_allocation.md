@@ -21,7 +21,7 @@ This resource will allow the allocation of an IP Address (or next available) fro
       configuration = "terraform_demo"
       view = "gg"
       zone = "gateway.com"
-      name = "testhost"
+      name = "ipalloc"
       network = "30.0.0.0/24"
       ip_address = "30.0.0.22"
       ip_version = "ipv4"

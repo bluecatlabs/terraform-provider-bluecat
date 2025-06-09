@@ -633,6 +633,127 @@ func (objMgr *ObjectManager) DeleteGenericRecord(configuration string, view stri
 	return objMgr.Connector.DeleteObject(genericRecord)
 }
 
+// CreateSRVRecord Create the SRV record
+func (objMgr *ObjectManager) CreateSRVRecord(configuration string, view string, zone string, priority int, port int, weight int, absoluteName string, linkedRecord string, ttl int, properties string) (*entities.SRVRecord, error) {
+
+	srvRecord := models.NewSRVRecord(entities.SRVRecord{
+		Configuration: configuration,
+		View:          view,
+		Zone:          zone,
+		LinkedRecord:  linkedRecord,
+		Priority:      priority,
+		Port:          port,
+		Weight:        weight,
+		AbsoluteName:  absoluteName,
+		TTL:           ttl,
+		Properties:    properties,
+	})
+
+	_, err := objMgr.Connector.CreateObject(srvRecord)
+	return srvRecord, err
+}
+
+// GetSRVRecord Get the SRV record
+func (objMgr *ObjectManager) GetSRVRecord(configuration string, view string, absoluteName string) (*entities.SRVRecord, error) {
+
+	srvRecord := models.SRVRecord(entities.SRVRecord{
+		Configuration: configuration,
+		View:          view,
+		AbsoluteName:  absoluteName,
+	})
+
+	err := objMgr.Connector.GetObject(srvRecord, &srvRecord)
+	return srvRecord, err
+}
+
+// UpdateSRVRecord Update the SRV record
+func (objMgr *ObjectManager) UpdateSRVRecord(configuration string, view string, zone string, priority int, port int, weight int, absoluteName string, linkedRecord string, ttl int, properties string, name string) (*entities.SRVRecord, error) {
+
+	srvRecord := models.SRVRecord(entities.SRVRecord{
+		Configuration: configuration,
+		View:          view,
+		Zone:          zone,
+		LinkedRecord:  linkedRecord,
+		Priority:      priority,
+		Port:          port,
+		Weight:        weight,
+		AbsoluteName:  absoluteName,
+		TTL:           ttl,
+		Properties:    properties,
+		Name:          name,
+	})
+
+	err := objMgr.Connector.UpdateObject(srvRecord, &srvRecord)
+	return srvRecord, err
+}
+
+// DeleteSRVRecord Delete the SRV record
+func (objMgr *ObjectManager) DeleteSRVRecord(configuration string, view string, absoluteName string) (string, error) {
+
+	srvRecord := models.SRVRecord(entities.SRVRecord{
+		Configuration: configuration,
+		View:          view,
+		AbsoluteName:  absoluteName,
+	})
+
+	return objMgr.Connector.DeleteObject(srvRecord)
+}
+
+// CreateSRVRecord Create the SRV record
+func (objMgr *ObjectManager) CreateExternalHostRecord(configuration string, view string, addresses string, absoluteName string, properties string) (*entities.ExternalHostRecord, error) {
+
+	externalHostRecord := models.NewExternalHostRecord(entities.ExternalHostRecord{
+		Configuration: configuration,
+		View:          view,
+		AbsoluteName:  absoluteName,
+		Properties:    properties,
+		Addresses:     addresses,
+	})
+
+	_, err := objMgr.Connector.CreateObject(externalHostRecord)
+	return externalHostRecord, err
+}
+
+// GetSRVRecord Get the SRV record
+func (objMgr *ObjectManager) GetExternalHostRecord(configuration string, view string, absoluteName string) (*entities.ExternalHostRecord, error) {
+
+	externalHostRecord := models.ExternalHostRecord(entities.ExternalHostRecord{
+		Configuration: configuration,
+		View:          view,
+		AbsoluteName:  absoluteName,
+	})
+
+	err := objMgr.Connector.GetObject(externalHostRecord, &externalHostRecord)
+	return externalHostRecord, err
+}
+
+// UpdateSRVRecord Update the SRV record
+func (objMgr *ObjectManager) UpdateExternalHostRecord(configuration string, view string, addresses string, absoluteName string, properties string) (*entities.ExternalHostRecord, error) {
+
+	externalHostRecord := models.ExternalHostRecord(entities.ExternalHostRecord{
+		Configuration: configuration,
+		View:          view,
+		AbsoluteName:  absoluteName,
+		Addresses:     addresses,
+		Properties:    properties,
+	})
+
+	err := objMgr.Connector.UpdateObject(externalHostRecord, &externalHostRecord)
+	return externalHostRecord, err
+}
+
+// DeleteSRVRecord Delete the SRV record
+func (objMgr *ObjectManager) DeleteExternalHostRecord(configuration string, view string, absoluteName string) (string, error) {
+
+	externalHostRecord := models.ExternalHostRecord(entities.ExternalHostRecord{
+		Configuration: configuration,
+		View:          view,
+		AbsoluteName:  absoluteName,
+	})
+
+	return objMgr.Connector.DeleteObject(externalHostRecord)
+}
+
 // Zone
 
 // CreateZone Create a new Zone

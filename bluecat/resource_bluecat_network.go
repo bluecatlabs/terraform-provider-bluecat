@@ -5,11 +5,13 @@ package bluecat
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"reflect"
 	"strconv"
 	"strings"
 	"terraform-provider-bluecat/bluecat/entities"
+	"terraform-provider-bluecat/bluecat/utils"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 // ResourceNetwork The IPv4/IPv6 Network
@@ -226,10 +228,7 @@ func getNetwork(d *schema.ResourceData, m interface{}) error {
 		cidr = d.Get("cidr").(string)
 	}
 	d.Set("cidr", cidr)
-	name := d.Get("name").(string)
-	fmt.Println("%v", name)
 	//cidrStr, err = strconv.Atoi(cidrStr)
-	fmt.Println("%v", cidr)
 
 	parentBlock := d.Get("parent_block").(string)
 	allocatedId := d.Get("allocated_id").(string)
@@ -345,5 +344,5 @@ func getObjectFieldValue(fieldName, ref string) (val string) {
 		return f.String()
 	}
 
-	return getPropertyValue(fieldName, object.Properties)
+	return utils.GetPropertyValue(fieldName, object.Properties)
 }

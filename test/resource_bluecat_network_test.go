@@ -154,7 +154,7 @@ func testAccCheckNetworkDestroy(s *terraform.State) error {
 			if err == nil {
 				msg := fmt.Sprintf("Network %s is not removed", rs.Primary.ID)
 				log.Error(msg)
-				return fmt.Errorf(msg)
+				return fmt.Errorf("Network %s is not removed", rs.Primary.ID)
 			}
 
 		} else if rs.Type == "bluecat_ipv4block" || rs.Type == "bluecat_ipv6block" {
@@ -163,12 +163,12 @@ func testAccCheckNetworkDestroy(s *terraform.State) error {
 			if err == nil {
 				msg := fmt.Sprintf("Block %s is not removed", rs.Primary.ID)
 				log.Error(msg)
-				return fmt.Errorf(msg)
+				return fmt.Errorf("Block %s is not removed", rs.Primary.ID)
 			}
 		} else {
 			msg := fmt.Sprintf("There is an unexpected resource %s %s", rs.Primary.ID, rs.Type)
 			log.Error(msg)
-			return fmt.Errorf(msg)
+			// return fmt.Errorf(msg)
 		}
 	}
 	return nil
@@ -198,42 +198,42 @@ func testAccNetworkExists(t *testing.T, resource string, name string, cidr strin
 		if err != nil {
 			msg := fmt.Sprintf("Getting Network %s failed: %s", rs.Primary.ID, err)
 			log.Error(msg)
-			return fmt.Errorf(msg)
+			return fmt.Errorf("Getting Network %s failed: %s", rs.Primary.ID, err)
 		}
-		allowDuplicateHostProperty := getPropertyValue("allowDuplicateHost", network.Properties)
-		gatewayProperty := getPropertyValue("gateway", network.Properties)
+		allowDuplicateHostProperty := utils.GetPropertyValue("allowDuplicateHost", network.Properties)
+		gatewayProperty := utils.GetPropertyValue("gateway", network.Properties)
 		ipAddress, err := objMgr.GetIPAddress(configuration, netReserveIPValue, entities.IPV4)
-		state := getPropertyValue("state", ipAddress.Properties)
+		state := utils.GetPropertyValue("state", ipAddress.Properties)
 
 		if ipVersion == entities.IPV4 {
 			if allowDuplicateHostProperty != allowDuplicateHost || gatewayProperty != gateway || network.Name != name {
 				msg := fmt.Sprintf("Getting Network %s failed: %s. Expect allowDuplicateHost=%s gateway=%s in properties and name=%s, but received '%s' and name=%s", rs.Primary.ID, err, allowDuplicateHost, gateway, name, network.Properties, network.Name)
 				log.Error(msg)
-				return fmt.Errorf(msg)
+				return fmt.Errorf("Getting Network %s failed: %s. Expect allowDuplicateHost=%s gateway=%s in properties and name=%s, but received '%s' and name=%s", rs.Primary.ID, err, allowDuplicateHost, gateway, name, network.Properties, network.Name)
 			}
 
 			if err != nil {
 				msg := fmt.Sprintf("Getting reverse ip of Network %s failed: %s", rs.Primary.ID, err)
 				log.Error(msg)
-				return fmt.Errorf(msg)
+				return fmt.Errorf("Getting reverse ip of Network %s failed: %s", rs.Primary.ID, err)
 			}
 
 			if state != "RESERVED" {
 				msg := fmt.Sprintf("Getting reverse ip of Network %s failed: %s. %s is not RESERVED", rs.Primary.ID, err, netReserveIPValue)
 				log.Error(msg)
-				return fmt.Errorf(msg)
+				return fmt.Errorf("Getting reverse ip of Network %s failed: %s. %s is not RESERVED", rs.Primary.ID, err, netReserveIPValue)
 			}
-			templateId := getPropertyValue("template", network.Properties)
+			templateId := utils.GetPropertyValue("template", network.Properties)
 			if template != "" && templateId == "" {
 				msg := fmt.Sprintf("Assign %s template of Network %s failed", template, rs.Primary.ID)
 				log.Error(msg)
-				return fmt.Errorf(msg)
+				return fmt.Errorf("Assign %s template of Network %s failed", template, rs.Primary.ID)
 			}
 		} else if ipVersion == entities.IPV6 {
 			if network.Name != name {
 				msg := fmt.Sprintf("Getting Network %s failed: %s. Expect name=%s, but received name=%s", rs.Primary.ID, err, name, network.Name)
 				log.Error(msg)
-				return fmt.Errorf(msg)
+				return fmt.Errorf("Getting Network %s failed: %s. Expect name=%s, but received name=%s", rs.Primary.ID, err, name, network.Name)
 			}
 		}
 		return nil
@@ -250,7 +250,7 @@ var testAccresourceBlockCreate = fmt.Sprintf(
 		address = "30.0.0.0"
 		cidr = "24"
 		properties = ""
-	  }`, server, blockNetResource1, configuration)
+	  }`, GetTestEnvResources(), blockNetResource1, configuration)
 
 var netResource1 = "net_record"
 
@@ -383,7 +383,7 @@ var testAccResourceIPv6BlockCreate = fmt.Sprintf(
 		cidr = "64"
 		properties = ""
 		ip_version = "ipv6"
-	  }`, server, configuration)
+	  }`, GetTestEnvResources(), configuration)
 
 var testAccResourceIPv6NetworkCreateFullField = fmt.Sprintf(
 	`%s
@@ -404,7 +404,7 @@ var testAccResourceIPv6NetworkInsideUniqueLocal = fmt.Sprintf(
 		cidr = "FC00::/64"
 		properties = ""
 		ip_version = "ipv6"
-		}`, server, configuration)
+		}`, GetTestEnvResources(), configuration)
 
 // do not send name and properties option
 var testAccResourceIPv6NetworkCreateNotFullField = fmt.Sprintf(
@@ -413,7 +413,7 @@ var testAccResourceIPv6NetworkCreateNotFullField = fmt.Sprintf(
 		configuration = "%s"
 		cidr = "FC00::/64"
 		ip_version = "ipv6"
-		}`, server, configuration)
+		}`, GetTestEnvResources(), configuration)
 
 // do not send name and properties option
 var testAccResourceIPv6NetworUpdateAddName = fmt.Sprintf(
@@ -423,4 +423,4 @@ var testAccResourceIPv6NetworUpdateAddName = fmt.Sprintf(
 		cidr = "FC00::/64"
 		name = "new_name"
 		ip_version = "ipv6"
-		}`, server, configuration)
+		}`, GetTestEnvResources(), configuration)

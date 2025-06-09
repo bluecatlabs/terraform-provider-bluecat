@@ -4,10 +4,12 @@ package bluecat
 
 import (
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"strconv"
 	"strings"
 	"terraform-provider-bluecat/bluecat/entities"
+	"terraform-provider-bluecat/bluecat/utils"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 // ResourceIPAssociation The IP Association
@@ -143,10 +145,10 @@ func deleteIPAssociation(d *schema.ResourceData, m interface{}) error {
 		// Checking for existing linked IP address
 		properties := hostRecord.Properties
 
-		currentAssociateIPs := getPropertyValue("addresses", properties)
+		currentAssociateIPs := utils.GetPropertyValue("addresses", properties)
 
 		if strings.Contains(currentAssociateIPs, address.Address) && len(strings.Split(currentAssociateIPs, ",")) > 1 {
-			TTL := getPropertyValue("ttl", hostRecord.Properties)
+			TTL := utils.GetPropertyValue("ttl", hostRecord.Properties)
 			rrTTL, err := strconv.Atoi(TTL)
 			if err != nil {
 				msg := fmt.Sprintf("Convert Host record TTL %s failed: %s", TTL, err)

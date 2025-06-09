@@ -56,6 +56,7 @@ var testAccDataSourceHostRecordsReadFullField = fmt.Sprintf(
 		ip_address = "%s"
 		ttl = 200
 		properties = ""
+		depends_on = [bluecat_zone.sub_zone_test, bluecat_ipv4network.network_test]
 		}
 
 	data "bluecat_host_record" "%s" {
@@ -64,7 +65,7 @@ var testAccDataSourceHostRecordsReadFullField = fmt.Sprintf(
 		zone = "%s"
 		fqdn = bluecat_host_record.%s.absolute_name
 		ip_address = bluecat_host_record.%s.ip_address
-		}`, server, dataHostResource1, configuration, view, zone, fqdnName1, ipAddress1, hostDataSource1, configuration,
+		}`, GetTestEnvResources(), dataHostResource1, configuration, view, zone, fqdnName1, ipAddress1, hostDataSource1, configuration,
 	view, zone, dataHostResource1, dataHostResource1)
 
 var dataHostResource2 = "host_record_2"
@@ -81,6 +82,7 @@ var testAccDataSourceHostRecordsReadNotFullField = fmt.Sprintf(
 		ip_address = "%s"
 		ttl = 200
 		properties = ""
+		depends_on = [bluecat_zone.sub_zone_test, bluecat_ipv4network.network_test]
 		}
 
 	data "bluecat_host_record" "%s" {
@@ -88,4 +90,4 @@ var testAccDataSourceHostRecordsReadNotFullField = fmt.Sprintf(
 		view = "%s"
 		fqdn = bluecat_host_record.%s.absolute_name
 		ip_address = bluecat_host_record.%s.ip_address
-		}`, server, dataHostResource2, configuration, view, zone, fqdnName2, ipAddress2, hostDataSource2, configuration, view, dataHostResource2, dataHostResource2)
+		}`, GetTestEnvResources(), dataHostResource2, configuration, view, zone, fqdnName2, ipAddress2, hostDataSource2, configuration, view, dataHostResource2, dataHostResource2)
