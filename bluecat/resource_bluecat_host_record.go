@@ -70,6 +70,12 @@ func ResourceHostRecord() *schema.Resource {
 					return checkDiffProperties(old, new)
 				},
 			},
+			"to_deploy": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				Description: "Whether or not to selectively deploy the Host record",
+				Default:     "no",
+			},
 		},
 		Importer: &schema.ResourceImporter{
 			State: recordImporter,
@@ -113,11 +119,21 @@ func createHostRecord(d *schema.ResourceData, m interface{}) error {
 		zone = getZoneFromRRName(fqdnName)
 	}
 
-	_, err := objMgr.CreateHostRecord(configuration, view, zone, fqdnName, ipAddress, ttl, properties)
+	hostRecord, err := objMgr.CreateHostRecord(configuration, view, zone, fqdnName, ipAddress, ttl, properties)
 	if err != nil {
 		msg := fmt.Sprintf("Error creating Host record %s: %s", fqdnName, err)
 		log.Debug(msg)
 		return fmt.Errorf(msg)
+	}
+	deploy := utils.ParseDeploymentValue(d.Get("to_deploy").(string))
+	if deploy {
+		res, err := objMgr.Connector.DeployObject(hostRecord)
+		if err != nil {
+			msg := fmt.Sprintf("Error deploying Host record %s: %s", fqdnName, err)
+			log.Debug(msg)
+			return fmt.Errorf(msg)
+		}
+		log.Debugf("Successfully deployed. %s", res)
 	}
 	d.Set("absolute_name", fqdnName)
 	log.Debugf("Completed to create Host record %s", d.Get("absolute_name"))
@@ -184,11 +200,21 @@ func updateHostRecord(d *schema.ResourceData, m interface{}) error {
 	var immutableProperties = []string{"parentId", "parentType"} // these properties will raise error on the rest-api
 	properties = utils.RemoveImmutableProperties(properties, immutableProperties)
 
-	_, err := objMgr.UpdateHostRecord(configuration, view, zone, fqdnName, ipAddress, ttl, properties)
+	hostRecord, err := objMgr.UpdateHostRecord(configuration, view, zone, fqdnName, ipAddress, ttl, properties)
 	if err != nil {
 		msg := fmt.Sprintf("Error updating Host record %s: %s", fqdnName, err)
 		log.Debug(msg)
 		return fmt.Errorf(msg)
+	}
+	deploy := utils.ParseDeploymentValue(d.Get("to_deploy").(string))
+	if deploy {
+		res, err := objMgr.Connector.DeployObject(hostRecord)
+		if err != nil {
+			msg := fmt.Sprintf("Error deploying Host record %s: %s", fqdnName, err)
+			log.Debug(msg)
+			return fmt.Errorf(msg)
+		}
+		log.Debugf("Successfully deployed. %s", res)
 	}
 	d.Set("absolute_name", fqdnName)
 	log.Debugf("Completed to update Host record %s", d.Get("absolute_name"))

@@ -65,6 +65,12 @@ func ResourceTXTRecord() *schema.Resource {
 					return checkDiffProperties(old, new)
 				},
 			},
+			"to_deploy": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				Description: "Whether or not to selectively deploy the TXT record",
+				Default:     "no",
+			},
 		},
 		Importer: &schema.ResourceImporter{
 			State: recordImporter,
@@ -95,11 +101,21 @@ func createTXTRecord(d *schema.ResourceData, m interface{}) error {
 		zone = getZoneFromRRName(fqdnName)
 	}
 
-	_, err := objMgr.CreateTXTRecord(configuration, view, zone, fqdnName, text, ttl, properties)
+	txtRecord, err := objMgr.CreateTXTRecord(configuration, view, zone, fqdnName, text, ttl, properties)
 	if err != nil {
 		msg := fmt.Sprintf("Error creating TXT record %s: %s", fqdnName, err)
 		log.Debug(msg)
 		return fmt.Errorf(msg)
+	}
+	deploy := utils.ParseDeploymentValue(d.Get("to_deploy").(string))
+	if deploy {
+		res, err := objMgr.Connector.DeployObject(txtRecord)
+		if err != nil {
+			msg := fmt.Sprintf("Error deploying TXT record %s: %s", absoluteName, err)
+			log.Debug(msg)
+			return fmt.Errorf(msg)
+		}
+		log.Debugf("Successfully deployed. %s", res)
 	}
 	d.Set("absolute_name", fqdnName)
 	log.Debugf("Completed to create TXT record %s", d.Get("absolute_name"))
@@ -167,11 +183,21 @@ func updateTXTRecord(d *schema.ResourceData, m interface{}) error {
 	var immutableProperties = []string{"parentId", "parentType"} // these properties will raise error on the rest-api
 	properties = utils.RemoveImmutableProperties(properties, immutableProperties)
 
-	_, err := objMgr.UpdateTXTRecord(configuration, view, zone, fqdnName, text, ttl, properties)
+	txtRecord, err := objMgr.UpdateTXTRecord(configuration, view, zone, fqdnName, text, ttl, properties)
 	if err != nil {
 		msg := fmt.Sprintf("Error updating TXT record %s: %s", fqdnName, err)
 		log.Debug(msg)
 		return fmt.Errorf(msg)
+	}
+	deploy := utils.ParseDeploymentValue(d.Get("to_deploy").(string))
+	if deploy {
+		res, err := objMgr.Connector.DeployObject(txtRecord)
+		if err != nil {
+			msg := fmt.Sprintf("Error deploying TXT record %s: %s", absoluteName, err)
+			log.Debug(msg)
+			return fmt.Errorf(msg)
+		}
+		log.Debugf("Successfully deployed. %s", res)
 	}
 	d.Set("absolute_name", fqdnName)
 	log.Debugf("Completed to update TXT record %s", d.Get("absolute_name"))

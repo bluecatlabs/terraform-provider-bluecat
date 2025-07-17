@@ -10,6 +10,7 @@ This resource will create a CNAME record (Alias) in Address Manager with the spe
 | linked_record | Required | The record that will be linked to the CNAME record, must be a full valid FQDN of an existing record. | server1.bluecatnetworks.com |
 | ttl | Optional | The TTL value. Default is -1 | 300 |
 | properties | Optional | Records properties to be passed | comment=My comments |
+| to_deploy | Optional | Whether or not to deploy the resource to the BDDS, acceptable true values are yes/Yes true/True | yes |
 
 ## Example of a CNAME Record resource
 

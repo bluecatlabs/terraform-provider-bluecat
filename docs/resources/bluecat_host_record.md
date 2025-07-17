@@ -10,6 +10,7 @@ This resource will create a host record in Address Manager with a specific IP Ad
 | ip_address    | Required | The IP address that will be linked to the Host record | 10.0.0.12 or 2003:1000::10 |
 | ttl           | Optional | The TTL value. Default is -1  | 300                        |
 | properties    | Optional | Records properties to be passed | comment=My comments        |
+| to_deploy | Optional | Whether or not to deploy the resource to the BDDS, acceptable true values are yes/Yes true/True | yes |
 
 ## Example of a Host Record resource
 

@@ -14,6 +14,7 @@ This resource will allow the allocation of an IP Address (or next available) fro
 | action        | Optional | Desired IP4 address state: MAKE_STATIC / MAKE_RESERVED / MAKE_DHCP_RESERVED                                 | MAKE_STATIC                |
 | template      | Optional | IPv4 Template which you want to assign                                                                      | ipTemplateIPv4             |
 | properties    | Optional | Records properties to be passed                                                                             | comment=My comments        |
+| to_deploy | Optional | Whether or not to deploy the resource to the BDDS, acceptable true values are yes/Yes true/True | yes |
 
 ## Example of an IP Allocation resource
 

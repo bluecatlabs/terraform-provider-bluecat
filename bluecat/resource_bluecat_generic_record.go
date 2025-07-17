@@ -70,6 +70,12 @@ func ResourceGenericRecord() *schema.Resource {
 					return checkDiffProperties(old, new)
 				},
 			},
+			"to_deploy": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				Description: "Whether or not to selectively deploy the Generic record",
+				Default:     "no",
+			},
 		},
 		Importer: &schema.ResourceImporter{
 			State: recordImporter,
@@ -101,11 +107,21 @@ func createGenericRecord(d *schema.ResourceData, m interface{}) error {
 		zone = getZoneFromRRName(fqdnName)
 	}
 
-	_, err := objMgr.CreateGenericRecord(configuration, view, zone, typerr, fqdnName, data, ttl, properties)
+	genericRecord, err := objMgr.CreateGenericRecord(configuration, view, zone, typerr, fqdnName, data, ttl, properties)
 	if err != nil {
 		msg := fmt.Sprintf("Error creating Generic record %s: %s", fqdnName, err)
 		log.Debug(msg)
 		return fmt.Errorf(msg)
+	}
+	deploy := utils.ParseDeploymentValue(d.Get("to_deploy").(string))
+	if deploy {
+		res, err := objMgr.Connector.DeployObject(genericRecord)
+		if err != nil {
+			msg := fmt.Sprintf("Error deploying Generic record %s: %s", absoluteName, err)
+			log.Debug(msg)
+			return fmt.Errorf(msg)
+		}
+		log.Debugf("Successfully deployed. %s", res)
 	}
 	d.Set("absolute_name", fqdnName)
 	log.Debugf("Completed to create Generic record %s", d.Get("absolute_name"))
@@ -171,11 +187,21 @@ func updateGenericRecord(d *schema.ResourceData, m interface{}) error {
 	var immutableProperties = []string{"parentId", "parentType"} // these properties will raise error on the rest-api
 	properties = utils.RemoveImmutableProperties(properties, immutableProperties)
 
-	_, err := objMgr.UpdateGenericRecord(configuration, view, zone, typerr, fqdnName, data, ttl, properties)
+	genericRecord, err := objMgr.UpdateGenericRecord(configuration, view, zone, typerr, fqdnName, data, ttl, properties)
 	if err != nil {
 		msg := fmt.Sprintf("Error updating Generic record %s: %s", fqdnName, err)
 		log.Debug(msg)
 		return fmt.Errorf(msg)
+	}
+	deploy := utils.ParseDeploymentValue(d.Get("to_deploy").(string))
+	if deploy {
+		res, err := objMgr.Connector.DeployObject(genericRecord)
+		if err != nil {
+			msg := fmt.Sprintf("Error deploying Generic record %s: %s", absoluteName, err)
+			log.Debug(msg)
+			return fmt.Errorf(msg)
+		}
+		log.Debugf("Successfully deployed. %s", res)
 	}
 	d.Set("absolute_name", fqdnName)
 	log.Debugf("Completed to update Generic record %s", d.Get("absolute_name"))
