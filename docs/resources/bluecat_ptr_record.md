@@ -10,6 +10,7 @@ This resource will create a PTR record (reverse record) in Address Manager with 
 | ip_address | Required | The IP address that will be created the PTR record for | 10.0.0.12 |
 | reverse_record | Required | To create a reverse record for the pass host | True/False |
 | ttl | Optional | The TTL value. Default is -1  | 300 |
+| to_deploy | Optional | Whether or not to deploy the resource to the BDDS, acceptable true values are yes/Yes true/True | yes |
 
 ## Example of a PTR Record resource
 

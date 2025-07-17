@@ -337,6 +337,10 @@ Option for automatic creation without getting the prompt for approving the creat
 #### 1. Creating imports.tf configuration
 Create a new file called imports.tf and define the resource blocks that you want to import.
 
+Notice: Make sure the default configuration within Terraforms gateway instance is set up to be the one where the imported resources are located, otherwise terraform will not be able to find the resources to be imported.
+
+Notice: When importing resource records, make sure that they are located within the default View of the Gateway configuration otherwise Terraform will not be able to locate the requested records.
+
 Resource import definition:
 ```
 import {

@@ -11,6 +11,7 @@ This resource will create a Generic record in Address Manager. The attributes ar
 | data | Required | The Data of the Generic record | 10.0.0.12 |
 | ttl | Optional | The TTL value. Default is -1  | 300 |
 | properties | Optional | Records properties to be passed | comment=My comments |
+| to_deploy | Optional | Whether or not to deploy the resource to the BDDS, acceptable true values are yes/Yes true/True | yes |
 
 ## Example of a Generic Record resource
 

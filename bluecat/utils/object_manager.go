@@ -29,7 +29,12 @@ func (objMgr *ObjectManager) CreateHostRecord(configuration string, view string,
 		Properties:    properties,
 	})
 
-	_, err := objMgr.Connector.CreateObject(hostRecord)
+	res, err := objMgr.Connector.CreateObject(hostRecord)
+	if err == nil {
+		var respDict map[string]interface{}
+		_ = json.Unmarshal([]byte(res), &respDict)
+		hostRecord.BAMId = int(respDict["id"].(float64))
+	}
 	return hostRecord, err
 }
 
@@ -90,7 +95,12 @@ func (objMgr *ObjectManager) CreateCNAMERecord(configuration string, view string
 		Properties:    properties,
 	})
 
-	_, err := objMgr.Connector.CreateObject(cnameRecord)
+	res, err := objMgr.Connector.CreateObject(cnameRecord)
+	if err == nil {
+		var respDict map[string]interface{}
+		_ = json.Unmarshal([]byte(res), &respDict)
+		cnameRecord.BAMId = int(respDict["id"].(float64))
+	}
 	return cnameRecord, err
 }
 
@@ -526,7 +536,12 @@ func (objMgr *ObjectManager) CreateTXTRecord(configuration string, view string, 
 		Properties:    properties,
 	})
 
-	_, err := objMgr.Connector.CreateObject(txtRecord)
+	res, err := objMgr.Connector.CreateObject(txtRecord)
+	if err == nil {
+		var respDict map[string]interface{}
+		_ = json.Unmarshal([]byte(res), &respDict)
+		txtRecord.BAMId = int(respDict["id"].(float64))
+	}
 	return txtRecord, err
 }
 
@@ -586,7 +601,12 @@ func (objMgr *ObjectManager) CreateGenericRecord(configuration string, view stri
 		Properties:    properties,
 	})
 
-	_, err := objMgr.Connector.CreateObject(genericRecord)
+	res, err := objMgr.Connector.CreateObject(genericRecord)
+	if err == nil {
+		var respDict map[string]interface{}
+		_ = json.Unmarshal([]byte(res), &respDict)
+		genericRecord.BAMId = int(respDict["id"].(float64))
+	}
 	return genericRecord, err
 }
 
@@ -649,7 +669,12 @@ func (objMgr *ObjectManager) CreateSRVRecord(configuration string, view string, 
 		Properties:    properties,
 	})
 
-	_, err := objMgr.Connector.CreateObject(srvRecord)
+	res, err := objMgr.Connector.CreateObject(srvRecord)
+	if err == nil {
+		var respDict map[string]interface{}
+		_ = json.Unmarshal([]byte(res), &respDict)
+		srvRecord.BAMId = int(respDict["id"].(float64))
+	}
 	return srvRecord, err
 }
 
@@ -699,7 +724,7 @@ func (objMgr *ObjectManager) DeleteSRVRecord(configuration string, view string, 
 	return objMgr.Connector.DeleteObject(srvRecord)
 }
 
-// CreateSRVRecord Create the SRV record
+// CreateExternalHostRecord Create the External Host Record record
 func (objMgr *ObjectManager) CreateExternalHostRecord(configuration string, view string, addresses string, absoluteName string, properties string) (*entities.ExternalHostRecord, error) {
 
 	externalHostRecord := models.NewExternalHostRecord(entities.ExternalHostRecord{
@@ -710,7 +735,12 @@ func (objMgr *ObjectManager) CreateExternalHostRecord(configuration string, view
 		Addresses:     addresses,
 	})
 
-	_, err := objMgr.Connector.CreateObject(externalHostRecord)
+	res, err := objMgr.Connector.CreateObject(externalHostRecord)
+	if err == nil {
+		var respDict map[string]interface{}
+		_ = json.Unmarshal([]byte(res), &respDict)
+		externalHostRecord.BAMId = int(respDict["id"].(float64))
+	}
 	return externalHostRecord, err
 }
 

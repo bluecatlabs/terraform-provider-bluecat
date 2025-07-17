@@ -86,6 +86,12 @@ func ResourceSRVRecord() *schema.Resource {
 				Optional:    true,
 				Description: "SRV Records name, used exclusively for changing the name of the record. For identification, use absolute_name.",
 			},
+			"to_deploy": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				Description: "Whether or not to selectively deploy the SRV record",
+				Default:     "no",
+			},
 		},
 		Importer: &schema.ResourceImporter{
 			State: recordImporter,
@@ -119,11 +125,21 @@ func createSRVRecord(d *schema.ResourceData, m interface{}) error {
 		zone = getZoneFromRRName(fqdnName)
 	}
 
-	_, err := objMgr.CreateSRVRecord(configuration, view, zone, priority, port, weight, fqdnName, linkedRecord, ttl, properties)
+	srvRecord, err := objMgr.CreateSRVRecord(configuration, view, zone, priority, port, weight, fqdnName, linkedRecord, ttl, properties)
 	if err != nil {
 		msg := fmt.Sprintf("Error creating SRV record %s: %s", fqdnName, err)
 		log.Debug(msg)
 		return fmt.Errorf(msg)
+	}
+	deploy := utils.ParseDeploymentValue(d.Get("to_deploy").(string))
+	if deploy {
+		res, err := objMgr.Connector.DeployObject(srvRecord)
+		if err != nil {
+			msg := fmt.Sprintf("Error deploying SRV record %s: %s", absoluteName, err)
+			log.Debug(msg)
+			return fmt.Errorf(msg)
+		}
+		log.Debugf("Successfully deployed. %s", res)
 	}
 	d.Set("absolute_name", fqdnName)
 	log.Debugf("Completed to create SRV record %s", d.Get("absolute_name"))
@@ -193,11 +209,22 @@ func updateSRVRecord(d *schema.ResourceData, m interface{}) error {
 	var immutableProperties = []string{"parentId", "parentType"} // these properties will raise error on the rest-api
 	properties = utils.RemoveImmutableProperties(properties, immutableProperties)
 
-	_, err := objMgr.UpdateSRVRecord(configuration, view, zone, priority, port, weight, fqdnName, linkedRecord, ttl, properties, name)
+	srvRecord, err := objMgr.UpdateSRVRecord(configuration, view, zone, priority, port, weight, fqdnName, linkedRecord, ttl, properties, name)
 	if err != nil {
 		msg := fmt.Sprintf("Error updating SRV record %s: %s", fqdnName, err)
 		log.Debug(msg)
 		return fmt.Errorf(msg)
+	}
+
+	deploy := utils.ParseDeploymentValue(d.Get("to_deploy").(string))
+	if deploy {
+		res, err := objMgr.Connector.DeployObject(srvRecord)
+		if err != nil {
+			msg := fmt.Sprintf("Error deploying SRV record %s: %s", absoluteName, err)
+			log.Debug(msg)
+			return fmt.Errorf(msg)
+		}
+		log.Debugf("Successfully deployed. %s", res)
 	}
 	if name != "" {
 		fqdnName = replaceName(fqdnName, name)

@@ -95,7 +95,7 @@ func dataSourceCNAMERecordRead(d *schema.ResourceData, m interface{}) error {
 		}
 	}
 
-	d.SetId(strconv.Itoa(cnameRecord.CNameId))
+	d.SetId(strconv.Itoa(cnameRecord.BAMId))
 
 	d.Set("zone", zone)
 	d.Set("ttl", ttl)

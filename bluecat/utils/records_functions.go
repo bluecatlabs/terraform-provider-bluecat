@@ -2,6 +2,7 @@ package utils
 
 import (
 	"fmt"
+	"slices"
 	"strings"
 	"terraform-provider-bluecat/bluecat/entities"
 )
@@ -36,4 +37,9 @@ func GetPropertyValue(key, props string) (val string) {
 		}
 	}
 	return
+}
+
+func ParseDeploymentValue(deploymentString string) (deploy bool) {
+	trueValues := []string{"Yes", "yes", "True", "true"}
+	return slices.Contains(trueValues, deploymentString)
 }

@@ -51,6 +51,12 @@ func ResourceExternalHostRecord() *schema.Resource {
 					return checkDiffProperties(old, new)
 				},
 			},
+			"to_deploy": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				Description: "Whether or not to selectively deploy the Host record",
+				Default:     "no",
+			},
 		},
 		Importer: &schema.ResourceImporter{
 			State: recordImporter,
@@ -71,11 +77,21 @@ func createExternalHostRecord(d *schema.ResourceData, m interface{}) error {
 	objMgr := new(utils.ObjectManager)
 	objMgr.Connector = connector
 
-	_, err := objMgr.CreateExternalHostRecord(configuration, view, addresses, absoluteName, properties)
+	externalHostRecord, err := objMgr.CreateExternalHostRecord(configuration, view, addresses, absoluteName, properties)
 	if err != nil {
 		msg := fmt.Sprintf("Error creating ExternalHost record %s: %s", absoluteName, err)
 		log.Debug(msg)
 		return fmt.Errorf(msg)
+	}
+	deploy := utils.ParseDeploymentValue(d.Get("to_deploy").(string))
+	if deploy {
+		res, err := objMgr.Connector.DeployObject(externalHostRecord)
+		if err != nil {
+			msg := fmt.Sprintf("Error deploying External Host record %s: %s", absoluteName, err)
+			log.Debug(msg)
+			return fmt.Errorf(msg)
+		}
+		log.Debugf("Successfully deployed. %s", res)
 	}
 	d.Set("absolute_name", absoluteName)
 	log.Debugf("Completed to create ExternalHost record %s", d.Get("absolute_name"))
@@ -131,11 +147,21 @@ func updateExternalHostRecord(d *schema.ResourceData, m interface{}) error {
 	var immutableProperties = []string{"parentId", "parentType"} // these properties will raise error on the rest-api
 	properties = utils.RemoveImmutableProperties(properties, immutableProperties)
 
-	_, err := objMgr.UpdateExternalHostRecord(configuration, view, addresses, absoluteName, properties)
+	externalHostRecord, err := objMgr.UpdateExternalHostRecord(configuration, view, addresses, absoluteName, properties)
 	if err != nil {
 		msg := fmt.Sprintf("Error updating ExternalHost record %s: %s", absoluteName, err)
 		log.Debug(msg)
 		return fmt.Errorf(msg)
+	}
+	deploy := utils.ParseDeploymentValue(d.Get("to_deploy").(string))
+	if deploy {
+		res, err := objMgr.Connector.DeployObject(externalHostRecord)
+		if err != nil {
+			msg := fmt.Sprintf("Error deploying External Host record %s: %s", absoluteName, err)
+			log.Debug(msg)
+			return fmt.Errorf(msg)
+		}
+		log.Debugf("Successfully deployed. %s", res)
 	}
 	d.Set("absolute_name", absoluteName)
 	log.Debugf("Completed to update ExternalHost record %s", d.Get("absolute_name"))

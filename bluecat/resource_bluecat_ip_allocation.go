@@ -93,6 +93,12 @@ func ResourceIPAllocation() *schema.Resource {
 				Optional:    true,
 				Description: "IP Address version: ipv4 or ipv6",
 			},
+			"to_deploy": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				Description: "Whether or not to selectively deploy the Host record",
+				Default:     "no",
+			},
 		},
 	}
 }
@@ -178,11 +184,26 @@ func createIPAllocation(d *schema.ResourceData, m interface{}) error {
 	if len(zone) > 0 {
 		if address.Action != entities.AllocateReserved {
 			log.Debugf("Creating the Host record %s", fqdnName)
-			_, err := objMgr.CreateHostRecord(address.Configuration, view, zone, fqdnName, address.Address, -1, address.Properties)
+			hostRecord, err := objMgr.CreateHostRecord(address.Configuration, view, zone, fqdnName, address.Address, -1, address.Properties)
 			if err != nil {
 				msg := fmt.Sprintf("Error creating the Host record %s: %s", fqdnName, err)
 				log.Debug(msg)
 				return fmt.Errorf(msg)
+			}
+			if d.Get("action").(string) == "MAKE_STATIC" {
+				to_deploy := d.Get("to_deploy")
+				if to_deploy != nil {
+					deploy := utils.ParseDeploymentValue(to_deploy.(string))
+					if deploy {
+						res, err := objMgr.Connector.DeployObject(hostRecord)
+						if err != nil {
+							msg := fmt.Sprintf("Error deploying IP Allocation record %s: %s", fqdnName, err)
+							log.Debug(msg)
+							return fmt.Errorf(msg)
+						}
+						log.Debugf("Successfully deployed. %s", res)
+					}
+				}
 			}
 		}
 
@@ -330,11 +351,26 @@ func updateAllocatedResource(d *schema.ResourceData, m interface{}) error {
 			var immutableProperties = []string{"parentId", "parentType"} // these properties will raise error on the rest-api
 			address.Properties = utils.RemoveImmutableProperties(address.Properties, immutableProperties)
 
-			_, err = objMgr.UpdateHostRecord(address.Configuration, view, zone, fqdnName, associateIPs, rrTTL, address.Properties)
+			hostRecord, err = objMgr.UpdateHostRecord(address.Configuration, view, zone, fqdnName, associateIPs, rrTTL, address.Properties)
 			if err != nil {
 				msg := fmt.Sprintf("Error updating Host record %s: %s", fqdnName, err)
 				log.Debug(msg)
 				return fmt.Errorf(msg)
+			}
+			if action, ok := d.Get("action").(string); ok && action == "MAKE_STATIC" {
+				to_deploy := d.Get("to_deploy")
+				if to_deploy != nil {
+					deploy := utils.ParseDeploymentValue(to_deploy.(string))
+					if deploy {
+						res, err := objMgr.Connector.DeployObject(hostRecord)
+						if err != nil {
+							msg := fmt.Sprintf("Error deploying IP Allocation record %s: %s", fqdnName, err)
+							log.Debug(msg)
+							return fmt.Errorf(msg)
+						}
+						log.Debugf("Successfully deployed. %s", res)
+					}
+				}
 			}
 		} else {
 			msg := fmt.Sprintf("Getting Host record %s failed: %s", address.Name, err)

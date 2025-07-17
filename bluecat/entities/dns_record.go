@@ -25,7 +25,8 @@ type HostRecord struct {
 	TTL           int    `json:"ttl,omitempty"`
 	ReverseRecord string `json:"reverse_record,omitempty"`
 	Properties    string `json:"properties,omitempty"`
-	HostId        int    `json:"id,omitempty"`
+	BAMId         int    `json:"id,omitempty"`
+	BAMType       string `json:"type,omitempty"`
 	Name          string `json:"name,omitempty"`
 }
 
@@ -40,7 +41,8 @@ type CNAMERecord struct {
 	TTL           int    `json:"ttl,omitempty"`
 	Properties    string `json:"properties,omitempty"`
 	Name          string `json:"name,omitempty"`
-	CNameId       int    `json:"id,omitempty"`
+	BAMId         int    `json:"id,omitempty"`
+	BAMType       string `json:"type,omitempty"`
 }
 
 // TXTRecord TXT record entity
@@ -53,6 +55,8 @@ type TXTRecord struct {
 	Text          string `json:"text,omitempty"`
 	TTL           int    `json:"ttl,omitempty"`
 	Properties    string `json:"properties,omitempty"`
+	BAMId         int    `json:"id,omitempty"`
+	BAMType       string `json:"type,omitempty"`
 }
 
 // GenericRecord Generic record entity
@@ -66,6 +70,7 @@ type GenericRecord struct {
 	Data          string `json:"data,omitempty"`
 	TTL           int    `json:"ttl,omitempty"`
 	Properties    string `json:"properties,omitempty"`
+	BAMId         int    `json:"id,omitempty"`
 }
 
 // SRVRecord SRV record entity
@@ -82,7 +87,8 @@ type SRVRecord struct {
 	Weight        int    `json:"weight,omitempty"`
 	Properties    string `json:"properties,omitempty"`
 	Name          string `json:"name,omitempty"`
-	SrvID         int    `json:"id,omitempty"`
+	BAMId         int    `json:"id,omitempty"`
+	BAMType       string `json:"type,omitempty"`
 }
 
 // External Host Record record entity
@@ -93,4 +99,6 @@ type ExternalHostRecord struct {
 	AbsoluteName  string `json:"name,omitempty"`
 	Addresses     string `json:"addresses,omitempty"`
 	Properties    string `json:"properties,omitempty"`
+	BAMId         int    `json:"id,omitempty"`
+	BAMType       string `json:"type,omitempty"`
 }

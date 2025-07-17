@@ -10,6 +10,7 @@ This resource will create a TXT record in Address Manager with the specific data
 | text | Required | The text data | 10.0.0.0/24 |
 | ttl | Optional | The TTL value. Default is -1  | 300 |
 | properties | Optional | Records properties to be passed | comment=My comments |
+| to_deploy | Optional | Whether or not to deploy the resource to the BDDS, acceptable true values are yes/Yes true/True | yes |
 
 ## Example of a TXT Record resource
 

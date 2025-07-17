@@ -2,8 +2,9 @@ package bluecat
 
 import (
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"strings"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 func resourceImporter(d *schema.ResourceData, meta any) ([]*schema.ResourceData, error) {
@@ -26,13 +27,12 @@ func recordImporter(d *schema.ResourceData, meta any) ([]*schema.ResourceData, e
 	// d.Id() here is the last argument passed to the `terraform import RESOURCE_TYPE.RESOURCE_NAME RESOURCE_ID` command
 	// Here we use a function to parse the import ID (like the example above) to simplify our logic
 	zoneName, recordName, err := recordParseId(d.Id())
-
 	if err != nil {
 		return nil, err
 	}
 
 	d.Set("zone", zoneName)
-	d.Set("name", recordName)
+	d.Set("absolute_name", recordName)
 	absoluteName := fmt.Sprintf("%s.%s", recordName, zoneName)
 	d.Set("absoluteName", absoluteName)
 	d.SetId(absoluteName)

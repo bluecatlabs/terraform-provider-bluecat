@@ -99,7 +99,7 @@ func dataSourceHostRecordRead(d *schema.ResourceData, m interface{}) error {
 		}
 	}
 
-	d.SetId(strconv.Itoa(hostRecord.HostId))
+	d.SetId(strconv.Itoa(hostRecord.BAMId))
 	d.Set("zone", zone)
 	d.Set("ttl", ttl)
 	d.Set("properties", hostRecord.Properties)
