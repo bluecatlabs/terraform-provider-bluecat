@@ -67,6 +67,12 @@ func ResourcePTRRecord() *schema.Resource {
 					return checkDiffProperties(old, new)
 				},
 			},
+			"to_deploy": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				Description: "Whether or not to selectively deploy the Host record",
+				Default:     "no",
+			},
 		},
 	}
 }
@@ -83,7 +89,8 @@ func createPTRRecord(d *schema.ResourceData, m interface{}) error {
 	ttl := d.Get("ttl").(int)
 	reverseRecord := d.Get("reverse_record").(string)
 	properties := d.Get("properties").(string)
-	fqdnName, err := updatePTR(m, configuration, view, zone, name, ipAddress, reverseRecord, properties, ttl)
+	to_deploy := d.Get("to_deploy").(string)
+	fqdnName, err := updatePTR(m, configuration, view, zone, name, ipAddress, reverseRecord, properties, ttl, to_deploy)
 	if err != nil {
 		return err
 	}
@@ -127,8 +134,9 @@ func updatePTRRecord(d *schema.ResourceData, m interface{}) error {
 	ttl := d.Get("ttl").(int)
 	reverseRecord := d.Get("reverse_record").(string)
 	properties := d.Get("properties").(string)
+	to_deploy := d.Get("to_deploy").(string)
 
-	fqdnName, err := updatePTR(m, configuration, view, zone, name, ipAddress, reverseRecord, properties, ttl)
+	fqdnName, err := updatePTR(m, configuration, view, zone, name, ipAddress, reverseRecord, properties, ttl, to_deploy)
 	if err != nil {
 		return err
 	}
@@ -139,7 +147,7 @@ func updatePTRRecord(d *schema.ResourceData, m interface{}) error {
 
 // updatePTRRecord Update the existing PTR record
 // Update the PTR, just set the reverseRecord flag
-func updatePTR(m interface{}, configuration, view, zone, name, ip4Address, reverseRecord, properties string, ttl int) (string, error) {
+func updatePTR(m interface{}, configuration, view, zone, name, ip4Address, reverseRecord, properties string, ttl int, to_deploy string) (string, error) {
 	connector := m.(*utils.Connector)
 	objMgr := new(utils.ObjectManager)
 	objMgr.Connector = connector
@@ -177,11 +185,21 @@ func updatePTR(m interface{}, configuration, view, zone, name, ip4Address, rever
 	var immutableProperties = []string{"parentId", "parentType"} // these properties will raise error on the rest-api
 	properties = utils.RemoveImmutableProperties(properties, immutableProperties)
 
-	_, err = objMgr.UpdateHostRecord(configuration, view, zone, fqdnName, ip4Address, ttl, properties)
+	hostRecord, err := objMgr.UpdateHostRecord(configuration, view, zone, fqdnName, ip4Address, ttl, properties)
 	if err != nil {
 		msg := fmt.Sprintf("Error updating PTR record %s: %s", fqdnName, err)
 		log.Debug(msg)
 		return "", fmt.Errorf(msg)
+	}
+	deploy := utils.ParseDeploymentValue(to_deploy)
+	if deploy {
+		res, err := objMgr.Connector.DeployObject(hostRecord)
+		if err != nil {
+			msg := fmt.Sprintf("Error deploying PTR record %s: %s", fqdnName, err)
+			log.Debug(msg)
+			return fqdnName, fmt.Errorf(msg)
+		}
+		log.Debugf("Successfully deployed. %s", res)
 	}
 	return fqdnName, nil
 }
@@ -198,8 +216,9 @@ func deletePTRRecord(d *schema.ResourceData, m interface{}) error {
 	ttl := d.Get("ttl").(int)
 	reverseRecord := "false"
 	properties := d.Get("properties").(string)
+	to_deploy := d.Get("to_deploy").(string)
 
-	_, err := updatePTR(m, configuration, view, zone, name, ipAddress, reverseRecord, properties, ttl)
+	_, err := updatePTR(m, configuration, view, zone, name, ipAddress, reverseRecord, properties, ttl, to_deploy)
 	if err != nil {
 		return err
 	}

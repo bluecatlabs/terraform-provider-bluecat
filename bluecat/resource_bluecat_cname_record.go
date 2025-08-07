@@ -65,6 +65,12 @@ func ResourceCNAMERecord() *schema.Resource {
 					return checkDiffProperties(old, new)
 				},
 			},
+			"to_deploy": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				Description: "Whether or not to selectively deploy the CNAME record",
+				Default:     "no",
+			},
 		},
 		Importer: &schema.ResourceImporter{
 			State: recordImporter,
@@ -95,11 +101,21 @@ func createCNAMERecord(d *schema.ResourceData, m interface{}) error {
 		zone = getZoneFromRRName(fqdnName)
 	}
 
-	_, err := objMgr.CreateCNAMERecord(configuration, view, zone, fqdnName, linkedRecord, ttl, properties)
+	cnameRecord, err := objMgr.CreateCNAMERecord(configuration, view, zone, fqdnName, linkedRecord, ttl, properties)
 	if err != nil {
 		msg := fmt.Sprintf("Error creating CNAME record %s: %s", fqdnName, err)
 		log.Debug(msg)
 		return fmt.Errorf(msg)
+	}
+	deploy := utils.ParseDeploymentValue(d.Get("to_deploy").(string))
+	if deploy {
+		res, err := objMgr.Connector.DeployObject(cnameRecord)
+		if err != nil {
+			msg := fmt.Sprintf("Error deploying CNAME record %s: %s", fqdnName, err)
+			log.Debug(msg)
+			return fmt.Errorf(msg)
+		}
+		log.Debugf("Successfully deployed. %s", res)
 	}
 	d.Set("absolute_name", fqdnName)
 	log.Debugf("Completed to create CNAME record %s", d.Get("absolute_name"))
@@ -166,11 +182,21 @@ func updateCNAMERecord(d *schema.ResourceData, m interface{}) error {
 	var immutableProperties = []string{"parentId", "parentType"} // these properties will raise error on the rest-api
 	properties = utils.RemoveImmutableProperties(properties, immutableProperties)
 
-	_, err := objMgr.UpdateCNAMERecord(configuration, view, zone, fqdnName, linkedRecord, ttl, properties)
+	cnameRecord, err := objMgr.UpdateCNAMERecord(configuration, view, zone, fqdnName, linkedRecord, ttl, properties)
 	if err != nil {
 		msg := fmt.Sprintf("Error updating CNAME record %s: %s", fqdnName, err)
 		log.Debug(msg)
 		return fmt.Errorf(msg)
+	}
+	deploy := utils.ParseDeploymentValue(d.Get("to_deploy").(string))
+	if deploy {
+		res, err := objMgr.Connector.DeployObject(cnameRecord)
+		if err != nil {
+			msg := fmt.Sprintf("Error deploying CNAME record %s: %s", fqdnName, err)
+			log.Debug(msg)
+			return fmt.Errorf(msg)
+		}
+		log.Debugf("Successfully deployed. %s", res)
 	}
 	d.Set("absolute_name", fqdnName)
 	log.Debugf("Completed to update CNAME record %s", d.Get("absolute_name"))

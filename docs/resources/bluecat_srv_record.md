@@ -14,6 +14,7 @@ This resource will create a SRV record (Alias) in Address Manager with the speci
 | priority | Required | The priority of the record, a lower value is a higher priority | 2 |
 | properties | Optional | Records properties to be passed | comment=My comments |
 | name | Optional | The name that terraform will use to update the fqdn of the record. *Make sure* to update the absolute name to match the newly updated name after using this parameter | webapp2 |
+| to_deploy | Optional | Whether or not to deploy the resource to the BDDS, acceptable true values are yes/Yes true/True | yes |
 
 ## Example of a SRV Record resource
 
