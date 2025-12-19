@@ -4,9 +4,10 @@ package entities
 
 import (
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"reflect"
 	"strings"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 const IPV4 = "ipv4"
@@ -209,6 +210,7 @@ type View struct {
 	Properties    string `json:"properties,omitempty"`
 }
 
+// TODO: If new function works, replace this with that function
 func GetPropertiesFromString(input string) map[string]string {
 	result := make(map[string]string)
 	properties := strings.Split(input, "|")

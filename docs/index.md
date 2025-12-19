@@ -71,6 +71,8 @@ Below are the available BlueCat data sources:
 -   DNS Zone (bluecat_zone)
 -   View (bluecat_view)
 
+To filter out which properties should be used within the Terraform infrastructure, pass the optional field "allowed_property_keys" to the datasource object in the form of "allowed_property_keys = ["property1_name", "property2_name",...]"
+
 ## Import Capabilities
 
 You can now import existing BlueCat data into Terraform state. The available BlueCat Objects you can import are:
@@ -83,5 +85,30 @@ You can now import existing BlueCat data into Terraform state. The available Blu
 -  Host Record
 -  TXT Record
 -  View
+
+## Bluecat Import Recommendation
+If the resource block is not included a "terraform plan -generate-config-out=<yourFileNameHere>.tf" must be run to create a configuration file with the resource that is being imported. This file does not specify optional attributes and uses the default value for required attributes where applicable.
+
+Including the resource block gives the user the ability to specify the exact attributes that should be assigned to the resource as it is imported, overwriting any values that are currently assigned to the resource in BAM
+
+Example
+#Block
+```
+import{
+    to=bluecat_ipv4block.import_block
+    id="10.2.0.0/16"
+}
+
+resource "bluecat_ipv4block" "import_block" {
+    configuration = "demo"
+    name = "10_2/16 Block (import)"
+    parent_block = "10.0.0.0/8"
+    address = "10.2.0.0"
+    cidr = "16"
+    ip_version = "ipv4"
+    properties = "allowDuplicateHost=enable"
+    depends_on = [bluecat_ipv4block.block_10_record, bluecat_ipv4block.block_10_16_record]
+}
+```
 
 For the latest updates, please see the BlueCat Product Documents.

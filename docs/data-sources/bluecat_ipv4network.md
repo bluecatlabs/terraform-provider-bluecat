@@ -9,7 +9,7 @@ This data source allows to retrieve the following information
 | cidr | Required | The Network address in CIDR format | 10.0.0.0/24 |
 | gateway | Optional |  This is the Gateway address for the Network | 10.0.0.1 |
 | ip_version | Optional |  Default is ipv4, options are ipv4 or ipv6 | ipv4 |
-| properties | Optional | The properties of the IPv4 Network | attribute=value |
+| allowed_property_keys | Optional | The list of properties that should be returned from BAM | ["property_name1", "property_name2"] |
 
 
 ## Example of a IPv4 Network Record dataset

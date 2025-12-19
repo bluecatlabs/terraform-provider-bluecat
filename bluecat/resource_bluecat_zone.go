@@ -47,12 +47,12 @@ func ResourceZone() *schema.Resource {
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
 			"properties": {
-				Type:        schema.TypeString,
-				Optional:    true,
-				Description: "Zone's properties.",
-				DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
-					return checkDiffProperties(old, new)
+				Type:     schema.TypeString,
+				Optional: true,
+				StateFunc: func(v interface{}) string {
+					return utils.JoinProperties(utils.ParseProperties(v.(string)))
 				},
+				DiffSuppressFunc: suppressWhenRemoteHasSuperset,
 			},
 		},
 		Importer: &schema.ResourceImporter{
@@ -142,21 +142,29 @@ func getZone(d *schema.ResourceData, m interface{}) error {
 
 	zoneObj, err := objMgr.GetZone(configuration, view, zone)
 	if err != nil {
-		if d.Id() != "" {
-			err := createZone(d, m)
-			if err != nil {
-				msg := fmt.Sprintf("Something gone wrong: %v", err)
-				return fmt.Errorf(msg)
+		if utils.IsNotFoundErr(err) {
+			if d.Id() != "" {
+				// If the record is missing remotely, remove from state so Terraform plans a create.
+				log.Warnf("Zone %q not found; removing from state to trigger recreation", d.Id())
+				d.SetId("")
+				return nil
 			}
-		} else {
-			msg := fmt.Sprintf("Getting Zone %s failed: %s", zone, err)
-			log.Debug(msg)
-			return fmt.Errorf(msg)
+			// If we don't have an ID yet (e.g., during import resolution) surface the not-found
+			return fmt.Errorf("Zone %s not found: %w", zone, err)
 		}
+		// Any other error is a real failure
+		return fmt.Errorf("Getting Zone %s failed: %w", zone, err)
 	}
 
+	// --- Parse both server and config properties ---
+	bamProps := utils.ParseProperties(zoneObj.Properties)
+	cfgProps := utils.ParseProperties(d.Get("properties").(string))
+
+	// --- Filter server properties using keys from config ---
+	filteredProperties := utils.FilterProperties(bamProps, cfgProps)
+
 	d.SetId(zone)
-	d.Set("properties", zoneObj.Properties)
+	d.Set("properties", utils.JoinProperties(filteredProperties))
 
 	log.Debugf("Completed reading Zone %s", d.Get("zone"))
 	return nil

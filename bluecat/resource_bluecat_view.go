@@ -31,9 +31,12 @@ func ResourceView() *schema.Resource {
 				Description: "The View name",
 			},
 			"properties": {
-				Type:        schema.TypeString,
-				Optional:    true,
-				Description: "View's properties",
+				Type:     schema.TypeString,
+				Optional: true,
+				StateFunc: func(v interface{}) string {
+					return utils.JoinProperties(utils.ParseProperties(v.(string)))
+				},
+				DiffSuppressFunc: suppressWhenRemoteHasSuperset,
 			},
 		},
 		Importer: &schema.ResourceImporter{
@@ -82,24 +85,30 @@ func getView(d *schema.ResourceData, m interface{}) error {
 
 	view, err := objMgr.GetView(configuration, viewName)
 	if err != nil {
-		if d.Id() != "" {
-			// sync the real infrastructure objects with those in state file
-			// revert previously deleted record
-			err := createView(d, m)
-			if err != nil {
-				msg := fmt.Sprintf("Something gone wrong: %v", err)
-				return fmt.Errorf(msg)
+		if utils.IsNotFoundErr(err) {
+			if d.Id() != "" {
+				// If the record is missing remotely, remove from state so Terraform plans a create.
+				log.Warnf("View %q not found; removing from state to trigger recreation", d.Id())
+				d.SetId("")
+				return nil
 			}
-		} else {
-			msg := fmt.Sprintf("Getting View record %s failed: %s", viewName, err)
-			log.Debug(msg)
-			return fmt.Errorf(msg)
+			// If we don't have an ID yet (e.g., during import resolution) surface the not-found
+			return fmt.Errorf("View %s not found: %w", viewName, err)
 		}
+		// Any other error is a real failure
+		return fmt.Errorf("Getting View %s failed: %w", viewName, err)
 	}
+
+	// --- Parse both server and config properties ---
+	bamProps := utils.ParseProperties(view.Properties)
+	cfgProps := utils.ParseProperties(d.Get("properties").(string))
+
+	// --- Filter server properties using keys from config ---
+	filteredProperties := utils.FilterProperties(bamProps, cfgProps)
 
 	d.Set("configuration", view.Configuration)
 	d.Set("name", view.Name)
-	d.Set("properties", view.Properties)
+	d.Set("properties", utils.JoinProperties(filteredProperties))
 	d.SetId(view.Name)
 	log.Debugf("Completed getting View %s", d.Get("name"))
 	return nil

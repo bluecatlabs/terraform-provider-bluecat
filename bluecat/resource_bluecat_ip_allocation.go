@@ -70,12 +70,12 @@ func ResourceIPAllocation() *schema.Resource {
 				Description: "The MAC address",
 			},
 			"properties": {
-				Type:        schema.TypeString,
-				Optional:    true,
-				Description: "IP address/Host record's properties. Example: attribute=value|",
-				DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
-					return checkDiffProperties(old, new)
+				Type:     schema.TypeString,
+				Optional: true,
+				StateFunc: func(v interface{}) string {
+					return utils.JoinProperties(utils.ParseProperties(v.(string)))
 				},
+				DiffSuppressFunc: suppressWhenRemoteHasSuperset,
 			},
 			"action": {
 				Type:        schema.TypeString,
@@ -98,6 +98,12 @@ func ResourceIPAllocation() *schema.Resource {
 				Optional:    true,
 				Description: "Whether or not to selectively deploy the Host record",
 				Default:     "no",
+			},
+			"batch_mode": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				Description: "Whether or not to use batch mode when selectively deploying",
+				Default:     "disabled",
 			},
 		},
 	}
@@ -195,6 +201,7 @@ func createIPAllocation(d *schema.ResourceData, m interface{}) error {
 				if to_deploy != nil {
 					deploy := utils.ParseDeploymentValue(to_deploy.(string))
 					if deploy {
+						hostRecord.BatchMode = d.Get("batch_mode").(string)
 						res, err := objMgr.Connector.DeployObject(hostRecord)
 						if err != nil {
 							msg := fmt.Sprintf("Error deploying IP Allocation record %s: %s", fqdnName, err)
@@ -255,8 +262,14 @@ func getIPAllocation(d *schema.ResourceData, m interface{}) error {
 		}
 		properties = ipAddress.Properties
 	}
+	// --- Parse both server and config properties ---
+	bamProps := utils.ParseProperties(properties)
+	cfgProps := utils.ParseProperties(d.Get("properties").(string))
+	// --- Filter server properties using keys from config ---
+	filteredProperties := utils.FilterProperties(bamProps, cfgProps)
+
 	d.Set("name", fqdnName)
-	d.Set("properties", properties)
+	d.Set("properties", utils.JoinProperties(filteredProperties))
 	d.SetId(fqdnName)
 	log.Debugf("Completed reading IP address %s", address.Address)
 	return nil
@@ -362,6 +375,7 @@ func updateAllocatedResource(d *schema.ResourceData, m interface{}) error {
 				if to_deploy != nil {
 					deploy := utils.ParseDeploymentValue(to_deploy.(string))
 					if deploy {
+						hostRecord.BatchMode = d.Get("batch_mode").(string)
 						res, err := objMgr.Connector.DeployObject(hostRecord)
 						if err != nil {
 							msg := fmt.Sprintf("Error deploying IP Allocation record %s: %s", fqdnName, err)

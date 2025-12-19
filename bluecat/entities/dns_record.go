@@ -28,6 +28,7 @@ type HostRecord struct {
 	BAMId         int    `json:"id,omitempty"`
 	BAMType       string `json:"type,omitempty"`
 	Name          string `json:"name,omitempty"`
+	BatchMode     string `json:"batch_mode,omitempty"`
 }
 
 // CNAMERecord CNAME record entity
@@ -43,6 +44,7 @@ type CNAMERecord struct {
 	Name          string `json:"name,omitempty"`
 	BAMId         int    `json:"id,omitempty"`
 	BAMType       string `json:"type,omitempty"`
+	BatchMode     string `json:"batch_mode,omitempty"`
 }
 
 // TXTRecord TXT record entity
@@ -57,6 +59,7 @@ type TXTRecord struct {
 	Properties    string `json:"properties,omitempty"`
 	BAMId         int    `json:"id,omitempty"`
 	BAMType       string `json:"type,omitempty"`
+	BatchMode     string `json:"batch_mode,omitempty"`
 }
 
 // GenericRecord Generic record entity
@@ -71,6 +74,7 @@ type GenericRecord struct {
 	TTL           int    `json:"ttl,omitempty"`
 	Properties    string `json:"properties,omitempty"`
 	BAMId         int    `json:"id,omitempty"`
+	BatchMode     string `json:"batch_mode,omitempty"`
 }
 
 // SRVRecord SRV record entity
@@ -89,6 +93,7 @@ type SRVRecord struct {
 	Name          string `json:"name,omitempty"`
 	BAMId         int    `json:"id,omitempty"`
 	BAMType       string `json:"type,omitempty"`
+	BatchMode     string `json:"batch_mode,omitempty"`
 }
 
 // External Host Record record entity
@@ -101,4 +106,5 @@ type ExternalHostRecord struct {
 	Properties    string `json:"properties,omitempty"`
 	BAMId         int    `json:"id,omitempty"`
 	BAMType       string `json:"type,omitempty"`
+	BatchMode     string `json:"batch_mode,omitempty"`
 }

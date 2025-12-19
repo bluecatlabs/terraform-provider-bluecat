@@ -8,7 +8,7 @@ This data source allows to retrieve the following information
 | view          | Required | The name of view                                                                    | InternalView        |
 | deployable          | Optional | If the view is to be deployable                                                                    | true                |
 | server_roles          | Optional | The list of server roles. The format of each server role will be 'role type, server fqdn                                                                    | ["primary, server1","secondary, server2"]        |
-| properties    | Optional | Zone's properties                                                                   | comment=My comments |
+| allowed_property_keys | Optional | The list of properties that should be returned from BAM | ["property_name1", "property_name2"] |
 
 
 ## Example of a View dataset

@@ -74,12 +74,12 @@ func ResourceBlock() *schema.Resource {
 				Description: "The parent Block. Specified to creating the child Block. THe Block in CIDR format",
 			},
 			"properties": {
-				Type:        schema.TypeString,
-				Optional:    true,
-				Description: "IPv4 Block's properties. Example: attribute=value|",
-				DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
-					return checkDiffProperties(old, new)
+				Type:     schema.TypeString,
+				Optional: true,
+				StateFunc: func(v interface{}) string {
+					return utils.JoinProperties(utils.ParseProperties(v.(string)))
 				},
+				DiffSuppressFunc: suppressWhenRemoteHasSuperset,
 			},
 			"ip_version": {
 				Type:        schema.TypeString,
@@ -152,21 +152,30 @@ func getBlock(d *schema.ResourceData, m interface{}) error {
 	objMgr.Connector = connector
 
 	block, err := objMgr.GetBlock(configuration, address, cidrStr, ipVersion)
+
 	if err != nil {
-		// check to see if some resource exist. If it does not exist, and it is in the plan - create that resource
-		if d.Id() != "" {
-			//d.Set("address", address)
-			d.Set("ip_version", ipVersion)
-			err := createBlock(d, m)
-			if err != nil {
-				msg := fmt.Sprintf("Something gone wrong %v", err)
-				return fmt.Errorf(msg)
+		if utils.IsNotFoundErr(err) {
+			if d.Id() != "" {
+				// If the record is missing remotely, remove from state so Terraform plans a create.
+				log.Warnf("Block %q not found; removing from state to trigger recreation", d.Id())
+				d.SetId("")
+				return nil
 			}
+			// If we don't have an ID yet (e.g., during import resolution) surface the not-found
+			return fmt.Errorf("Block %s not found: %w", cidrStr, err)
 		}
+		// Any other error is a real failure
+		return fmt.Errorf("Getting Block %s failed: %w", cidrStr, err)
 	}
+	// --- Parse both server and config properties ---
+	bamProps := utils.ParseProperties(block.Properties)
+	cfgProps := utils.ParseProperties(d.Get("properties").(string))
+
+	// --- Filter server properties using keys from config ---
+	filteredProperties := utils.FilterProperties(bamProps, cfgProps)
 
 	d.Set("name", block.Name)
-	d.Set("properties", block.Properties)
+	d.Set("properties", utils.JoinProperties(filteredProperties))
 	d.SetId(block.AddressCIDR())
 	log.Debugf("Completed getting Block %s", d.Get("address"))
 	return nil

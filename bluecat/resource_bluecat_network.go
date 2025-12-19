@@ -56,12 +56,12 @@ func ResourceNetwork() *schema.Resource {
 				Description: "Give the IP you want to reserve for gateway, by default the first IP gets reserved for gateway",
 			},
 			"properties": {
-				Type:        schema.TypeString,
-				Optional:    true,
-				Description: "IPv4 Network's properties. Example: attribute=value|",
-				DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
-					return checkDiffProperties(old, new)
+				Type:     schema.TypeString,
+				Optional: true,
+				StateFunc: func(v interface{}) string {
+					return utils.JoinProperties(utils.ParseProperties(v.(string)))
 				},
+				DiffSuppressFunc: suppressWhenRemoteHasSuperset,
 			},
 			"template": {
 				Type:        schema.TypeString,
@@ -255,18 +255,18 @@ func getNetwork(d *schema.ResourceData, m interface{}) error {
 	if networkEntity.CIDR != "" {
 		network, getNetworkError = objMgr.GetNetwork(&networkEntity)
 		if getNetworkError != nil {
-			// check to see if some resource exist. If it does not exist, and it is in the plan - create that resource
-			if d.Id() != "" {
-				e := createNetwork(d, m)
-				if e != nil {
-					msg := fmt.Sprintf("Something gone wrong %v", e)
-					return fmt.Errorf(msg)
+			if utils.IsNotFoundErr(err) {
+				if d.Id() != "" {
+					// If the record is missing remotely, remove from state so Terraform plans a create.
+					log.Warnf("Network %q not found; removing from state to trigger recreation", d.Id())
+					d.SetId("")
+					return nil
 				}
-			} else {
-				msg := fmt.Sprintf("Getting Network %s failed: %s", cidr, err)
-				log.Error(msg)
-				return fmt.Errorf(msg)
+				// If we don't have an ID yet (e.g., during import resolution) surface the not-found
+				return fmt.Errorf("Network %s not found: %w", cidr, getNetworkError)
 			}
+			// Any other error is a real failure
+			return fmt.Errorf("Getting Network %s failed: %w", cidr, getNetworkError)
 		}
 	} else if allocatedId != "" && parentBlock != "" {
 		network, err = objMgr.GetNetworkByAllocatedId(configuration, parentBlock, allocatedId)
@@ -277,9 +277,16 @@ func getNetwork(d *schema.ResourceData, m interface{}) error {
 		}
 	}
 
+	// --- Parse both server and config properties ---
+	bamProps := utils.ParseProperties(network.Properties)
+	cfgProps := utils.ParseProperties(d.Get("properties").(string))
+
+	// --- Filter server properties using keys from config ---
+	filteredProperties := utils.FilterProperties(bamProps, cfgProps)
+
 	d.SetId(network.CIDR)
 	d.Set("cidr", network.CIDR)
-	d.Set("properties", network.Properties)
+	d.Set("properties", utils.JoinProperties(filteredProperties))
 	log.Debugf("Completed getting Network %s", d.Get("cidr"))
 	return nil
 }

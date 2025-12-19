@@ -382,4 +382,27 @@ or
    * Copy generated resources from the generated_resources.tf file and copy them to the main config file (main.tf file)
    * Delete the generated_resources.tf file and create the same one with command from Step 2 (`terraform plan -generate-config-out=generated_resources.tf`)
 
-Also, you need to remove imports block if that resources are already imported.
+Notice: Also, the import block must be removed upon successful import, as if left in, the import block takes precedent during runtime and might replace data already previously imported
+
+### Bluecat Recommendation
+If the resource block is not included a "terraform plan -generate-config-out=<yourFileNameHere>.tf" must be run to create a configuration file with the resource that is being imported. This file does not specify optional attributes and uses the default value for required attributes where applicable.
+
+Including the resource block gives the user the ability to specify the exact attributes that should be assigned to the resource as it is imported, overwriting any values that are currently assigned to the resource in BAM
+
+Example:
+#Block
+import {
+    to=bluecat_ipv4block.import_block
+    id="10.2.0.0/16"
+}
+resource "bluecat_ipv4block" "import_block" {
+    configuration = "demo"
+    name = "10_2/16 Block (import)"
+    parent_block = "10.0.0.0/8"
+    address = "10.2.0.0"
+    cidr = "16"
+    ip_version = "ipv4"
+    properties = "allowDuplicateHost=enable"
+    depends_on = [bluecat_ipv4block.block_10_record, bluecat_ipv4block.block_10_16_record]
+}
+

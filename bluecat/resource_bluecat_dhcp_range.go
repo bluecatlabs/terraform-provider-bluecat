@@ -4,9 +4,11 @@ package bluecat
 
 import (
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"strings"
 	"terraform-provider-bluecat/bluecat/entities"
+	"terraform-provider-bluecat/bluecat/utils"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 // ResourceDHCPRange The IPv4 ResourceDHCPRange
@@ -45,12 +47,12 @@ func ResourceDHCPRange() *schema.Resource {
 				Description: "The name of the DHCP Range",
 			},
 			"properties": {
-				Type:        schema.TypeString,
-				Optional:    true,
-				Description: "DHCP Range's properties. Example: attribute=value|",
-				DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
-					return checkDiffProperties(old, new)
+				Type:     schema.TypeString,
+				Optional: true,
+				StateFunc: func(v interface{}) string {
+					return utils.JoinProperties(utils.ParseProperties(v.(string)))
 				},
+				DiffSuppressFunc: suppressWhenRemoteHasSuperset,
 			},
 			"template": {
 				Type:        schema.TypeString,
@@ -113,10 +115,17 @@ func getDHCPRange(d *schema.ResourceData, m interface{}) error {
 		log.Error(msg)
 		return fmt.Errorf(msg)
 	}
+	// --- Parse both server and config properties ---
+	bamProps := utils.ParseProperties(dhcpRange.Properties)
+	cfgProps := utils.ParseProperties(d.Get("properties").(string))
+
+	// --- Filter server properties using keys from config ---
+	filteredProperties := utils.FilterProperties(bamProps, cfgProps)
+
 	d.SetId(dhcpRangeEntity.Start + "-" + dhcpRangeEntity.End)
 	d.Set("network", dhcpRangeEntity.Network)
 	d.Set("template", dhcpRangeEntity.Template)
-	d.Set("properties", dhcpRangeEntity.Properties)
+	d.Set("properties", utils.JoinProperties(filteredProperties))
 	log.Debugf("Completed getting DHCP Range (%s - %s)", dhcpRangeEntity.Start, dhcpRangeEntity.End)
 	return nil
 }

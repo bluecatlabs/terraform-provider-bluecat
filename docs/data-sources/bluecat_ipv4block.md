@@ -9,7 +9,7 @@ This data source allows to retrieve the following information
 | parent_block | Optional |  The parent block of the IPv4/IPv6 Block. Specify this field to retrieve the child IPv4/IPv6 Block. The parent_block must be in CIDR format | 10.0.0.0/8      |
 | ip_version | Optional | If not provided, this will default to ipv4. Options are ipv4 or ipv6|                 |
 | cidr | Required | IPv4 Block's CIDR | 10.0.0.0/24     |
-| properties | Optional | The properties of the IPv4 Block | attribute=value |
+| allowed_property_keys | Optional | The list of properties that should be returned from BAM | ["property_name1", "property_name2"] |
 
 
 ## Example of a IPv4 Block dataset

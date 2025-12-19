@@ -44,8 +44,19 @@ func DataSourceCNAMERecord() *schema.Resource {
 			},
 			"properties": {
 				Type:        schema.TypeString,
+				Computed:    true,
+				Description: "Pipe-separated key=value properties (filtered).",
+			},
+			"properties_raw": {
+				Type:        schema.TypeString,
+				Computed:    true,
+				Description: "Unfiltered raw properties returned by BAM.",
+			},
+			"allowed_property_keys": {
+				Type:        schema.TypeSet,
 				Optional:    true,
-				Description: "CNAME record's properties",
+				Description: "Optional list of property keys to keep when filtering.",
+				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
 		},
 	}
@@ -95,11 +106,20 @@ func dataSourceCNAMERecordRead(d *schema.ResourceData, m interface{}) error {
 		}
 	}
 
+	// Parse BAM properties
+	bamProps := utils.ParseProperties(cnameRecord.Properties)
+	d.Set("properties_raw", cnameRecord.Properties)
+
+	filtered := utils.FilterDataSouceProperties(d, bamProps)
+
+	// Write clean properties string back
+	if err := d.Set("properties", utils.JoinProperties(filtered)); err != nil {
+		return fmt.Errorf("setting properties failed: %w", err)
+	}
 	d.SetId(strconv.Itoa(cnameRecord.BAMId))
 
 	d.Set("zone", zone)
 	d.Set("ttl", ttl)
-	d.Set("properties", cnameRecord.Properties)
 
 	return nil
 }

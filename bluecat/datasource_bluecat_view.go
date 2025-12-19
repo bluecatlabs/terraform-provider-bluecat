@@ -34,8 +34,19 @@ func DataSourceView() *schema.Resource {
 			},
 			"properties": {
 				Type:        schema.TypeString,
+				Computed:    true,
+				Description: "Pipe-separated key=value properties (filtered).",
+			},
+			"properties_raw": {
+				Type:        schema.TypeString,
+				Computed:    true,
+				Description: "Unfiltered raw properties returned by BAM.",
+			},
+			"allowed_property_keys": {
+				Type:        schema.TypeSet,
 				Optional:    true,
-				Description: "Zone's properties.",
+				Description: "Optional list of property keys to keep when filtering.",
+				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
 		},
 	}
@@ -56,9 +67,18 @@ func dataSourceViewRead(d *schema.ResourceData, m interface{}) error {
 		log.Debug(msg)
 		return fmt.Errorf(msg)
 	}
+	// Parse BAM properties
+	bamProps := utils.ParseProperties(viewObj.Properties)
+	d.Set("properties_raw", viewObj.Properties)
+
+	filtered := utils.FilterDataSouceProperties(d, bamProps)
+
+	// Write clean properties string back
+	if err := d.Set("properties", utils.JoinProperties(filtered)); err != nil {
+		return fmt.Errorf("setting properties failed: %w", err)
+	}
 
 	d.SetId(viewObj.Name)
-	d.Set("properties", viewObj.Properties)
 
 	deployable := utils.GetPropertyValue("deployable", viewObj.Properties)
 	if deployable == "true" {
