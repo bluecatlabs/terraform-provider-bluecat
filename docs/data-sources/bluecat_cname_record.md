@@ -11,7 +11,7 @@ This data source allows to retrieve the following information
 | canonical | Required | The name of the CNAME record. Must be FQDN if the Zone is not provided | webapp.bluecatnetworks.com |
 | linked_record | Required | The record name that's linked to the CNAME record | server1.bluecatnetworks.com |
 | ttl | Optional | The TTL value. | 300 |
-| properties | Optional | The properties of the CNAME record | attribute=value |
+| allowed_property_keys | Optional | The list of properties that should be returned from BAM | ["property_name1", "property_name2"] |
 
 ## Example of CNAME Record dataset
 

@@ -58,18 +58,24 @@ func ResourceCNAMERecord() *schema.Resource {
 				Default:     -1,
 			},
 			"properties": {
-				Type:        schema.TypeString,
-				Optional:    true,
-				Description: "CNAME record's properties. Example: attribute=value|",
-				DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
-					return checkDiffProperties(old, new)
+				Type:     schema.TypeString,
+				Optional: true,
+				StateFunc: func(v interface{}) string {
+					return utils.JoinProperties(utils.ParseProperties(v.(string)))
 				},
+				DiffSuppressFunc: suppressWhenRemoteHasSuperset,
 			},
 			"to_deploy": {
 				Type:        schema.TypeString,
 				Optional:    true,
 				Description: "Whether or not to selectively deploy the CNAME record",
 				Default:     "no",
+			},
+			"batch_mode": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				Description: "Whether or not to use batch mode when selectively deploying",
+				Default:     "disabled",
 			},
 		},
 		Importer: &schema.ResourceImporter{
@@ -109,6 +115,7 @@ func createCNAMERecord(d *schema.ResourceData, m interface{}) error {
 	}
 	deploy := utils.ParseDeploymentValue(d.Get("to_deploy").(string))
 	if deploy {
+		cnameRecord.BatchMode = d.Get("batch_mode").(string)
 		res, err := objMgr.Connector.DeployObject(cnameRecord)
 		if err != nil {
 			msg := fmt.Sprintf("Error deploying CNAME record %s: %s", fqdnName, err)
@@ -135,21 +142,29 @@ func getCNAMERecord(d *schema.ResourceData, m interface{}) error {
 
 	cnameRecord, err := objMgr.GetCNAMERecord(configuration, view, absoluteName)
 	if err != nil {
-		if d.Id() != "" {
-			err := createCNAMERecord(d, m)
-			if err != nil {
-				msg := fmt.Sprintf("Something gone wrong: %v", err)
-				return fmt.Errorf(msg)
+		if utils.IsNotFoundErr(err) {
+			if d.Id() != "" {
+				// If the record is missing remotely, remove from state so Terraform plans a create.
+				log.Warnf("CNAME Record %q not found; removing from state to trigger recreation", d.Id())
+				d.SetId("")
+				return nil
 			}
-		} else {
-			msg := fmt.Sprintf("Getting CNAME record %s failed: %s", absoluteName, err)
-			log.Debug(msg)
-			return fmt.Errorf(msg)
+			// If we don't have an ID yet (e.g., during import resolution) surface the not-found
+			return fmt.Errorf("CNAME Record %s not found: %w", absoluteName, err)
 		}
+		// Any other error is a real failure
+		return fmt.Errorf("Getting CNAME Record %s failed: %w", absoluteName, err)
 	}
+	// --- Parse both server and config properties ---
+	bamProps := utils.ParseProperties(cnameRecord.Properties)
+	cfgProps := utils.ParseProperties(d.Get("properties").(string))
+
+	// --- Filter server properties using keys from config ---
+	filteredProperties := utils.FilterProperties(bamProps, cfgProps)
+
 	d.SetId(cnameRecord.AbsoluteName)
 	d.Set("absolute_name", cnameRecord.AbsoluteName)
-	d.Set("properties", cnameRecord.Properties)
+	d.Set("properties", utils.JoinProperties(filteredProperties))
 	// for import functionality linked_record must be set for the cname_record - required attribute
 	d.Set("linked_record", parseRecordPropertyValue(cnameRecord.Properties, "linkedRecordName"))
 	log.Debugf("Completed reading CNAME record %s", d.Get("absolute_name"))
@@ -190,6 +205,7 @@ func updateCNAMERecord(d *schema.ResourceData, m interface{}) error {
 	}
 	deploy := utils.ParseDeploymentValue(d.Get("to_deploy").(string))
 	if deploy {
+		cnameRecord.BatchMode = d.Get("batch_mode").(string)
 		res, err := objMgr.Connector.DeployObject(cnameRecord)
 		if err != nil {
 			msg := fmt.Sprintf("Error deploying CNAME record %s: %s", fqdnName, err)

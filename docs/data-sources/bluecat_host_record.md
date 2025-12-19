@@ -11,7 +11,7 @@ This data source allows to retrieve the following information
 | fqdn | Required | The name of the Host record. Must be FQDN if the Zone is not provided | webapp.bluecatnetworks.com |
 | ip_address | Required | The IP address assigned to the Host record | 10.0.0.12 or 2003:1000:10  |
 | ttl | Optional | The TTL value of the host record | 300                        |
-| properties | Optional | The properties of the Host Record | attribute=value            |
+| allowed_property_keys | Optional | The list of properties that should be returned from BAM | ["property_name1", "property_name2"] |
 
 ## Example of a Host Record dataset
 

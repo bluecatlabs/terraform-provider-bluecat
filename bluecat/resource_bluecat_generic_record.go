@@ -63,18 +63,24 @@ func ResourceGenericRecord() *schema.Resource {
 				Default:     -1,
 			},
 			"properties": {
-				Type:        schema.TypeString,
-				Optional:    true,
-				Description: "Generic record's properties. Example: attribute=value|",
-				DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
-					return checkDiffProperties(old, new)
+				Type:     schema.TypeString,
+				Optional: true,
+				StateFunc: func(v interface{}) string {
+					return utils.JoinProperties(utils.ParseProperties(v.(string)))
 				},
+				DiffSuppressFunc: suppressWhenRemoteHasSuperset,
 			},
 			"to_deploy": {
 				Type:        schema.TypeString,
 				Optional:    true,
 				Description: "Whether or not to selectively deploy the Generic record",
 				Default:     "no",
+			},
+			"batch_mode": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				Description: "Whether or not to use batch mode when selectively deploying",
+				Default:     "disabled",
 			},
 		},
 		Importer: &schema.ResourceImporter{
@@ -115,6 +121,7 @@ func createGenericRecord(d *schema.ResourceData, m interface{}) error {
 	}
 	deploy := utils.ParseDeploymentValue(d.Get("to_deploy").(string))
 	if deploy {
+		genericRecord.BatchMode = d.Get("batch_mode").(string)
 		res, err := objMgr.Connector.DeployObject(genericRecord)
 		if err != nil {
 			msg := fmt.Sprintf("Error deploying Generic record %s: %s", absoluteName, err)
@@ -141,21 +148,29 @@ func getGenericRecord(d *schema.ResourceData, m interface{}) error {
 
 	genericRecord, err := objMgr.GetGenericRecord(configuration, view, absoluteName)
 	if err != nil {
-		if d.Id() != "" {
-			err := createGenericRecord(d, m)
-			if err != nil {
-				msg := fmt.Sprintf("Something gone wrong: %v", err)
-				return fmt.Errorf(msg)
+		if utils.IsNotFoundErr(err) {
+			if d.Id() != "" {
+				// If the record is missing remotely, remove from state so Terraform plans a create.
+				log.Warnf("Generic Record %q not found; removing from state to trigger recreation", d.Id())
+				d.SetId("")
+				return nil
 			}
-		} else {
-			msg := fmt.Sprintf("Getting Generic record %s failed: %s", absoluteName, err)
-			log.Debug(msg)
-			return fmt.Errorf(msg)
+			// If we don't have an ID yet (e.g., during import resolution) surface the not-found
+			return fmt.Errorf("Generic Record %s not found: %w", absoluteName, err)
 		}
+		// Any other error is a real failure
+		return fmt.Errorf("Getting Generic Record %s failed: %w", absoluteName, err)
 	}
+	// --- Parse both server and config properties ---
+	bamProps := utils.ParseProperties(genericRecord.Properties)
+	cfgProps := utils.ParseProperties(d.Get("properties").(string))
+
+	// --- Filter server properties using keys from config ---
+	filteredProperties := utils.FilterProperties(bamProps, cfgProps)
+
 	d.SetId(genericRecord.AbsoluteName)
 	d.Set("absolute_name", genericRecord.AbsoluteName)
-	d.Set("properties", genericRecord.Properties)
+	d.Set("properties", utils.JoinProperties(filteredProperties))
 	log.Debugf("Completed reading Generic record %s", d.Get("absolute_name"))
 	return nil
 }
@@ -195,6 +210,7 @@ func updateGenericRecord(d *schema.ResourceData, m interface{}) error {
 	}
 	deploy := utils.ParseDeploymentValue(d.Get("to_deploy").(string))
 	if deploy {
+		genericRecord.BatchMode = d.Get("batch_mode").(string)
 		res, err := objMgr.Connector.DeployObject(genericRecord)
 		if err != nil {
 			msg := fmt.Sprintf("Error deploying Generic record %s: %s", absoluteName, err)

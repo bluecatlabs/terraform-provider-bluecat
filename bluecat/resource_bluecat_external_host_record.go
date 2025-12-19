@@ -44,18 +44,24 @@ func ResourceExternalHostRecord() *schema.Resource {
 				Description: "The IP addresses that will be linked to the External Host record",
 			},
 			"properties": {
-				Type:        schema.TypeString,
-				Optional:    true,
-				Description: "External Host record's properties. Example: attribute=value|",
-				DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
-					return checkDiffProperties(old, new)
+				Type:     schema.TypeString,
+				Optional: true,
+				StateFunc: func(v interface{}) string {
+					return utils.JoinProperties(utils.ParseProperties(v.(string)))
 				},
+				DiffSuppressFunc: suppressWhenRemoteHasSuperset,
 			},
 			"to_deploy": {
 				Type:        schema.TypeString,
 				Optional:    true,
 				Description: "Whether or not to selectively deploy the Host record",
 				Default:     "no",
+			},
+			"batch_mode": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				Description: "Whether or not to use batch mode when selectively deploying",
+				Default:     "disabled",
 			},
 		},
 		Importer: &schema.ResourceImporter{
@@ -85,6 +91,7 @@ func createExternalHostRecord(d *schema.ResourceData, m interface{}) error {
 	}
 	deploy := utils.ParseDeploymentValue(d.Get("to_deploy").(string))
 	if deploy {
+		externalHostRecord.BatchMode = d.Get("batch_mode").(string)
 		res, err := objMgr.Connector.DeployObject(externalHostRecord)
 		if err != nil {
 			msg := fmt.Sprintf("Error deploying External Host record %s: %s", absoluteName, err)
@@ -111,20 +118,29 @@ func getExternalHostRecord(d *schema.ResourceData, m interface{}) error {
 
 	externalHostRecord, err := objMgr.GetExternalHostRecord(configuration, view, absoluteName)
 	if err != nil {
-		// if d.Id() != "" {
-		// 	err := createExternalHostRecord(d, m)
-		// 	if err != nil {
-		// 		msg := fmt.Sprintf("Something gone wrong: %v", err)
-		// 		return fmt.Errorf(msg)
-		// 	}
-		// } else
-		msg := fmt.Sprintf("Getting ExternalHost record %s failed: %s", absoluteName, err)
-		log.Debug(msg)
-		return fmt.Errorf(msg)
+		if utils.IsNotFoundErr(err) {
+			if d.Id() != "" {
+				// If the record is missing remotely, remove from state so Terraform plans a create.
+				log.Warnf("External Host record %q not found; removing from state to trigger recreation", d.Id())
+				d.SetId("")
+				return nil
+			}
+			// If we don't have an ID yet (e.g., during import resolution) surface the not-found
+			return fmt.Errorf("External Host record %s not found: %w", absoluteName, err)
+		}
+		// Any other error is a real failure
+		return fmt.Errorf("Getting External Host Record %s failed: %w", absoluteName, err)
 	}
+
+	// --- Parse both server and config properties ---
+	bamProps := utils.ParseProperties(externalHostRecord.Properties)
+	cfgProps := utils.ParseProperties(d.Get("properties").(string))
+
+	// --- Filter server properties using keys from config ---
+	filteredProperties := utils.FilterProperties(bamProps, cfgProps)
 	d.SetId(externalHostRecord.AbsoluteName)
 	d.Set("absolute_name", externalHostRecord.AbsoluteName)
-	d.Set("properties", externalHostRecord.Properties)
+	d.Set("properties", utils.JoinProperties(filteredProperties))
 	// for import functionality ip4_address must be set for the host_record - required attribute
 	d.Set("addresses", externalHostRecord.Addresses)
 	log.Debugf("Completed reading ExternalHost record %s", d.Get("absolute_name"))
@@ -155,6 +171,7 @@ func updateExternalHostRecord(d *schema.ResourceData, m interface{}) error {
 	}
 	deploy := utils.ParseDeploymentValue(d.Get("to_deploy").(string))
 	if deploy {
+		externalHostRecord.BatchMode = d.Get("batch_mode").(string)
 		res, err := objMgr.Connector.DeployObject(externalHostRecord)
 		if err != nil {
 			msg := fmt.Sprintf("Error deploying External Host record %s: %s", absoluteName, err)

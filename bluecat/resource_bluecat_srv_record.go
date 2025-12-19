@@ -74,12 +74,12 @@ func ResourceSRVRecord() *schema.Resource {
 				Default:     -1,
 			},
 			"properties": {
-				Type:        schema.TypeString,
-				Optional:    true,
-				Description: "SRV record's properties. Example: attribute=value|",
-				DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
-					return checkDiffProperties(old, new)
+				Type:     schema.TypeString,
+				Optional: true,
+				StateFunc: func(v interface{}) string {
+					return utils.JoinProperties(utils.ParseProperties(v.(string)))
 				},
+				DiffSuppressFunc: suppressWhenRemoteHasSuperset,
 			},
 			"name": {
 				Type:        schema.TypeString,
@@ -91,6 +91,12 @@ func ResourceSRVRecord() *schema.Resource {
 				Optional:    true,
 				Description: "Whether or not to selectively deploy the SRV record",
 				Default:     "no",
+			},
+			"batch_mode": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				Description: "Whether or not to use batch mode when selectively deploying",
+				Default:     "disabled",
 			},
 		},
 		Importer: &schema.ResourceImporter{
@@ -133,6 +139,7 @@ func createSRVRecord(d *schema.ResourceData, m interface{}) error {
 	}
 	deploy := utils.ParseDeploymentValue(d.Get("to_deploy").(string))
 	if deploy {
+		srvRecord.BatchMode = d.Get("batch_mode").(string)
 		res, err := objMgr.Connector.DeployObject(srvRecord)
 		if err != nil {
 			msg := fmt.Sprintf("Error deploying SRV record %s: %s", absoluteName, err)
@@ -159,21 +166,29 @@ func getSRVRecord(d *schema.ResourceData, m interface{}) error {
 
 	srvRecord, err := objMgr.GetSRVRecord(configuration, view, absoluteName)
 	if err != nil {
-		if d.Id() != "" {
-			err := createSRVRecord(d, m)
-			if err != nil {
-				msg := fmt.Sprintf("Something gone wrong: %v", err)
-				return fmt.Errorf(msg)
+		if utils.IsNotFoundErr(err) {
+			if d.Id() != "" {
+				// If the record is missing remotely, remove from state so Terraform plans a create.
+				log.Warnf("SRV Record %q not found; removing from state to trigger recreation", d.Id())
+				d.SetId("")
+				return nil
 			}
-		} else {
-			msg := fmt.Sprintf("Getting SRV record %s failed: %s", absoluteName, err)
-			log.Debug(msg)
-			return fmt.Errorf(msg)
+			// If we don't have an ID yet (e.g., during import resolution) surface the not-found
+			return fmt.Errorf("SRV Record %s not found: %w", absoluteName, err)
 		}
+		// Any other error is a real failure
+		return fmt.Errorf("Getting SRV Record %s failed: %w", absoluteName, err)
 	}
+	// --- Parse both server and config properties ---
+	bamProps := utils.ParseProperties(srvRecord.Properties)
+	cfgProps := utils.ParseProperties(d.Get("properties").(string))
+
+	// --- Filter server properties using keys from config ---
+	filteredProperties := utils.FilterProperties(bamProps, cfgProps)
+
 	d.SetId(srvRecord.AbsoluteName)
 	d.Set("absolute_name", srvRecord.AbsoluteName)
-	d.Set("properties", srvRecord.Properties)
+	d.Set("properties", utils.JoinProperties(filteredProperties))
 
 	log.Debugf("Completed reading SRV record %s", d.Get("absolute_name"))
 	return nil
@@ -218,6 +233,7 @@ func updateSRVRecord(d *schema.ResourceData, m interface{}) error {
 
 	deploy := utils.ParseDeploymentValue(d.Get("to_deploy").(string))
 	if deploy {
+		srvRecord.BatchMode = d.Get("batch_mode").(string)
 		res, err := objMgr.Connector.DeployObject(srvRecord)
 		if err != nil {
 			msg := fmt.Sprintf("Error deploying SRV record %s: %s", absoluteName, err)

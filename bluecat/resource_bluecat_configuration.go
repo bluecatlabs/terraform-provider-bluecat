@@ -24,12 +24,12 @@ func ResourceConfiguration() *schema.Resource {
 				Description: "The Configuration name.",
 			},
 			"properties": {
-				Type:        schema.TypeString,
-				Optional:    true,
-				Description: "Configuration's properties. Example: attribute=value|",
-				DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
-					return checkDiffProperties(old, new)
+				Type:     schema.TypeString,
+				Optional: true,
+				StateFunc: func(v interface{}) string {
+					return utils.JoinProperties(utils.ParseProperties(v.(string)))
 				},
+				DiffSuppressFunc: suppressWhenRemoteHasSuperset,
 			},
 		},
 	}
@@ -70,9 +70,15 @@ func getConfiguration(d *schema.ResourceData, m interface{}) error {
 		log.Debug(msg)
 		return fmt.Errorf(msg)
 	}
+	// --- Parse both server and config properties ---
+	bamProps := utils.ParseProperties(config.Properties)
+	cfgProps := utils.ParseProperties(d.Get("properties").(string))
+
+	// --- Filter server properties using keys from config ---
+	filteredProperties := utils.FilterProperties(bamProps, cfgProps)
 	d.SetId(config.Name)
 	d.Set("name", config.Name)
-	d.Set("properties", config.Properties)
+	d.Set("properties", utils.JoinProperties(filteredProperties))
 	log.Debugf("Completed getting Configuration %s", d.Get("name"))
 	return nil
 }

@@ -60,18 +60,24 @@ func ResourcePTRRecord() *schema.Resource {
 				Description: "To create a reverse record for the pass host",
 			},
 			"properties": {
-				Type:        schema.TypeString,
-				Optional:    true,
-				Description: "Record's properties. Example: attribute=value|",
-				DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
-					return checkDiffProperties(old, new)
+				Type:     schema.TypeString,
+				Optional: true,
+				StateFunc: func(v interface{}) string {
+					return utils.JoinProperties(utils.ParseProperties(v.(string)))
 				},
+				DiffSuppressFunc: suppressWhenRemoteHasSuperset,
 			},
 			"to_deploy": {
 				Type:        schema.TypeString,
 				Optional:    true,
 				Description: "Whether or not to selectively deploy the Host record",
 				Default:     "no",
+			},
+			"batch_mode": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				Description: "Whether or not to use batch mode when selectively deploying",
+				Default:     "disabled",
 			},
 		},
 	}
@@ -90,7 +96,8 @@ func createPTRRecord(d *schema.ResourceData, m interface{}) error {
 	reverseRecord := d.Get("reverse_record").(string)
 	properties := d.Get("properties").(string)
 	to_deploy := d.Get("to_deploy").(string)
-	fqdnName, err := updatePTR(m, configuration, view, zone, name, ipAddress, reverseRecord, properties, ttl, to_deploy)
+	batch_mode := d.Get("batch_mode").(string)
+	fqdnName, err := updatePTR(m, configuration, view, zone, name, ipAddress, reverseRecord, properties, ttl, to_deploy, batch_mode)
 	if err != nil {
 		return err
 	}
@@ -135,8 +142,9 @@ func updatePTRRecord(d *schema.ResourceData, m interface{}) error {
 	reverseRecord := d.Get("reverse_record").(string)
 	properties := d.Get("properties").(string)
 	to_deploy := d.Get("to_deploy").(string)
+	batch_mode := d.Get("batch_mode").(string)
 
-	fqdnName, err := updatePTR(m, configuration, view, zone, name, ipAddress, reverseRecord, properties, ttl, to_deploy)
+	fqdnName, err := updatePTR(m, configuration, view, zone, name, ipAddress, reverseRecord, properties, ttl, to_deploy, batch_mode)
 	if err != nil {
 		return err
 	}
@@ -147,7 +155,7 @@ func updatePTRRecord(d *schema.ResourceData, m interface{}) error {
 
 // updatePTRRecord Update the existing PTR record
 // Update the PTR, just set the reverseRecord flag
-func updatePTR(m interface{}, configuration, view, zone, name, ip4Address, reverseRecord, properties string, ttl int, to_deploy string) (string, error) {
+func updatePTR(m interface{}, configuration, view, zone, name, ip4Address, reverseRecord, properties string, ttl int, to_deploy string, batch_mode string) (string, error) {
 	connector := m.(*utils.Connector)
 	objMgr := new(utils.ObjectManager)
 	objMgr.Connector = connector
@@ -169,7 +177,7 @@ func updatePTR(m interface{}, configuration, view, zone, name, ip4Address, rever
 
 	// Update the host record
 	reverseValues := []string{"yes", "true", "1"}
-	notReversedValues := []string{"no", "false", "0", ""}
+	notReversedValues := []string{"no", "false", "0"}
 	isReverse := contains(reverseValues, strings.ToLower(strings.Trim(reverseRecord, " ")))
 	isNotReverse := contains(notReversedValues, strings.ToLower(strings.Trim(reverseRecord, " ")))
 
@@ -193,6 +201,7 @@ func updatePTR(m interface{}, configuration, view, zone, name, ip4Address, rever
 	}
 	deploy := utils.ParseDeploymentValue(to_deploy)
 	if deploy {
+		hostRecord.BatchMode = batch_mode
 		res, err := objMgr.Connector.DeployObject(hostRecord)
 		if err != nil {
 			msg := fmt.Sprintf("Error deploying PTR record %s: %s", fqdnName, err)
@@ -217,8 +226,9 @@ func deletePTRRecord(d *schema.ResourceData, m interface{}) error {
 	reverseRecord := "false"
 	properties := d.Get("properties").(string)
 	to_deploy := d.Get("to_deploy").(string)
+	batch_mode := d.Get("batch_mode").(string)
 
-	_, err := updatePTR(m, configuration, view, zone, name, ipAddress, reverseRecord, properties, ttl, to_deploy)
+	_, err := updatePTR(m, configuration, view, zone, name, ipAddress, reverseRecord, properties, ttl, to_deploy, batch_mode)
 	if err != nil {
 		return err
 	}

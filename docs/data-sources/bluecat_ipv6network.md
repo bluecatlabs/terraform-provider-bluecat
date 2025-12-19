@@ -8,7 +8,7 @@ This data source allows to retrieve the following information
 | name | Optional | The Network name                                                                            | Server Farm |
 | cidr | Required | The Network address in CIDR format                                                          | 2003:1000::/65 |
 | ip_version | Optional |  Default is ipv4, options are ipv4 or ipv6 | ipv6 |
-| properties | Optional | The properties of the IPv6 Network                                                          | attribute=value |
+| allowed_property_keys | Optional | The list of properties that should be returned from BAM | ["property_name1", "property_name2"] |
 
 
 ## Example of a IPv6 Network Record dataset

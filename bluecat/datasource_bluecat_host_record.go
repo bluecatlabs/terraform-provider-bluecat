@@ -48,8 +48,19 @@ func DataSourceHostRecord() *schema.Resource {
 			},
 			"properties": {
 				Type:        schema.TypeString,
+				Computed:    true,
+				Description: "Pipe-separated key=value properties (filtered).",
+			},
+			"properties_raw": {
+				Type:        schema.TypeString,
+				Computed:    true,
+				Description: "Unfiltered raw properties returned by BAM.",
+			},
+			"allowed_property_keys": {
+				Type:        schema.TypeSet,
 				Optional:    true,
-				Description: "Host record's properties. Example: attribute=value|",
+				Description: "Optional list of property keys to keep when filtering.",
+				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
 		},
 	}
@@ -99,10 +110,20 @@ func dataSourceHostRecordRead(d *schema.ResourceData, m interface{}) error {
 		}
 	}
 
+	// Parse BAM properties
+	bamProps := utils.ParseProperties(hostRecord.Properties)
+	d.Set("properties_raw", hostRecord.Properties)
+
+	filtered := utils.FilterDataSouceProperties(d, bamProps)
+
+	// Write clean properties string back
+	if err := d.Set("properties", utils.JoinProperties(filtered)); err != nil {
+		return fmt.Errorf("setting properties failed: %w", err)
+	}
+
 	d.SetId(strconv.Itoa(hostRecord.BAMId))
 	d.Set("zone", zone)
 	d.Set("ttl", ttl)
-	d.Set("properties", hostRecord.Properties)
 	log.Debugf("Completed reading Host record %s", fqdnName)
 
 	return nil
