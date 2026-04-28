@@ -11,7 +11,7 @@ provider "bluecat" {
     transport = "http"
     port = "5000"
     username = "api_user"
-    encrypt_password = "False"
+    encrypt_password = false
     password = "api_password"
 }
 ```
@@ -111,4 +111,4 @@ resource "bluecat_ipv4block" "import_block" {
 }
 ```
 
-For the latest updates, please see the BlueCat Product Documents.
+For the latest updates, please see the BlueCat Product Documents (BlueCat Terraform Plugin Administration Guide).

@@ -9,7 +9,7 @@ This resource is for mapping an IP Address to a host record in Address Manager. 
 | name | Required | The name of the record. Must be FQDN if the Zone is not provided                                            | webapp.bluecatnetworks.com |
 | network | Required | The Network address in CIDR format                                                                          | 10.0.0.0/24 |
 | ip_address | Required | The IPv4/IPv6 IP Address                                                                                    | 10.0.0.12 |
-| ip_version    | Optional | Options are ivp4 and ipv6. If left blank, ipv4 will be used                                                 | ipv4                       |
+| ip_version    | Optional | Options are ipv4 and ipv6. If left blank, ipv4 will be used                                                 | ipv4                       |
 | mac_address | Required | The MAC address                                                                                             | 11:22:33:44:55:66 |
 | properties | Optional | Records properties to be passed                                                                             | comment=My comments |
 

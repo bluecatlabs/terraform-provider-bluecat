@@ -8,13 +8,13 @@ This will allow creation or update to an IPv6 Block in Address Manager. The attr
 | parent_block | Optional | The parent Block. Specified to creating the child Block. The IPv6 Block in CIDR format           |                    |
 | address | Required | IPv6 Block's address                                                                             | 2003:1000::      |
 | cidr | Required | IPv6 Block's CIDR                                                                                | 65                 |
-| ip_version | Required | Options are ivp4 and ipv6. For this creation, ipv6 should be used                                                                           | 65                 |
+| ip_version | Required | Options are ipv4 and ipv6. For this resource, use `ipv6`.                                                                           | ipv6                 |
 | properties | Optional | Records properties to be passed                                                                  | comment=My comments |
 
 
 ## Example of a IPv6 Block resource
 
-    resource "bluecat_ip6block" "block_record" {
+    resource "bluecat_ipv6block" "block_record" {
       configuration = "terraform_demo"
       name = "block1"
       parent_block = ""

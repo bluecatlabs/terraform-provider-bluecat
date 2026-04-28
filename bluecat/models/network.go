@@ -48,6 +48,14 @@ func IPBlock(block entities.Block) *entities.Block {
 	return &block
 }
 
+// NewNextAvailableNetwork Initialize the new next available IPv4 Network to be added
+func NewNextAvailableBlock(block entities.Block) *entities.Block {
+	block.SetObjectType("get_next_block")
+	block.SetSubPath(fmt.Sprintf("%s/%s_blocks/%s", getPath(block.Configuration), block.IPVersion, block.ParentBlock))
+
+	return &block
+}
+
 // Network
 
 // NewNetwork Initialize the new IPv4 Network to be added

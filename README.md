@@ -48,7 +48,7 @@ resource "bluecat_configuration" "conf_record" {
 ```
 ### Resource IPv4 Block:
 ```
-resource "bluecat_block" "block_record" {
+resource "bluecat_ipv4block" "block_record" {
   configuration = "terraform_demo"
   name = "block1"
   parent_block = ""
@@ -58,9 +58,20 @@ resource "bluecat_block" "block_record" {
   depends_on = [bluecat_configuration.conf_record]
 }
 ```
+```
+resource "bluecat_ipv4block" "next_available_block_record" {
+  configuration = "terraform_demo"
+  name = "next available block1"
+  parent_block = "30.0.0.0/16"
+  size = "256"
+  allocated_id = timestamp()
+  properties = "allowDuplicateHost=enable"
+  depends_on = [bluecat_configuration.conf_record]
+}
+```
 ### Resource IPv4 Network:
 ```
-resource "bluecat_network" "net_record" {
+resource "bluecat_ipv4network" "net_record" {
   configuration = "terraform_demo"
   name = "network1"
   cidr = "30.0.0.0/24"
@@ -71,7 +82,7 @@ resource "bluecat_network" "net_record" {
 }
 ```
 ```
-resource "bluecat_network" "next_available_net_record" {
+resource "bluecat_ipv4network" "next_available_net_record" {
   configuration = "terraform_demo"
   name = "next available network1"
   reserve_ip = 3
@@ -207,7 +218,7 @@ resource "bluecat_zone" "sub_zone" {
   view = "Internal"
   zone = "example.com"
   deployable = "True"
-  server_roles = [“primary, server1”, “secondary, server2”]
+  server_roles = ["primary, server1", "secondary, server2"]
   properties = ""
 }
 ```
@@ -215,24 +226,24 @@ resource "bluecat_zone" "sub_zone" {
 
 ### Datasource IPv4 Block:
 ```
-data "bluecat_block" "test_ip4block" {
+data "bluecat_ipv4block" "test_ip4block" {
   configuration = "terraform_demo"
   cidr = "20.0.0.0/24"
 }
 
 output "output_block" {
-  value = data.bluecat_block.test_ip4block
+  value = data.bluecat_ipv4block.test_ip4block
 }
 ```
 ### Datasource IPv4 Network:
 ```
-data "bluecat_network" "test_ip4network" {
+data "bluecat_ipv4network" "test_ip4network" {
   configuration = "terraform_demo"
   cidr = "20.0.0.0/24"
 }
 
 output "output_network" {
-  value = data.bluecat_network.test_ip4network
+  value = data.bluecat_ipv4network.test_ip4network
 }
 ```
 ### Datasource Host Record:
@@ -242,6 +253,7 @@ data "bluecat_host_record" "test_record" {
   view = "gg"
   zone = "gateway.com"
   fqdn = "host"
+  ip_address = "20.0.0.10"
 }
 
 output "output_host" {
@@ -405,4 +417,3 @@ resource "bluecat_ipv4block" "import_block" {
     properties = "allowDuplicateHost=enable"
     depends_on = [bluecat_ipv4block.block_10_record, bluecat_ipv4block.block_10_16_record]
 }
-

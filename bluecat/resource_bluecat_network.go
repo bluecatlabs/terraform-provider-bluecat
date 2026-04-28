@@ -3,6 +3,7 @@
 package bluecat
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"reflect"
@@ -22,6 +23,16 @@ func ResourceNetwork() *schema.Resource {
 		Read:   getNetwork,
 		Update: updateNetwork,
 		Delete: deleteNetwork,
+		CustomizeDiff: func(ctx context.Context, d *schema.ResourceDiff, meta interface{}) error {
+			// Next-available mode resolves cidr during Create, so mark as computed at plan time.
+			cidr := d.Get("cidr").(string)
+			parentBlock := d.Get("parent_block").(string)
+			size := d.Get("size").(string)
+			if cidr == "" && parentBlock != "" && size != "" {
+				d.SetNewComputed("cidr")
+			}
+			return nil
+		},
 
 		Schema: map[string]*schema.Schema{
 			"configuration": {
@@ -37,6 +48,7 @@ func ResourceNetwork() *schema.Resource {
 			"cidr": {
 				Type:        schema.TypeString,
 				Optional:    true,
+				Computed:    true,
 				Description: "The network address in CIDR format",
 				DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
 					if new != old && new == "" {
@@ -157,7 +169,7 @@ func createNetwork(d *schema.ResourceData, m interface{}) error {
 		}
 
 		sizeNumber, err := strconv.Atoi(network.Size)
-		if err != nil && !isPowerOfTwo(sizeNumber) {
+		if err != nil || !isPowerOfTwo(sizeNumber) {
 			msg := "'size' is a required property and must be power of 2 to get next available network"
 			log.Error(msg)
 			return fmt.Errorf(msg)

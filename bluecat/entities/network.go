@@ -17,13 +17,15 @@ const IPV6 = "ipv6"
 type Block struct {
 	BAMBase       `json:"-"`
 	Configuration string `json:"-"`
-	ParentBlock   string `json:"-"`
+	ParentBlock   string `json:"parent_block"`
 	Name          string `json:"name"`
 	Address       string `json:"address"`
 	CIDR          string `json:"cidr_notation"`
 	Properties    string `json:"properties,omitempty"`
 	BlockId       int    `json:"id,omitempty"`
+	AllocatedId   string `json:"allocatedId"`
 	IPVersion     string `json:"ip_version,omitempty"`
+	Size          string `json:"size"`
 }
 
 func (block *Block) InitBlock(blockMap *schema.ResourceData) {
@@ -32,6 +34,8 @@ func (block *Block) InitBlock(blockMap *schema.ResourceData) {
 	block.Address = blockMap.Get("address").(string)
 	block.ParentBlock = blockMap.Get("parent_block").(string)
 	block.CIDR = blockMap.Get("cidr").(string)
+	block.Size = blockMap.Get("size").(string)
+	block.AllocatedId = blockMap.Get("allocated_id").(string)
 	block.Properties = blockMap.Get("properties").(string)
 	block.IPVersion = blockMap.Get("ip_version").(string)
 }

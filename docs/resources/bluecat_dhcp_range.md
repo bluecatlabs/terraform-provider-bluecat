@@ -8,7 +8,7 @@ This resource will create a DHCP Range for the specified IPv4 Network in Address
 | start         | Optional | Start IP of the DHCP Range | 10.0.0.10           |
 | end           | Required | End IP of the DHCP Range | 10.0.0.100          |
 | name          | Optional | The name of the DHCP Range | DHCP Floor 1        |
-| ip_version    | Optional | Options are ivp4 and ipv6. If left blank, ipv4 will be used. | ipv4                |
+| ip_version    | Optional | Options are ipv4 and ipv6. If left blank, ipv4 will be used. | ipv4                |
 | template      | Required | The name of the IPv4 Template to apply to this DHCP Range | DHCP_Template_IPv4  |
 | properties    | Optional | Records properties to be passed | comment=My comments |
 

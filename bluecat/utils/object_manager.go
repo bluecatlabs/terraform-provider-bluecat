@@ -218,6 +218,23 @@ func (objMgr *ObjectManager) CreateBlock(block entities.Block) (*entities.Block,
 	return &block, err
 }
 
+// CreateNextAvailableBlock Create a next available Block
+func (objMgr *ObjectManager) CreateNextAvailableBlock(block entities.Block) (*entities.Block, string, error) {
+
+	blockEntity := models.NewNextAvailableBlock(entities.Block{
+		Configuration: block.Configuration,
+		ParentBlock:   block.ParentBlock,
+		Name:          block.Name,
+		Properties:    block.Properties,
+		Size:          block.Size,
+		AllocatedId:   block.AllocatedId,
+		IPVersion:     block.IPVersion,
+	})
+
+	ref, err := objMgr.Connector.CreateObject(blockEntity)
+	return blockEntity, ref, err
+}
+
 // GetBlock Get the Block info
 func (objMgr *ObjectManager) GetBlock(configuration string, address string, cidr string, ipVersion string) (*entities.Block, error) {
 

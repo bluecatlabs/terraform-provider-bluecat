@@ -8,7 +8,7 @@ This resource will create a DHCPv6 Range for the specified IPv6 Network in Addre
 | start | Required | Start IP of the DHCP Range | 2003:1000::1   |
 | end | Required | End IP of the DHCP Range | 2003:1000::100 |
 | name          | Optional | The name of the DHCP Range | DHCP Floor 1   |
-| ip_version    | Optional | Options are ivp4 and ipv6. If left blank, ipv4 will be used. | ipv6           |
+| ip_version    | Optional | Options are ipv4 and ipv6. Use `ipv6` for this resource. | ipv6           |
 | properties | Optional | Records properties to be passed | key=value      |
 
 
@@ -21,5 +21,5 @@ This resource will create a DHCPv6 Range for the specified IPv6 Network in Addre
       end = "2003:1000::100"
       ip_version = "ipv6"
       properties = ""
-      depends_on = [bluecat_network.net_record]
+      depends_on = [bluecat_ipv6network.net_record]
     }
