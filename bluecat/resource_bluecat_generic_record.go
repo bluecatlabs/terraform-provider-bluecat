@@ -82,6 +82,11 @@ func ResourceGenericRecord() *schema.Resource {
 				Description: "Whether or not to use batch mode when selectively deploying",
 				Default:     "disabled",
 			},
+			"bam_id": {
+				Type:        schema.TypeInt,
+				Computed:    true,
+				Description: "The entity id of the resource within BAM",
+			},
 		},
 		Importer: &schema.ResourceImporter{
 			State: recordImporter,
@@ -122,7 +127,7 @@ func createGenericRecord(d *schema.ResourceData, m interface{}) error {
 	deploy := utils.ParseDeploymentValue(d.Get("to_deploy").(string))
 	if deploy {
 		genericRecord.BatchMode = d.Get("batch_mode").(string)
-		res, err := objMgr.Connector.DeployObject(genericRecord)
+		res, err := objMgr.Connector.DeployObject([]int{genericRecord.BAMId}, genericRecord.BatchMode)
 		if err != nil {
 			msg := fmt.Sprintf("Error deploying Generic record %s: %s", absoluteName, err)
 			log.Debug(msg)
@@ -131,6 +136,7 @@ func createGenericRecord(d *schema.ResourceData, m interface{}) error {
 		log.Debugf("Successfully deployed. %s", res)
 	}
 	d.Set("absolute_name", fqdnName)
+	d.Set("bam_id", genericRecord.BAMId)
 	log.Debugf("Completed to create Generic record %s", d.Get("absolute_name"))
 	return getGenericRecord(d, m)
 }
@@ -170,6 +176,7 @@ func getGenericRecord(d *schema.ResourceData, m interface{}) error {
 
 	d.SetId(genericRecord.AbsoluteName)
 	d.Set("absolute_name", genericRecord.AbsoluteName)
+	d.Set("bam_id", genericRecord.BAMId)
 	d.Set("properties", utils.JoinProperties(filteredProperties))
 	log.Debugf("Completed reading Generic record %s", d.Get("absolute_name"))
 	return nil
@@ -211,7 +218,7 @@ func updateGenericRecord(d *schema.ResourceData, m interface{}) error {
 	deploy := utils.ParseDeploymentValue(d.Get("to_deploy").(string))
 	if deploy {
 		genericRecord.BatchMode = d.Get("batch_mode").(string)
-		res, err := objMgr.Connector.DeployObject(genericRecord)
+		res, err := objMgr.Connector.DeployObject([]int{genericRecord.BAMId}, genericRecord.BatchMode)
 		if err != nil {
 			msg := fmt.Sprintf("Error deploying Generic record %s: %s", absoluteName, err)
 			log.Debug(msg)
@@ -220,6 +227,7 @@ func updateGenericRecord(d *schema.ResourceData, m interface{}) error {
 		log.Debugf("Successfully deployed. %s", res)
 	}
 	d.Set("absolute_name", fqdnName)
+	d.Set("bam_id", genericRecord.BAMId)
 	log.Debugf("Completed to update Generic record %s", d.Get("absolute_name"))
 	return getGenericRecord(d, m)
 }
@@ -230,6 +238,7 @@ func deleteGenericRecord(d *schema.ResourceData, m interface{}) error {
 	configuration := d.Get("configuration").(string)
 	view := d.Get("view").(string)
 	absoluteName := d.Get("absolute_name").(string)
+	bamID := d.Get("bam_id").(int)
 
 	connector := m.(*utils.Connector)
 	objMgr := new(utils.ObjectManager)
@@ -240,6 +249,16 @@ func deleteGenericRecord(d *schema.ResourceData, m interface{}) error {
 		msg := fmt.Sprintf("Getting Generic record %s failed: %s", absoluteName, err)
 		log.Debug(msg)
 		return fmt.Errorf(msg)
+	}
+	deploy := utils.ParseDeploymentValue(d.Get("to_deploy").(string))
+	if deploy {
+		res, err := objMgr.Connector.DeployObject([]int{bamID}, d.Get("batch_mode").(string))
+		if err != nil {
+			msg := fmt.Sprintf("Error deploying Generic record %s: %s", absoluteName, err)
+			log.Debug(msg)
+			return fmt.Errorf(msg)
+		}
+		log.Debugf("Successfully deployed. %s", res)
 	}
 	d.SetId("")
 	log.Debugf("Completed to delete Generic record %s", d.Get("absolute_name"))

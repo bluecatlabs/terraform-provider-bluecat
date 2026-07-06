@@ -53,8 +53,7 @@ func TestAccResourceBlock(t *testing.T) {
 			},
 			// update ipv6 block
 			{
-				Config:             testAccResourceIPv6BlockUpdateNotFullField,
-				ExpectNonEmptyPlan: true,
+				Config: testAccResourceIPv6BlockUpdateNotFullField,
 				Check: resource.ComposeTestCheckFunc(
 					testAccBlockExists(
 						t,
@@ -91,6 +90,28 @@ func TestAccResourceBlock(t *testing.T) {
 						blockAllowDuplicateHostProperty2,
 						entities.IPV4,
 					),
+				),
+			},
+		},
+	})
+	// create multiple next available blocks from the same parent to exercise serialized next-available calls
+	resource.Test(t, resource.TestCase{
+		ProviderFactories: testAccProviders,
+		CheckDestroy:      testAccCheckBlockDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccResourceNextAvailableBlockBurst,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttrSet("bluecat_ipv4block.next_block_burst_a", "address"),
+					resource.TestCheckResourceAttrSet("bluecat_ipv4block.next_block_burst_a", "cidr"),
+					resource.TestCheckResourceAttrSet("bluecat_ipv4block.next_block_burst_b", "address"),
+					resource.TestCheckResourceAttrSet("bluecat_ipv4block.next_block_burst_b", "cidr"),
+					resource.TestCheckResourceAttrSet("bluecat_ipv4block.next_block_burst_c", "address"),
+					resource.TestCheckResourceAttrSet("bluecat_ipv4block.next_block_burst_c", "cidr"),
+					resource.TestCheckResourceAttrSet("bluecat_ipv4block.next_block_burst_d", "address"),
+					resource.TestCheckResourceAttrSet("bluecat_ipv4block.next_block_burst_d", "cidr"),
+					resource.TestCheckResourceAttrSet("bluecat_ipv4block.next_block_burst_e", "address"),
+					resource.TestCheckResourceAttrSet("bluecat_ipv4block.next_block_burst_e", "cidr"),
 				),
 			},
 		},
@@ -249,3 +270,63 @@ var testAccResourceIPv6BlockUpdateNotFullField = fmt.Sprintf(
 		properties = ""
 		ip_version = "ipv6"
 		}`, server, configuration)
+
+var testAccResourceNextAvailableBlockBurst = fmt.Sprintf(
+	`%s
+	resource "bluecat_ipv4block" "next_block_burst_parent" {
+		configuration = "%s"
+		name = "next_block_burst_parent"
+		address = "40.0.0.0"
+		cidr = "16"
+		properties = ""
+	}
+
+	resource "bluecat_ipv4block" "next_block_burst_a" {
+		configuration = "%s"
+		name = "next_block_burst_a"
+		parent_block = "40.0.0.0/16"
+		size = "256"
+		allocated_id = "burst_a"
+		properties = ""
+		depends_on = [bluecat_ipv4block.next_block_burst_parent]
+	}
+
+	resource "bluecat_ipv4block" "next_block_burst_b" {
+		configuration = "%s"
+		name = "next_block_burst_b"
+		parent_block = "40.0.0.0/16"
+		size = "256"
+		allocated_id = "burst_b"
+		properties = ""
+		depends_on = [bluecat_ipv4block.next_block_burst_parent]
+	}
+
+	resource "bluecat_ipv4block" "next_block_burst_c" {
+		configuration = "%s"
+		name = "next_block_burst_c"
+		parent_block = "40.0.0.0/16"
+		size = "256"
+		allocated_id = "burst_c"
+		properties = ""
+		depends_on = [bluecat_ipv4block.next_block_burst_parent]
+	}
+
+	resource "bluecat_ipv4block" "next_block_burst_d" {
+		configuration = "%s"
+		name = "next_block_burst_d"
+		parent_block = "40.0.0.0/16"
+		size = "256"
+		allocated_id = "burst_d"
+		properties = ""
+		depends_on = [bluecat_ipv4block.next_block_burst_parent]
+	}
+
+	resource "bluecat_ipv4block" "next_block_burst_e" {
+		configuration = "%s"
+		name = "next_block_burst_e"
+		parent_block = "40.0.0.0/16"
+		size = "256"
+		allocated_id = "burst_e"
+		properties = ""
+		depends_on = [bluecat_ipv4block.next_block_burst_parent]
+	}`, server, configuration, configuration, configuration, configuration, configuration, configuration)

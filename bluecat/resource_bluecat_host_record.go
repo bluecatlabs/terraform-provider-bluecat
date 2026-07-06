@@ -82,6 +82,11 @@ func ResourceHostRecord() *schema.Resource {
 				Description: "Whether or not to use batch mode when selectively deploying",
 				Default:     "disabled",
 			},
+			"bam_id": {
+				Type:        schema.TypeInt,
+				Computed:    true,
+				Description: "The entity id of the resource within BAM",
+			},
 		},
 		Importer: &schema.ResourceImporter{
 			State: recordImporter,
@@ -137,7 +142,7 @@ func createHostRecord(d *schema.ResourceData, m interface{}) error {
 	deploy := utils.ParseDeploymentValue(d.Get("to_deploy").(string))
 	if deploy {
 		hostRecord.BatchMode = d.Get("batch_mode").(string)
-		res, err := objMgr.Connector.DeployObject(hostRecord)
+		res, err := objMgr.Connector.DeployObject([]int{hostRecord.BAMId}, hostRecord.BatchMode)
 		if err != nil {
 			msg := fmt.Sprintf("Error deploying Host record %s: %s", fqdnName, err)
 			log.Debug(msg)
@@ -146,6 +151,7 @@ func createHostRecord(d *schema.ResourceData, m interface{}) error {
 		log.Debugf("Successfully deployed. %s", res)
 	}
 	d.Set("absolute_name", fqdnName)
+	d.Set("bam_id", hostRecord.BAMId)
 	log.Debugf("Completed to create Host record %s", d.Get("absolute_name"))
 	return getHostRecord(d, m)
 }
@@ -186,6 +192,7 @@ func getHostRecord(d *schema.ResourceData, m interface{}) error {
 
 	d.SetId(hostRecord.AbsoluteName)
 	d.Set("absolute_name", hostRecord.AbsoluteName)
+	d.Set("bam_id", hostRecord.BAMId)
 	d.Set("properties", utils.JoinProperties(filteredProperties))
 	// for import functionality ip4_address must be set for the host_record - required attribute
 	d.Set("ip_address", parseRecordPropertyValue(hostRecord.Properties, "addresses"))
@@ -232,7 +239,7 @@ func updateHostRecord(d *schema.ResourceData, m interface{}) error {
 	deploy := utils.ParseDeploymentValue(d.Get("to_deploy").(string))
 	if deploy {
 		hostRecord.BatchMode = d.Get("batch_mode").(string)
-		res, err := objMgr.Connector.DeployObject(hostRecord)
+		res, err := objMgr.Connector.DeployObject([]int{hostRecord.BAMId}, hostRecord.BatchMode)
 		if err != nil {
 			msg := fmt.Sprintf("Error deploying Host record %s: %s", fqdnName, err)
 			log.Debug(msg)
@@ -241,6 +248,7 @@ func updateHostRecord(d *schema.ResourceData, m interface{}) error {
 		log.Debugf("Successfully deployed. %s", res)
 	}
 	d.Set("absolute_name", fqdnName)
+	d.Set("bam_id", hostRecord.BAMId)
 	log.Debugf("Completed to update Host record %s", d.Get("absolute_name"))
 	return getHostRecord(d, m)
 }
@@ -251,7 +259,7 @@ func deleteHostRecord(d *schema.ResourceData, m interface{}) error {
 	configuration := d.Get("configuration").(string)
 	view := d.Get("view").(string)
 	absoluteName := d.Get("absolute_name").(string)
-
+	bamID := d.Get("bam_id").(int)
 	connector := m.(*utils.Connector)
 	objMgr := new(utils.ObjectManager)
 	objMgr.Connector = connector
@@ -261,6 +269,16 @@ func deleteHostRecord(d *schema.ResourceData, m interface{}) error {
 		msg := fmt.Sprintf("Delete Host record %s failed: %s", absoluteName, err)
 		log.Debug(msg)
 		return fmt.Errorf(msg)
+	}
+	deploy := utils.ParseDeploymentValue(d.Get("to_deploy").(string))
+	if deploy {
+		res, err := objMgr.Connector.DeployObject([]int{bamID}, d.Get("batch_mode").(string))
+		if err != nil {
+			msg := fmt.Sprintf("Error deploying Host record %s: %s", absoluteName, err)
+			log.Debug(msg)
+			return fmt.Errorf(msg)
+		}
+		log.Debugf("Successfully deployed. %s", res)
 	}
 	d.SetId("")
 	log.Debugf("Completed to delete Host record %s", d.Get("absolute_name"))

@@ -101,6 +101,12 @@ func ResourceBlock() *schema.Resource {
 					return old != ""
 				},
 			},
+			"deployment_options": {
+				Type:        schema.TypeMap,
+				Optional:    true,
+				Description: "The deployment options for the block.",
+				Elem:        &schema.Schema{Type: schema.TypeString},
+			},
 			"properties": {
 				Type:     schema.TypeString,
 				Optional: true,
@@ -211,6 +217,15 @@ func createBlock(d *schema.ResourceData, m interface{}) error {
 		log.Error(msg)
 		return fmt.Errorf(msg)
 	}
+	err := utils.CreateDeploymentOptions(objMgr, entities.DeploymentOption{
+		Configuration: block.Configuration,
+		ResourceType:  "block",
+		ResourceRef:   block.AddressCIDR(),
+		IPVersion:     block.IPVersion,
+	}, utils.ExpandStringMap(d.Get("deployment_options")))
+	if err != nil {
+		return fmt.Errorf("creating deployment options on Block (%s) failed: %w", block.AddressCIDR(), err)
+	}
 	return getBlock(d, m)
 }
 
@@ -266,12 +281,22 @@ func getBlock(d *schema.ResourceData, m interface{}) error {
 
 	// --- Filter server properties using keys from config ---
 	filteredProperties := utils.FilterProperties(bamProps, cfgProps)
+	deploymentOptions, err := utils.ReadDeploymentOptions(objMgr, entities.DeploymentOption{
+		Configuration: configuration,
+		ResourceType:  "block",
+		ResourceRef:   block.AddressCIDR(),
+		IPVersion:     block.IPVersion,
+	}, utils.ExpandStringMap(d.Get("deployment_options")))
+	if err != nil {
+		return fmt.Errorf("getting deployment options on Block %s failed: %w", block.AddressCIDR(), err)
+	}
 
 	d.Set("name", block.Name)
 	d.Set("address", block.Address)
 	d.Set("cidr", block.CIDR)
 	d.Set("ip_version", block.IPVersion)
 	d.Set("properties", utils.JoinProperties(filteredProperties))
+	d.Set("deployment_options", utils.FlattenStringMap(deploymentOptions))
 	d.SetId(block.AddressCIDR())
 	log.Debugf("Completed getting Block %s", d.Get("address"))
 	return nil
@@ -303,6 +328,16 @@ func updateBlock(d *schema.ResourceData, m interface{}) error {
 		msg := fmt.Sprintf("Error updating Block (%s): %s", block.Address, err)
 		log.Error(msg)
 		return fmt.Errorf(msg)
+	}
+	currentRaw, newRaw := d.GetChange("deployment_options")
+	err = utils.UpdateDeploymentOptionsForTarget(objMgr, entities.DeploymentOption{
+		Configuration: block.Configuration,
+		ResourceType:  "block",
+		ResourceRef:   block.AddressCIDR(),
+		IPVersion:     block.IPVersion,
+	}, currentRaw, newRaw)
+	if err != nil {
+		return fmt.Errorf("updating deployment options on Block (%s) failed: %w", block.AddressCIDR(), err)
 	}
 	log.Debugf("Completed to update Block %s", d.Get("address"))
 	return getBlock(d, m)

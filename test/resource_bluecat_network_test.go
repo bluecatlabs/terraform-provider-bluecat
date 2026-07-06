@@ -132,6 +132,23 @@ func TestAccResourceNetwork(t *testing.T) {
 			},
 		},
 	})
+	// create multiple next available networks from the same parent to exercise serialized next-available calls
+	resource.Test(t, resource.TestCase{
+		ProviderFactories: testAccProviders,
+		CheckDestroy:      testAccCheckNetworkDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccResourceNextAvailableNetworkBurst,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttrSet("bluecat_ipv4network.next_net_burst_a", "cidr"),
+					resource.TestCheckResourceAttrSet("bluecat_ipv4network.next_net_burst_b", "cidr"),
+					resource.TestCheckResourceAttrSet("bluecat_ipv4network.next_net_burst_c", "cidr"),
+					resource.TestCheckResourceAttrSet("bluecat_ipv4network.next_net_burst_d", "cidr"),
+					resource.TestCheckResourceAttrSet("bluecat_ipv4network.next_net_burst_e", "cidr"),
+				),
+			},
+		},
+	})
 }
 
 func testAccCheckNetworkDestroy(s *terraform.State) error {
@@ -424,3 +441,63 @@ var testAccResourceIPv6NetworUpdateAddName = fmt.Sprintf(
 		name = "new_name"
 		ip_version = "ipv6"
 		}`, GetTestEnvResources(), configuration)
+
+var testAccResourceNextAvailableNetworkBurst = fmt.Sprintf(
+	`%s
+	resource "bluecat_ipv4block" "next_net_burst_parent" {
+		configuration = "%s"
+		name = "next_net_burst_parent"
+		address = "41.0.0.0"
+		cidr = "16"
+		properties = ""
+	}
+
+	resource "bluecat_ipv4network" "next_net_burst_a" {
+		configuration = "%s"
+		name = "next_net_burst_a"
+		parent_block = "41.0.0.0/16"
+		size = "256"
+		allocated_id = "burst_a"
+		properties = ""
+		depends_on = [bluecat_ipv4block.next_net_burst_parent]
+	}
+
+	resource "bluecat_ipv4network" "next_net_burst_b" {
+		configuration = "%s"
+		name = "next_net_burst_b"
+		parent_block = "41.0.0.0/16"
+		size = "256"
+		allocated_id = "burst_b"
+		properties = ""
+		depends_on = [bluecat_ipv4block.next_net_burst_parent]
+	}
+
+	resource "bluecat_ipv4network" "next_net_burst_c" {
+		configuration = "%s"
+		name = "next_net_burst_c"
+		parent_block = "41.0.0.0/16"
+		size = "256"
+		allocated_id = "burst_c"
+		properties = ""
+		depends_on = [bluecat_ipv4block.next_net_burst_parent]
+	}
+
+	resource "bluecat_ipv4network" "next_net_burst_d" {
+		configuration = "%s"
+		name = "next_net_burst_d"
+		parent_block = "41.0.0.0/16"
+		size = "256"
+		allocated_id = "burst_d"
+		properties = ""
+		depends_on = [bluecat_ipv4block.next_net_burst_parent]
+	}
+
+	resource "bluecat_ipv4network" "next_net_burst_e" {
+		configuration = "%s"
+		name = "next_net_burst_e"
+		parent_block = "41.0.0.0/16"
+		size = "256"
+		allocated_id = "burst_e"
+		properties = ""
+		depends_on = [bluecat_ipv4block.next_net_burst_parent]
+	}`, server, configuration, configuration, configuration, configuration, configuration, configuration)

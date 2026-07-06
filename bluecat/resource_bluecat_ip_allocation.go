@@ -202,7 +202,7 @@ func createIPAllocation(d *schema.ResourceData, m interface{}) error {
 					deploy := utils.ParseDeploymentValue(to_deploy.(string))
 					if deploy {
 						hostRecord.BatchMode = d.Get("batch_mode").(string)
-						res, err := objMgr.Connector.DeployObject(hostRecord)
+						res, err := objMgr.Connector.DeployObject([]int{hostRecord.BAMId}, hostRecord.BatchMode)
 						if err != nil {
 							msg := fmt.Sprintf("Error deploying IP Allocation record %s: %s", fqdnName, err)
 							log.Debug(msg)
@@ -376,7 +376,7 @@ func updateAllocatedResource(d *schema.ResourceData, m interface{}) error {
 					deploy := utils.ParseDeploymentValue(to_deploy.(string))
 					if deploy {
 						hostRecord.BatchMode = d.Get("batch_mode").(string)
-						res, err := objMgr.Connector.DeployObject(hostRecord)
+						res, err := objMgr.Connector.DeployObject([]int{hostRecord.BAMId}, hostRecord.BatchMode)
 						if err != nil {
 							msg := fmt.Sprintf("Error deploying IP Allocation record %s: %s", fqdnName, err)
 							log.Debug(msg)

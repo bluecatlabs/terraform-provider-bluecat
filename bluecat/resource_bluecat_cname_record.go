@@ -77,6 +77,11 @@ func ResourceCNAMERecord() *schema.Resource {
 				Description: "Whether or not to use batch mode when selectively deploying",
 				Default:     "disabled",
 			},
+			"bam_id": {
+				Type:        schema.TypeInt,
+				Computed:    true,
+				Description: "The entity id of the resource within BAM",
+			},
 		},
 		Importer: &schema.ResourceImporter{
 			State: recordImporter,
@@ -116,7 +121,7 @@ func createCNAMERecord(d *schema.ResourceData, m interface{}) error {
 	deploy := utils.ParseDeploymentValue(d.Get("to_deploy").(string))
 	if deploy {
 		cnameRecord.BatchMode = d.Get("batch_mode").(string)
-		res, err := objMgr.Connector.DeployObject(cnameRecord)
+		res, err := objMgr.Connector.DeployObject([]int{cnameRecord.BAMId}, cnameRecord.BatchMode)
 		if err != nil {
 			msg := fmt.Sprintf("Error deploying CNAME record %s: %s", fqdnName, err)
 			log.Debug(msg)
@@ -125,6 +130,7 @@ func createCNAMERecord(d *schema.ResourceData, m interface{}) error {
 		log.Debugf("Successfully deployed. %s", res)
 	}
 	d.Set("absolute_name", fqdnName)
+	d.Set("bam_id", cnameRecord.BAMId)
 	log.Debugf("Completed to create CNAME record %s", d.Get("absolute_name"))
 	return getCNAMERecord(d, m)
 }
@@ -164,6 +170,7 @@ func getCNAMERecord(d *schema.ResourceData, m interface{}) error {
 
 	d.SetId(cnameRecord.AbsoluteName)
 	d.Set("absolute_name", cnameRecord.AbsoluteName)
+	d.Set("bam_id", cnameRecord.BAMId)
 	d.Set("properties", utils.JoinProperties(filteredProperties))
 	// for import functionality linked_record must be set for the cname_record - required attribute
 	d.Set("linked_record", parseRecordPropertyValue(cnameRecord.Properties, "linkedRecordName"))
@@ -206,7 +213,7 @@ func updateCNAMERecord(d *schema.ResourceData, m interface{}) error {
 	deploy := utils.ParseDeploymentValue(d.Get("to_deploy").(string))
 	if deploy {
 		cnameRecord.BatchMode = d.Get("batch_mode").(string)
-		res, err := objMgr.Connector.DeployObject(cnameRecord)
+		res, err := objMgr.Connector.DeployObject([]int{cnameRecord.BAMId}, cnameRecord.BatchMode)
 		if err != nil {
 			msg := fmt.Sprintf("Error deploying CNAME record %s: %s", fqdnName, err)
 			log.Debug(msg)
@@ -215,6 +222,7 @@ func updateCNAMERecord(d *schema.ResourceData, m interface{}) error {
 		log.Debugf("Successfully deployed. %s", res)
 	}
 	d.Set("absolute_name", fqdnName)
+	d.Set("bam_id", cnameRecord.BAMId)
 	log.Debugf("Completed to update CNAME record %s", d.Get("absolute_name"))
 	return getCNAMERecord(d, m)
 }
@@ -225,6 +233,7 @@ func deleteCNAMERecord(d *schema.ResourceData, m interface{}) error {
 	configuration := d.Get("configuration").(string)
 	view := d.Get("view").(string)
 	absoluteName := d.Get("absolute_name").(string)
+	bamID := d.Get("bam_id").(int)
 
 	connector := m.(*utils.Connector)
 	objMgr := new(utils.ObjectManager)
@@ -235,6 +244,16 @@ func deleteCNAMERecord(d *schema.ResourceData, m interface{}) error {
 		msg := fmt.Sprintf("Getting CNAME record %s failed: %s", absoluteName, err)
 		log.Debug(msg)
 		return fmt.Errorf(msg)
+	}
+	deploy := utils.ParseDeploymentValue(d.Get("to_deploy").(string))
+	if deploy {
+		res, err := objMgr.Connector.DeployObject([]int{bamID}, d.Get("batch_mode").(string))
+		if err != nil {
+			msg := fmt.Sprintf("Error deploying CNAME record %s: %s", absoluteName, err)
+			log.Debug(msg)
+			return fmt.Errorf(msg)
+		}
+		log.Debugf("Successfully deployed. %s", res)
 	}
 	d.SetId("")
 	log.Debugf("Completed to delete CNAME record %s", d.Get("absolute_name"))

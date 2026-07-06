@@ -57,6 +57,7 @@ Below are the available resources for the following objectTypes:
 -   TXT Record (bluecat_txt_record)
 -   SRV Record (bluecat_srv_record)
 -   Generic Record (bluecat_generic_record)
+-   External Host Record (bluecat_external_host_record)
 -   DNS Zone (bluecat_zone)
 -   View (bluecat_view)
 
@@ -81,6 +82,7 @@ You can now import existing BlueCat data into Terraform state. The available Blu
 -  Network
 -  Zone
 -  CNAME
+-  External Host Record
 -  Generic Record
 -  Host Record
 -  TXT Record

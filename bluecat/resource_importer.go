@@ -40,6 +40,22 @@ func recordImporter(d *schema.ResourceData, meta any) ([]*schema.ResourceData, e
 	return []*schema.ResourceData{d}, nil
 }
 
+// External Host Records do not have a zone attribute, so their import ID must
+// stay as the full FQDN and be written directly to absolute_name.
+func externalHostRecordImporter(d *schema.ResourceData, meta any) ([]*schema.ResourceData, error) {
+	absoluteName := strings.TrimSpace(d.Id())
+	if absoluteName == "" || !strings.Contains(absoluteName, ".") {
+		return nil, fmt.Errorf("unexpected format of external host record ID (%s), expected fully qualified domain name", d.Id())
+	}
+
+	if err := d.Set("absolute_name", absoluteName); err != nil {
+		return nil, err
+	}
+	d.SetId(absoluteName)
+
+	return []*schema.ResourceData{d}, nil
+}
+
 func zoneImporter(d *schema.ResourceData, meta any) ([]*schema.ResourceData, error) {
 	zoneName := d.Id()
 	d.Set("zone", zoneName)
@@ -79,6 +95,10 @@ func getAbsoluteName(d *schema.ResourceData) (string, error) {
 	if d.Id() != "" {
 		zoneName, recordName, err := recordParseId(d.Id())
 		if err != nil {
+			absoluteName = d.Get("absolute_name").(string)
+			if absoluteName != "" {
+				return absoluteName, nil
+			}
 			log.Debug(err)
 			return "", err
 		}

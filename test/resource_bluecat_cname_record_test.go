@@ -137,7 +137,7 @@ var cnameResource1 = "cname_record_a4"
 var cnameName1 = "a4.example.com"
 var cnameLink1 = "a2.example.com"
 var cnameTTL1 = "400"
-var cnameProperties1 = ""
+var cnameProperties1 = "comments=unittest"
 var testAccresourceCNAMERecordCreateFullField = fmt.Sprintf(
 	`%s
 	resource "bluecat_cname_record" "%s" {
@@ -165,7 +165,7 @@ var testAccresourceCNAMERecordCreateNotFullField = fmt.Sprintf(
 
 var cnameLink2 = "a3.example.com"
 var cnameTTL2 = "4000"
-var cnameProperties2 = ""
+var cnameProperties2 = "comments=unittest2"
 var testAccresourceCNAMERecordUpdateFullField = fmt.Sprintf(
 	`%s
 	resource "bluecat_cname_record" "%s" {

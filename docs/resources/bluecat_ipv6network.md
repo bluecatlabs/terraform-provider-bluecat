@@ -8,6 +8,7 @@ This will allow creation or update to an IPv6 Network in Address Manager. The at
 | cidr | Optional | The network address in CIDR format. If not provided, the next available network will be created                                                 | 2003:1000::/65    |
 | template | Optional | IPv4 Template to apply                                                                                                                          | NetworkTemplateIPv6 |
 | parent_block | Optional | The parent block of the network in CIDR format. Required if create next available network                                                       | 2003:1000::/64    |
+| deployment_options | Optional | Deployment options to set on the network as a map of option name to value                                                       | { monitor-state = "enabled" } |
 | properties | Optional | Records properties to be passed                                                                                                                 | comment=My comments |
 | ip_version | Optional | Options are ipv4 and ipv6. For this resource, use `ipv6`.                                                    | ipv6              |
 
@@ -19,6 +20,10 @@ This will allow creation or update to an IPv6 Network in Address Manager. The at
       configuration = "terraform_demo"
       name = "network1"
       cidr = "2003:1000::/65"
+      deployment_options = {
+         allow-query = "any"
+         notify      = "explicit"
+      }
       ip_version = "ipv6"
       properties = ""
       depends_on = [bluecat_ipv6block.block_record]

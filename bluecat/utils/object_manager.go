@@ -5,9 +5,14 @@ package utils
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
+	"sync"
 	"terraform-provider-bluecat/bluecat/entities"
 	"terraform-provider-bluecat/bluecat/models"
 )
+
+var nextAvailableBlockMu sync.Mutex
+var nextAvailableNetworkMu sync.Mutex
 
 // ObjectManager The BlueCat object manager
 type ObjectManager struct {
@@ -220,6 +225,8 @@ func (objMgr *ObjectManager) CreateBlock(block entities.Block) (*entities.Block,
 
 // CreateNextAvailableBlock Create a next available Block
 func (objMgr *ObjectManager) CreateNextAvailableBlock(block entities.Block) (*entities.Block, string, error) {
+	nextAvailableBlockMu.Lock()
+	defer nextAvailableBlockMu.Unlock()
 
 	blockEntity := models.NewNextAvailableBlock(entities.Block{
 		Configuration: block.Configuration,
@@ -331,6 +338,8 @@ func (objMgr *ObjectManager) CreateNetwork(network entities.Network) (*entities.
 
 // CreateNextAvailableNetwork Create a next available Network
 func (objMgr *ObjectManager) CreateNextAvailableNetwork(network entities.Network) (*entities.Network, string, error) {
+	nextAvailableNetworkMu.Lock()
+	defer nextAvailableNetworkMu.Unlock()
 
 	networkEntity := models.NewNextAvailableNetwork(entities.Network{
 		Configuration: network.Configuration,
@@ -918,6 +927,72 @@ func (objMgr *ObjectManager) DeleteDeploymentRole(configuration string, view str
 	})
 
 	return objMgr.Connector.DeleteObject(deploymentRole)
+}
+
+// CreateDeploymentOption Create the Deployment option
+func (objMgr *ObjectManager) CreateDeploymentOption(deploymentOption entities.DeploymentOption) (*entities.DeploymentOption, error) {
+	deploymentOptionObj := models.NewDeploymentOption(deploymentOption)
+
+	_, err := objMgr.Connector.CreateObject(deploymentOptionObj)
+	return deploymentOptionObj, err
+}
+
+// GetDeploymentOption Get the Deployment option
+func (objMgr *ObjectManager) GetDeploymentOption(deploymentOption entities.DeploymentOption) (*entities.DeploymentOption, error) {
+	deploymentOptionObj := models.DeploymentOption(deploymentOption)
+
+	return objMgr.getDeploymentOptionResponse(GET, deploymentOptionObj)
+}
+
+// UpdateDeploymentOption Update the Deployment option
+func (objMgr *ObjectManager) UpdateDeploymentOption(deploymentOption entities.DeploymentOption) (*entities.DeploymentOption, error) {
+	deploymentOptionObj := models.DeploymentOption(deploymentOption)
+
+	return objMgr.getDeploymentOptionResponse(UPDATE, deploymentOptionObj)
+}
+
+// DeleteDeploymentOption Delete the Deployment option
+func (objMgr *ObjectManager) DeleteDeploymentOption(deploymentOption entities.DeploymentOption) (string, error) {
+	deploymentOptionObj := models.DeploymentOption(deploymentOption)
+
+	return objMgr.Connector.DeleteObject(deploymentOptionObj)
+}
+
+func (objMgr *ObjectManager) getDeploymentOptionResponse(rType RequestType, deploymentOption *entities.DeploymentOption) (*entities.DeploymentOption, error) {
+	connector, ok := objMgr.Connector.(*Connector)
+	if !ok {
+		return nil, fmt.Errorf("deployment option requests require *utils.Connector")
+	}
+
+	resp, err := connector.makeRequest(rType, deploymentOption)
+	if err != nil {
+		return nil, err
+	}
+	if len(resp) == 0 {
+		return deploymentOption, nil
+	}
+
+	body := strings.TrimSpace(string(resp))
+	if strings.HasPrefix(body, "[") {
+		var options []entities.DeploymentOption
+		if err := json.Unmarshal(resp, &options); err != nil {
+			return nil, err
+		}
+		if len(options) == 0 {
+			return deploymentOption, nil
+		}
+		option := options[0]
+		option.Configuration = deploymentOption.Configuration
+		option.View = deploymentOption.View
+		option.Zone = deploymentOption.Zone
+		option.ServerID = deploymentOption.ServerID
+		return &option, nil
+	}
+
+	if err := json.Unmarshal(resp, deploymentOption); err != nil {
+		return nil, err
+	}
+	return deploymentOption, nil
 }
 
 // GetServer Get the Server info

@@ -98,6 +98,11 @@ func ResourceSRVRecord() *schema.Resource {
 				Description: "Whether or not to use batch mode when selectively deploying",
 				Default:     "disabled",
 			},
+			"bam_id": {
+				Type:        schema.TypeInt,
+				Computed:    true,
+				Description: "The entity id of the resource within BAM",
+			},
 		},
 		Importer: &schema.ResourceImporter{
 			State: recordImporter,
@@ -140,7 +145,7 @@ func createSRVRecord(d *schema.ResourceData, m interface{}) error {
 	deploy := utils.ParseDeploymentValue(d.Get("to_deploy").(string))
 	if deploy {
 		srvRecord.BatchMode = d.Get("batch_mode").(string)
-		res, err := objMgr.Connector.DeployObject(srvRecord)
+		res, err := objMgr.Connector.DeployObject([]int{srvRecord.BAMId}, srvRecord.BatchMode)
 		if err != nil {
 			msg := fmt.Sprintf("Error deploying SRV record %s: %s", absoluteName, err)
 			log.Debug(msg)
@@ -149,6 +154,7 @@ func createSRVRecord(d *schema.ResourceData, m interface{}) error {
 		log.Debugf("Successfully deployed. %s", res)
 	}
 	d.Set("absolute_name", fqdnName)
+	d.Set("bam_id", srvRecord.BAMId)
 	log.Debugf("Completed to create SRV record %s", d.Get("absolute_name"))
 	return getSRVRecord(d, m)
 }
@@ -188,6 +194,7 @@ func getSRVRecord(d *schema.ResourceData, m interface{}) error {
 
 	d.SetId(srvRecord.AbsoluteName)
 	d.Set("absolute_name", srvRecord.AbsoluteName)
+	d.Set("bam_id", srvRecord.BAMId)
 	d.Set("properties", utils.JoinProperties(filteredProperties))
 
 	log.Debugf("Completed reading SRV record %s", d.Get("absolute_name"))
@@ -234,7 +241,7 @@ func updateSRVRecord(d *schema.ResourceData, m interface{}) error {
 	deploy := utils.ParseDeploymentValue(d.Get("to_deploy").(string))
 	if deploy {
 		srvRecord.BatchMode = d.Get("batch_mode").(string)
-		res, err := objMgr.Connector.DeployObject(srvRecord)
+		res, err := objMgr.Connector.DeployObject([]int{srvRecord.BAMId}, srvRecord.BatchMode)
 		if err != nil {
 			msg := fmt.Sprintf("Error deploying SRV record %s: %s", absoluteName, err)
 			log.Debug(msg)
@@ -246,6 +253,7 @@ func updateSRVRecord(d *schema.ResourceData, m interface{}) error {
 		fqdnName = replaceName(fqdnName, name)
 	}
 	d.Set("absolute_name", fqdnName)
+	d.Set("bam_id", srvRecord.BAMId)
 	d.SetId(fqdnName)
 	log.Debugf("Completed to update SRV record %s", d.Get("absolute_name"))
 	return nil
@@ -257,6 +265,7 @@ func deleteSRVRecord(d *schema.ResourceData, m interface{}) error {
 	configuration := d.Get("configuration").(string)
 	view := d.Get("view").(string)
 	absoluteName := d.Get("absolute_name").(string)
+	bamID := d.Get("bam_id").(int)
 
 	connector := m.(*utils.Connector)
 	objMgr := new(utils.ObjectManager)
@@ -267,6 +276,16 @@ func deleteSRVRecord(d *schema.ResourceData, m interface{}) error {
 		msg := fmt.Sprintf("Getting SRV record %s failed: %s", absoluteName, err)
 		log.Debug(msg)
 		return fmt.Errorf(msg)
+	}
+	deploy := utils.ParseDeploymentValue(d.Get("to_deploy").(string))
+	if deploy {
+		res, err := objMgr.Connector.DeployObject([]int{bamID}, d.Get("batch_mode").(string))
+		if err != nil {
+			msg := fmt.Sprintf("Error deploying SRV record %s: %s", absoluteName, err)
+			log.Debug(msg)
+			return fmt.Errorf(msg)
+		}
+		log.Debugf("Successfully deployed. %s", res)
 	}
 	d.SetId("")
 	log.Debugf("Completed to delete SRV record %s", d.Get("absolute_name"))

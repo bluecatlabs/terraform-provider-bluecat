@@ -54,6 +54,10 @@ resource "bluecat_ipv4block" "block_record" {
   parent_block = ""
   address = "30.0.0.0"
   cidr = "24"
+  deployment_options = {
+     allow-query = "any"
+     notify      = "explicit"
+  }
   properties = "allowDuplicateHost=enable"
   depends_on = [bluecat_configuration.conf_record]
 }
@@ -65,6 +69,10 @@ resource "bluecat_ipv4block" "next_available_block_record" {
   parent_block = "30.0.0.0/16"
   size = "256"
   allocated_id = timestamp()
+  deployment_options = {
+     allow-query = "any"
+     notify      = "explicit"
+  }
   properties = "allowDuplicateHost=enable"
   depends_on = [bluecat_configuration.conf_record]
 }
@@ -77,6 +85,10 @@ resource "bluecat_ipv4network" "net_record" {
   cidr = "30.0.0.0/24"
   gateway = "30.0.0.12"
   reserve_ip = 3
+  deployment_options = {
+     allow-query = "any"
+     notify      = "explicit"
+  }
   properties = ""
   depends_on = [bluecat_ipv4block.block_record]
 }
@@ -89,6 +101,10 @@ resource "bluecat_ipv4network" "next_available_net_record" {
   parent_block = "30.0.0.0/24"
   size = 256
   allocated_id = timestamp()
+  deployment_options = {
+     allow-query = "any"
+     notify      = "explicit"
+  }
   properties = ""
   depends_on = [bluecat_ipv4block.block_record]
 }
@@ -219,6 +235,10 @@ resource "bluecat_zone" "sub_zone" {
   zone = "example.com"
   deployable = "True"
   server_roles = ["primary, server1", "secondary, server2"]
+  deployment_options = {
+     allow-query = "any"
+     notify      = "explicit"
+  }
   properties = ""
 }
 ```
@@ -375,6 +395,13 @@ import {
 import {
   to = bluecat_ipv4network.network_record_import_1
   id = "2.2.2.0/24"
+}
+```
+External host records are imported by their fully qualified record name:
+```
+import {
+  to = bluecat_external_host_record.external_host_record_import_1
+  id = "external.example.com"
 }
 ```
 Notice: You need to check if every resource specified in the blocks above exists as a real object in BAM.

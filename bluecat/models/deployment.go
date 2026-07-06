@@ -39,3 +39,42 @@ func DeploymentRole(deploymentRole entities.DeploymentRole) *entities.Deployment
 	res.SetSubPath(fmt.Sprintf("%s/zones/%s/server/%s/deployment_roles", sPath, deploymentRole.Zone, deploymentRole.ServerFQDN))
 	return &res
 }
+
+// NewDeploymentOption Initialize the new Deployment option to be added
+func NewDeploymentOption(deploymentOption entities.DeploymentOption) *entities.DeploymentOption {
+	res := deploymentOption
+	res.SetObjectType("deployment_options")
+	res.SetSubPath(getDeploymentOptionBasePath(deploymentOption))
+	return &res
+}
+
+// DeploymentOption Initialize the Deployment option to be loaded, updated or deleted
+func DeploymentOption(deploymentOption entities.DeploymentOption) *entities.DeploymentOption {
+	res := deploymentOption
+	res.SetObjectType("")
+	sPath := getDeploymentOptionBasePath(deploymentOption)
+	res.SetSubPath(
+		fmt.Sprintf(
+			"%s/option_name/%s/server/%d/deployment_options",
+			sPath,
+			deploymentOption.Name,
+			deploymentOption.ServerID,
+		),
+	)
+	return &res
+}
+
+func getDeploymentOptionBasePath(deploymentOption entities.DeploymentOption) string {
+	switch {
+	case deploymentOption.Zone != "":
+		return fmt.Sprintf("%s/zones/%s", getRRPrefixPath(deploymentOption.Configuration, deploymentOption.View), deploymentOption.Zone)
+	case deploymentOption.View != "":
+		return getRRPrefixPath(deploymentOption.Configuration, deploymentOption.View)
+	case deploymentOption.ResourceType == "block":
+		return fmt.Sprintf("%s/%s_blocks/%s", getPath(deploymentOption.Configuration), deploymentOption.IPVersion, deploymentOption.ResourceRef)
+	case deploymentOption.ResourceType == "network":
+		return fmt.Sprintf("%s/%s_networks/%s", getPath(deploymentOption.Configuration), deploymentOption.IPVersion, deploymentOption.ResourceRef)
+	default:
+		return ""
+	}
+}

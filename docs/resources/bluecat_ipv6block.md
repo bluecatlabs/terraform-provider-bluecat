@@ -9,6 +9,7 @@ This will allow creation or update to an IPv6 Block in Address Manager. The attr
 | address | Required | IPv6 Block's address                                                                             | 2003:1000::      |
 | cidr | Required | IPv6 Block's CIDR                                                                                | 65                 |
 | ip_version | Required | Options are ipv4 and ipv6. For this resource, use `ipv6`.                                                                           | ipv6                 |
+| deployment_options | Optional | Deployment options to set on the block as a map of option name to value                  | { ping-before-assign = "disable" } |
 | properties | Optional | Records properties to be passed                                                                  | comment=My comments |
 
 
@@ -20,6 +21,10 @@ This will allow creation or update to an IPv6 Block in Address Manager. The attr
       parent_block = ""
       address = "2003:1000::"
       cidr = "65"
+      deployment_options = {
+         allow-query = "any"
+         notify      = "explicit"
+      }
       properties = ""
       ip_version = "ipv6"
       depends_on = [bluecat_configuration.conf_record]

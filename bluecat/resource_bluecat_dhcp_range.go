@@ -75,7 +75,7 @@ func createDHCPRange(d *schema.ResourceData, m interface{}) error {
 
 	dhcpRange := entities.DHCPRange{}
 	if !dhcpRange.InitRange(d) {
-		log.Error(dhcpRange.InitRange)
+		log.Error(dhcpRange.InitError)
 		return fmt.Errorf(dhcpRange.InitError)
 	}
 
@@ -102,7 +102,7 @@ func getDHCPRange(d *schema.ResourceData, m interface{}) error {
 
 	dhcpRange := entities.DHCPRange{}
 	if !dhcpRange.InitRange(d) {
-		log.Error(dhcpRange.InitRange)
+		log.Error(dhcpRange.InitError)
 		return fmt.Errorf(dhcpRange.InitError)
 	}
 
@@ -137,7 +137,7 @@ func updateDHCPRange(d *schema.ResourceData, m interface{}) error {
 
 	dhcpRange := entities.DHCPRange{}
 	if !dhcpRange.InitRange(d) {
-		log.Error(dhcpRange.InitRange)
+		log.Error(dhcpRange.InitError)
 		return fmt.Errorf(dhcpRange.InitError)
 	}
 
@@ -177,7 +177,7 @@ func deleteDHCPRange(d *schema.ResourceData, m interface{}) error {
 
 	dhcpRange := entities.DHCPRange{}
 	if !dhcpRange.InitRange(d) {
-		log.Error(dhcpRange.InitRange)
+		log.Error(dhcpRange.InitError)
 		return fmt.Errorf(dhcpRange.InitError)
 	}
 

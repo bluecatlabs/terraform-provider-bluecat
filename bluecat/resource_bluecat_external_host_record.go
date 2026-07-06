@@ -40,7 +40,7 @@ func ResourceExternalHostRecord() *schema.Resource {
 			},
 			"addresses": {
 				Type:        schema.TypeString,
-				Required:    true,
+				Optional:    true,
 				Description: "The IP addresses that will be linked to the External Host record",
 			},
 			"properties": {
@@ -63,9 +63,15 @@ func ResourceExternalHostRecord() *schema.Resource {
 				Description: "Whether or not to use batch mode when selectively deploying",
 				Default:     "disabled",
 			},
+			"bam_id": {
+				Type:        schema.TypeInt,
+				Computed:    true,
+				Description: "The entity id of the resource within BAM",
+			},
 		},
 		Importer: &schema.ResourceImporter{
-			State: recordImporter,
+			// External Host Records are imported by full FQDN, not by record name + zone.
+			State: externalHostRecordImporter,
 		},
 	}
 }
@@ -92,7 +98,7 @@ func createExternalHostRecord(d *schema.ResourceData, m interface{}) error {
 	deploy := utils.ParseDeploymentValue(d.Get("to_deploy").(string))
 	if deploy {
 		externalHostRecord.BatchMode = d.Get("batch_mode").(string)
-		res, err := objMgr.Connector.DeployObject(externalHostRecord)
+		res, err := objMgr.Connector.DeployObject([]int{externalHostRecord.BAMId}, externalHostRecord.BatchMode)
 		if err != nil {
 			msg := fmt.Sprintf("Error deploying External Host record %s: %s", absoluteName, err)
 			log.Debug(msg)
@@ -101,6 +107,7 @@ func createExternalHostRecord(d *schema.ResourceData, m interface{}) error {
 		log.Debugf("Successfully deployed. %s", res)
 	}
 	d.Set("absolute_name", absoluteName)
+	d.Set("bam_id", externalHostRecord.BAMId)
 	log.Debugf("Completed to create ExternalHost record %s", d.Get("absolute_name"))
 	return getExternalHostRecord(d, m)
 }
@@ -108,6 +115,7 @@ func createExternalHostRecord(d *schema.ResourceData, m interface{}) error {
 // getExternalHostRecord Get the ExternalHost record
 func getExternalHostRecord(d *schema.ResourceData, m interface{}) error {
 	log.Debugf("Beginning to get ExternalHost record: %s", d.Get("absolute_name"))
+	// During import, the full FQDN is stored in ID and must be used as absolute_name.
 	absoluteName, err := getAbsoluteName(d)
 	configuration := d.Get("configuration").(string)
 	view := d.Get("view").(string)
@@ -140,9 +148,17 @@ func getExternalHostRecord(d *schema.ResourceData, m interface{}) error {
 	filteredProperties := utils.FilterProperties(bamProps, cfgProps)
 	d.SetId(externalHostRecord.AbsoluteName)
 	d.Set("absolute_name", externalHostRecord.AbsoluteName)
+	d.Set("bam_id", externalHostRecord.BAMId)
 	d.Set("properties", utils.JoinProperties(filteredProperties))
-	// for import functionality ip4_address must be set for the host_record - required attribute
-	d.Set("addresses", externalHostRecord.Addresses)
+	addresses := parseRecordPropertyValue(externalHostRecord.Properties, "addresses")
+	if len(addresses) == 0 {
+		addresses = externalHostRecord.Addresses
+	}
+	if len(addresses) == 0 {
+		// Some BAM responses omit addresses on read; keep configured/state value stable.
+		addresses = d.Get("addresses").(string)
+	}
+	d.Set("addresses", addresses)
 	log.Debugf("Completed reading ExternalHost record %s", d.Get("absolute_name"))
 	return nil
 }
@@ -172,7 +188,7 @@ func updateExternalHostRecord(d *schema.ResourceData, m interface{}) error {
 	deploy := utils.ParseDeploymentValue(d.Get("to_deploy").(string))
 	if deploy {
 		externalHostRecord.BatchMode = d.Get("batch_mode").(string)
-		res, err := objMgr.Connector.DeployObject(externalHostRecord)
+		res, err := objMgr.Connector.DeployObject([]int{externalHostRecord.BAMId}, externalHostRecord.BatchMode)
 		if err != nil {
 			msg := fmt.Sprintf("Error deploying External Host record %s: %s", absoluteName, err)
 			log.Debug(msg)
@@ -181,6 +197,7 @@ func updateExternalHostRecord(d *schema.ResourceData, m interface{}) error {
 		log.Debugf("Successfully deployed. %s", res)
 	}
 	d.Set("absolute_name", absoluteName)
+	d.Set("bam_id", externalHostRecord.BAMId)
 	log.Debugf("Completed to update ExternalHost record %s", d.Get("absolute_name"))
 	return getExternalHostRecord(d, m)
 }
@@ -191,6 +208,7 @@ func deleteExternalHostRecord(d *schema.ResourceData, m interface{}) error {
 	configuration := d.Get("configuration").(string)
 	view := d.Get("view").(string)
 	absoluteName := d.Get("absolute_name").(string)
+	bamID := d.Get("bam_id").(int)
 
 	connector := m.(*utils.Connector)
 	objMgr := new(utils.ObjectManager)
@@ -206,6 +224,16 @@ func deleteExternalHostRecord(d *schema.ResourceData, m interface{}) error {
 			msg := fmt.Sprintf("Delete ExternalHost record %s failed: %s", absoluteName, err)
 			log.Debug(msg)
 			return fmt.Errorf(msg)
+		}
+		deploy := utils.ParseDeploymentValue(d.Get("to_deploy").(string))
+		if deploy {
+			res, err := objMgr.Connector.DeployObject([]int{bamID}, d.Get("batch_mode").(string))
+			if err != nil {
+				msg := fmt.Sprintf("Error deploying External Host record %s: %s", absoluteName, err)
+				log.Debug(msg)
+				return fmt.Errorf(msg)
+			}
+			log.Debugf("Successfully deployed. %s", res)
 		}
 	}
 	d.SetId("")
