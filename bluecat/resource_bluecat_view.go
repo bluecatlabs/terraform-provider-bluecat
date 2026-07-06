@@ -5,6 +5,7 @@ package bluecat
 import (
 	"errors"
 	"fmt"
+	"terraform-provider-bluecat/bluecat/entities"
 	"terraform-provider-bluecat/bluecat/utils"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -30,6 +31,12 @@ func ResourceView() *schema.Resource {
 				Optional:    true,
 				Description: "The View name",
 			},
+			"deployment_options": {
+				Type:        schema.TypeMap,
+				Optional:    true,
+				Description: "The deployment options for the view.",
+				Elem:        &schema.Schema{Type: schema.TypeString},
+			},
 			"properties": {
 				Type:     schema.TypeString,
 				Optional: true,
@@ -50,6 +57,7 @@ func createView(d *schema.ResourceData, m interface{}) error {
 	log.Debugf("Beginning to create View %s", d.Get("address"))
 	configuration := d.Get("configuration").(string)
 	name := d.Get("name").(string)
+	deploymentOptions := utils.ExpandStringMap(d.Get("deployment_options"))
 	properties := d.Get("properties").(string)
 
 	connector := m.(*utils.Connector)
@@ -59,6 +67,15 @@ func createView(d *schema.ResourceData, m interface{}) error {
 	_, err := objMgr.CreateView(configuration, name, properties)
 	if err != nil {
 		msg := fmt.Sprintf("Error creating View (%s): %s", name, err)
+		log.Error(msg)
+		return fmt.Errorf(msg)
+	}
+	err = utils.CreateDeploymentOptions(objMgr, entities.DeploymentOption{
+		Configuration: configuration,
+		View:          name,
+	}, deploymentOptions)
+	if err != nil {
+		msg := fmt.Sprintf("Error creating deployment options on View (%s): %s", name, err)
 		log.Error(msg)
 		return fmt.Errorf(msg)
 	}
@@ -105,10 +122,18 @@ func getView(d *schema.ResourceData, m interface{}) error {
 
 	// --- Filter server properties using keys from config ---
 	filteredProperties := utils.FilterProperties(bamProps, cfgProps)
+	deploymentOptions, err := utils.ReadDeploymentOptions(objMgr, entities.DeploymentOption{
+		Configuration: configuration,
+		View:          view.Name,
+	}, utils.ExpandStringMap(d.Get("deployment_options")))
+	if err != nil {
+		return fmt.Errorf("getting deployment options on View %s failed: %w", view.Name, err)
+	}
 
 	d.Set("configuration", view.Configuration)
 	d.Set("name", view.Name)
 	d.Set("properties", utils.JoinProperties(filteredProperties))
+	d.Set("deployment_options", utils.FlattenStringMap(deploymentOptions))
 	d.SetId(view.Name)
 	log.Debugf("Completed getting View %s", d.Get("name"))
 	return nil

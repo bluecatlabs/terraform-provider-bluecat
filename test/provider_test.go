@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"os"
 	"terraform-provider-bluecat/bluecat"
 	"terraform-provider-bluecat/bluecat/logging"
 	"testing"
@@ -44,15 +45,16 @@ func GetTestEnvResources() string {
 var configuration = "terraform_test"
 var view = "test"
 var zone = "example.com"
+var serverIP = mustGetEnv("TF_REST_API_URL")
 var server = fmt.Sprintf(
 	`provider "bluecat" {
-		server = "10.244.12.9"
+		server = "%s"
 		api_version = "1"
 		transport = "http"
 		port = "80"
 		username = "admin"
 		password = "admin"
-	  }`)
+	  }`, serverIP)
 var viewTestResource = fmt.Sprintf(
 	`resource "bluecat_view" "view_test" {
 		name = "%s"
@@ -106,3 +108,10 @@ var ipv6NetworkTestResource = fmt.Sprintf(
       ip_version = "ipv6"
       properties = ""
     }`, configuration)
+
+func mustGetEnv(key string) string {
+	if value := os.Getenv(key); value != "" {
+		return value
+	}
+	panic(fmt.Sprintf("required env var %s is not set", key))
+}

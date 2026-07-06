@@ -67,6 +67,12 @@ func ResourceNetwork() *schema.Resource {
 				Optional:    true,
 				Description: "Give the IP you want to reserve for gateway, by default the first IP gets reserved for gateway",
 			},
+			"deployment_options": {
+				Type:        schema.TypeMap,
+				Optional:    true,
+				Description: "The deployment options for the network.",
+				Elem:        &schema.Schema{Type: schema.TypeString},
+			},
 			"properties": {
 				Type:     schema.TypeString,
 				Optional: true,
@@ -216,6 +222,15 @@ func createNetwork(d *schema.ResourceData, m interface{}) error {
 			}
 		}
 	}
+	err := utils.CreateDeploymentOptions(objMgr, entities.DeploymentOption{
+		Configuration: network.Configuration,
+		ResourceType:  "network",
+		ResourceRef:   network.CIDR,
+		IPVersion:     network.IPVersion,
+	}, utils.ExpandStringMap(d.Get("deployment_options")))
+	if err != nil {
+		return fmt.Errorf("creating deployment options on Network (%s) failed: %w", network.CIDR, err)
+	}
 	return getNetwork(d, m)
 }
 
@@ -295,10 +310,20 @@ func getNetwork(d *schema.ResourceData, m interface{}) error {
 
 	// --- Filter server properties using keys from config ---
 	filteredProperties := utils.FilterProperties(bamProps, cfgProps)
+	deploymentOptions, err := utils.ReadDeploymentOptions(objMgr, entities.DeploymentOption{
+		Configuration: configuration,
+		ResourceType:  "network",
+		ResourceRef:   network.CIDR,
+		IPVersion:     network.IPVersion,
+	}, utils.ExpandStringMap(d.Get("deployment_options")))
+	if err != nil {
+		return fmt.Errorf("getting deployment options on Network %s failed: %w", network.CIDR, err)
+	}
 
 	d.SetId(network.CIDR)
 	d.Set("cidr", network.CIDR)
 	d.Set("properties", utils.JoinProperties(filteredProperties))
+	d.Set("deployment_options", utils.FlattenStringMap(deploymentOptions))
 	log.Debugf("Completed getting Network %s", d.Get("cidr"))
 	return nil
 }
@@ -320,6 +345,16 @@ func updateNetwork(d *schema.ResourceData, m interface{}) error {
 		msg := fmt.Sprintf("Error updating Network (%s): %s", network.CIDR, err)
 		log.Error(msg)
 		return fmt.Errorf(msg)
+	}
+	currentRaw, newRaw := d.GetChange("deployment_options")
+	err = utils.UpdateDeploymentOptionsForTarget(objMgr, entities.DeploymentOption{
+		Configuration: network.Configuration,
+		ResourceType:  "network",
+		ResourceRef:   network.CIDR,
+		IPVersion:     network.IPVersion,
+	}, currentRaw, newRaw)
+	if err != nil {
+		return fmt.Errorf("updating deployment options on Network (%s) failed: %w", network.CIDR, err)
 	}
 	log.Debugf("Completed to update Network %s", network.CIDR)
 	return getNetwork(d, m)

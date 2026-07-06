@@ -18,3 +18,12 @@ This resource will create an external host record in Address Manager with a list
       addresses = "45.0.0.4,45.0.0.6"
       properties = ""
     }
+
+## Import
+
+External host records can be imported by fully qualified domain name.
+
+    import {
+      to = bluecat_external_host_record.external_host_record
+      id = "testhost.testy.com"
+    }

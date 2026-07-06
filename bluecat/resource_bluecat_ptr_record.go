@@ -202,7 +202,7 @@ func updatePTR(m interface{}, configuration, view, zone, name, ip4Address, rever
 	deploy := utils.ParseDeploymentValue(to_deploy)
 	if deploy {
 		hostRecord.BatchMode = batch_mode
-		res, err := objMgr.Connector.DeployObject(hostRecord)
+		res, err := objMgr.Connector.DeployObject([]int{hostRecord.BAMId}, hostRecord.BatchMode)
 		if err != nil {
 			msg := fmt.Sprintf("Error deploying PTR record %s: %s", fqdnName, err)
 			log.Debug(msg)

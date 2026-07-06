@@ -26,7 +26,7 @@ func TestAccDataSourceZoneRecord(t *testing.T) {
 
 var zoneDataSource = "test_zone"
 var zoneName = "test_zone_1.com"
-var zoneDeployable = "True"
+var zoneDeployable = "true"
 
 var testAccDataSourceZoneRead = fmt.Sprintf(
 	`%s

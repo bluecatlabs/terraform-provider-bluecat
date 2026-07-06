@@ -11,6 +11,7 @@ This will allow creation or update to an IPv4 Block in Address Manager. The attr
 | size | Optional | The size of the block expressed in the power of 2. Required for next available block creation | 256 |
 | allocated_id | Optional | Allocated ID of the next available block. Recommended for stable retrieval | timestamp() |
 | ip_version    | Optional | Options: ipv4 or ipv6. Defaults to ipv4 if unspecified| ipv4 |
+| deployment_options | Optional | Deployment options to set on the block as a map of option name to value | { ping-before-assign = "disable" } |
 | properties | Optional | Record properties to pass | attribute=value |
 
 
@@ -23,6 +24,10 @@ This will allow creation or update to an IPv4 Block in Address Manager. The attr
       address = "30.0.0.0"
       cidr = "24"
       ip_version = "ipv4"
+      deployment_options = {
+         allow-query = "any"
+         notify      = "explicit"
+      }
       properties = "allowDuplicateHost=enable"
       depends_on = [bluecat_configuration.conf_record]
     }
@@ -36,6 +41,10 @@ This will allow creation or update to an IPv4 Block in Address Manager. The attr
       size = "256"
       allocated_id = timestamp()
       ip_version = "ipv4"
+      deployment_options = {
+         allow-query = "any"
+         notify      = "explicit"
+      }
       properties = "allowDuplicateHost=enable"
       depends_on = [bluecat_configuration.conf_record]
     }

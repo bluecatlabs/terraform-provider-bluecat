@@ -23,3 +23,18 @@ type DeploymentRoles struct {
 	Zone          string           `json:"-"`
 	ServerRoles   []DeploymentRole `json:"deployment_roles, omitempty"`
 }
+
+// DeploymentOption the Deployment option entity
+type DeploymentOption struct {
+	BAMBase       `json:"-"`
+	Configuration string `json:"-"`
+	View          string `json:"-"`
+	Zone          string `json:"-"`
+	ResourceType  string `json:"-"`
+	ResourceRef   string `json:"-"`
+	IPVersion     string `json:"-"`
+	Name          string `json:"name,omitempty"`
+	Value         string `json:"value,omitempty"`
+	ServerID      int    `json:"-"`
+	Properties    string `json:"properties,omitempty"`
+}

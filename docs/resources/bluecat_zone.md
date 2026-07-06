@@ -8,6 +8,7 @@ This will allow creation or update of a Zone or Sub zone in Address Manager. The
 | zone | Required | The absolute name of zone or sub zone | example.com |
 | deployable | Optional | The deployable flag is False by default and is optional. To make the zone deployable, set the deployable flag to True | True |
 | server_roles | Optional | The list of server roles. The format of each server role is `role type, server fqdn`. Options include `FORWARDER`, `PRIMARY`, `PRIMARY_HIDDEN`, `NONE`, `RECURSION`, `SECONDARY`, `SECONDARY_STEALTH`, `STUB`. | ["primary, bdds1.example.com", "secondary, bdds2.example.com"] |
+| deployment_options | Optional | Deployment options to set on the zone as a map of option name to value | { allow-query = "any" } |
 | properties | Optional | Zone's properties to be passed | comment=My comments |
 
 
@@ -19,5 +20,9 @@ This will allow creation or update of a Zone or Sub zone in Address Manager. The
       zone = "example.com"
       deployable = "True"
       server_roles = ["primary, server1", "secondary, server2"]
+      deployment_options = {
+         allow-query = "any"
+         notify      = "explicit"
+      }
       properties = ""
     }

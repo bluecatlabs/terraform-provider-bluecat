@@ -105,6 +105,37 @@ func FilterProperties(bamProps, cfgProps map[string]string) map[string]string {
 	return filteredProperties
 }
 
+func ExpandStringMap(v interface{}) map[string]string {
+	if v == nil {
+		return nil
+	}
+
+	raw, ok := v.(map[string]interface{})
+	if !ok || len(raw) == 0 {
+		return nil
+	}
+
+	out := make(map[string]string, len(raw))
+	for key, value := range raw {
+		out[key] = value.(string)
+	}
+
+	return out
+}
+
+func FlattenStringMap(m map[string]string) map[string]interface{} {
+	if len(m) == 0 {
+		return map[string]interface{}{}
+	}
+
+	out := make(map[string]interface{}, len(m))
+	for key, value := range m {
+		out[key] = value
+	}
+
+	return out
+}
+
 // parse "a=1|b=2" -> map[string]string{"a":"1","b":"2"}
 func ParseProperties(s string) map[string]string {
 	out := map[string]string{}

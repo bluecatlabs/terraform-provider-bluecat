@@ -89,9 +89,9 @@ func dataSourceZoneRead(d *schema.ResourceData, m interface{}) error {
 
 	deployable := utils.GetPropertyValue("deployable", zoneObj.Properties)
 	if deployable == "true" {
-		d.Set("deployable", "True")
+		d.Set("deployable", "true")
 	} else {
-		d.Set("deployable", "False")
+		d.Set("deployable", "false")
 	}
 
 	serverRoles, err := objMgr.GetDeploymentRoles(configuration, view, zone)

@@ -68,7 +68,7 @@ var testAccDataSourceCNAMERecordsReadFullField = fmt.Sprintf(
 		absolute_name = "%s"
 		linked_record = "%s"
 		ttl = 200
-		properties = ""
+		properties = "comments=unittest5"
   		depends_on = [bluecat_host_record.host_record_1]		
 	}
 
@@ -107,7 +107,7 @@ var testAccDataSourceCNAMERecordsReadNotFullField = fmt.Sprintf(
 		absolute_name = "%s"
 		linked_record = "%s"
 		ttl = 200
-		properties = ""
+		properties = "comments=unittest3"
 		depends_on = [bluecat_host_record.host_record_2]
 		}
 

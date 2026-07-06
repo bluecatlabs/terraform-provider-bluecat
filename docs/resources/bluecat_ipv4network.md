@@ -13,6 +13,7 @@ This will allow creation or update to an IPv4 Network in Address Manager. The at
 | ip_version    | Optional | Options are ipv4 and ipv6. If left blank, ipv4 will be used                                                  | ipv4                       |
 | size | Optional | The size of the network expressed in the power of 2. Required if create next available network | 256 |
 | allocated_id | Optional | The allocated id of the next available network. Required if create next available network | timestamp() |
+| deployment_options | Optional | Deployment options to set on the network as a map of option name to value | { ddns-hostname = "net-test" } |
 | properties | Optional | Records properties to be passed | comment=My comments |
 
 
@@ -24,6 +25,10 @@ This will allow creation or update to an IPv4 Network in Address Manager. The at
       cidr = "30.0.0.0/24"
       gateway = "30.0.0.12"
       reserve_ip = 3
+      deployment_options = {
+         allow-query = "any"
+         notify      = "explicit"
+      }
       properties = ""
       depends_on = [bluecat_ipv4block.block_record]
     }
@@ -35,6 +40,10 @@ This will allow creation or update to an IPv4 Network in Address Manager. The at
       parent_block = "30.0.0.0/24"
       size = 256
       allocated_id = timestamp()
+      deployment_options = {
+         allow-query = "any"
+         notify      = "explicit"
+      }
       properties = ""
       depends_on = [bluecat_ipv4block.block_record]
     }

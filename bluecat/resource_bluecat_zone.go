@@ -5,6 +5,7 @@ package bluecat
 import (
 	"fmt"
 	"strings"
+	"terraform-provider-bluecat/bluecat/entities"
 	"terraform-provider-bluecat/bluecat/utils"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -46,6 +47,12 @@ func ResourceZone() *schema.Resource {
 				Description: "The list of server roles. The format of each server role will be 'role type, server fqdn'",
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
+			"deployment_options": {
+				Type:        schema.TypeMap,
+				Optional:    true,
+				Description: "The deployment options for the zone.",
+				Elem:        &schema.Schema{Type: schema.TypeString},
+			},
 			"properties": {
 				Type:     schema.TypeString,
 				Optional: true,
@@ -70,6 +77,7 @@ func createZone(d *schema.ResourceData, m interface{}) error {
 	zone := d.Get("zone").(string)
 	deployable := d.Get("deployable").(string)
 	serverRolesRaw := d.Get("server_roles").([]interface{})
+	deploymentOptions := utils.ExpandStringMap(d.Get("deployment_options"))
 	properties := d.Get("properties").(string)
 
 	properties, err := updateDeployableProperty(deployable, properties, false)
@@ -124,6 +132,27 @@ func createZone(d *schema.ResourceData, m interface{}) error {
 		}
 	}
 
+	for optionName, optionValue := range deploymentOptions {
+		_, err = objMgr.CreateDeploymentOption(entities.DeploymentOption{
+			Configuration: configuration,
+			View:          view,
+			Zone:          zone,
+			Name:          optionName,
+			Value:         optionValue,
+		})
+		if err != nil {
+			msg := fmt.Sprintf("Error creating Zone (%s): %s", zone, err)
+			log.Debug(msg)
+
+			_, err := objMgr.DeleteZone(configuration, view, zone)
+			if err != nil {
+				msg := fmt.Sprintf("Rollback data - Delete Zone %s failed: %s", zone, err)
+				log.Debug(msg)
+			}
+			return fmt.Errorf(msg)
+		}
+	}
+
 	log.Debugf("Completed to create Zone %s", d.Get("zone"))
 
 	return getZone(d, m)
@@ -162,9 +191,47 @@ func getZone(d *schema.ResourceData, m interface{}) error {
 
 	// --- Filter server properties using keys from config ---
 	filteredProperties := utils.FilterProperties(bamProps, cfgProps)
+	// During import there are usually no configured property keys yet.
+	// Keep full BAM properties so generated config is populated.
+	if len(cfgProps) == 0 {
+		filteredProperties = bamProps
+	}
 
 	d.SetId(zone)
+	d.Set("zone", zone)
+	d.Set("configuration", configuration)
+	d.Set("view", view)
 	d.Set("properties", utils.JoinProperties(filteredProperties))
+
+	deployable := utils.GetPropertyValue("deployable", zoneObj.Properties)
+	if strings.EqualFold(deployable, "true") {
+		d.Set("deployable", "true")
+	} else if strings.EqualFold(deployable, "false") {
+		d.Set("deployable", "false")
+	}
+
+	serverRoles, rolesErr := objMgr.GetDeploymentRoles(configuration, view, zone)
+	if rolesErr != nil {
+		msg := fmt.Sprintf("error get all deployment roles on the zone: %s", rolesErr)
+		log.Debug(msg)
+		return fmt.Errorf(msg)
+	}
+
+	serverRolesRaw := make([]string, 0, len(serverRoles.ServerRoles))
+	for _, serverRole := range serverRoles.ServerRoles {
+		serverRoleRaw := fmt.Sprintf("%s, %s", getRoleNameInTerraform(serverRole.Role), serverRole.ServerFQDN)
+		serverRolesRaw = append(serverRolesRaw, serverRoleRaw)
+	}
+	d.Set("server_roles", serverRolesRaw)
+
+	deploymentOptionNames := utils.GetSortedMapKeys(utils.ExpandStringMap(d.Get("deployment_options")))
+	deploymentOptionsRaw, optionsErr := getDeploymentOptions(objMgr, configuration, view, zone, deploymentOptionNames)
+	if optionsErr != nil {
+		msg := fmt.Sprintf("error get deployment options on the zone: %s", optionsErr)
+		log.Debug(msg)
+		return fmt.Errorf(msg)
+	}
+	d.Set("deployment_options", utils.FlattenStringMap(deploymentOptionsRaw))
 
 	log.Debugf("Completed reading Zone %s", d.Get("zone"))
 	return nil
@@ -198,7 +265,13 @@ func updateZone(d *schema.ResourceData, m interface{}) error {
 		return fmt.Errorf(msg)
 	}
 
+	currentDeploymentOptionsRaw, newDeploymentOptionsRaw := d.GetChange("deployment_options")
+	newDeploymentOptions, currentDeploymentOptions := prepareDeploymentOptionData(currentDeploymentOptionsRaw, newDeploymentOptionsRaw)
+
 	trace, err := updateServerRoles(objMgr, currentServerRoles, newServerRoles, configuration, view, zone)
+	if err == nil {
+		trace, err = updateDeploymentOptions(objMgr, currentDeploymentOptions, newDeploymentOptions, configuration, view, zone, trace)
+	}
 	if err == nil {
 		_, err = objMgr.UpdateZone(configuration, view, zone, properties)
 	}
@@ -382,7 +455,7 @@ func updateServerRoles(objMgr *utils.ObjectManager, currentServerRoles map[strin
 			if err != nil {
 				return trace, err
 			}
-			trace = append(trace, []string{currentServerFQDN, currentRole, "append"})
+			trace = append(trace, []string{"server_role", currentServerFQDN, currentRole, "append"})
 		}
 	}
 
@@ -393,7 +466,7 @@ func updateServerRoles(objMgr *utils.ObjectManager, currentServerRoles map[strin
 			if err != nil {
 				return trace, err
 			}
-			trace = append(trace, []string{newServerFQDN, currentRole, "update"})
+			trace = append(trace, []string{"server_role", newServerFQDN, currentRole, "update"})
 			delete(newServerRoles, newServerFQDN)
 		}
 	}
@@ -406,29 +479,126 @@ func updateServerRoles(objMgr *utils.ObjectManager, currentServerRoles map[strin
 				if err != nil {
 					return trace, err
 				}
-				trace = append(trace, []string{newServerFQDN, currentRole, "update"})
+				trace = append(trace, []string{"server_role", newServerFQDN, currentRole, "update"})
 			}
 		} else {
 			_, err := objMgr.CreateDeploymentRole(configuration, view, zone, newServerFQDN, "dns", newRole, "", "")
 			if err != nil {
 				return trace, err
 			}
-			trace = append(trace, []string{newServerFQDN, newRole, "delete"})
+			trace = append(trace, []string{"server_role", newServerFQDN, newRole, "delete"})
 		}
 	}
 	return trace, nil
 }
 
+func prepareDeploymentOptionData(currentDeploymentOptionsRaw interface{}, newDeploymentOptionsRaw interface{}) (map[string]string, map[string]string) {
+	newDeploymentOptions := utils.ExpandStringMap(newDeploymentOptionsRaw)
+	if newDeploymentOptions == nil {
+		newDeploymentOptions = make(map[string]string)
+	}
+	currentDeploymentOptions := utils.ExpandStringMap(currentDeploymentOptionsRaw)
+	if currentDeploymentOptions == nil {
+		currentDeploymentOptions = make(map[string]string)
+	}
+
+	return newDeploymentOptions, currentDeploymentOptions
+}
+
+func updateDeploymentOptions(objMgr *utils.ObjectManager, currentDeploymentOptions map[string]string, newDeploymentOptions map[string]string, configuration string, view string, zone string, trace [][]string) ([][]string, error) {
+	for currentOptionName, currentOptionValue := range currentDeploymentOptions {
+		_, ok := newDeploymentOptions[currentOptionName]
+		if !ok {
+			_, err := objMgr.DeleteDeploymentOption(entities.DeploymentOption{
+				Configuration: configuration,
+				View:          view,
+				Zone:          zone,
+				Name:          currentOptionName,
+				ServerID:      utils.DeploymentOptionAllServersID,
+			})
+			if err != nil {
+				return trace, err
+			}
+			trace = append(trace, []string{"deployment_option", currentOptionName, currentOptionValue, "append"})
+		}
+	}
+
+	for newOptionName, newOptionValue := range newDeploymentOptions {
+		currentOptionValue, ok := currentDeploymentOptions[newOptionName]
+		if ok {
+			if !strings.EqualFold(currentOptionValue, newOptionValue) {
+				_, err := objMgr.DeleteDeploymentOption(entities.DeploymentOption{
+					Configuration: configuration,
+					View:          view,
+					Zone:          zone,
+					Name:          newOptionName,
+					Value:         currentOptionValue,
+					ServerID:      utils.DeploymentOptionAllServersID,
+				})
+				if err != nil {
+					return trace, err
+				}
+				trace = append(trace, []string{"deployment_option", newOptionName, currentOptionValue, "append"})
+				_, err = objMgr.CreateDeploymentOption(entities.DeploymentOption{
+					Configuration: configuration,
+					View:          view,
+					Zone:          zone,
+					Name:          newOptionName,
+					Value:         newOptionValue,
+				})
+				if err != nil {
+					return trace, err
+				}
+				trace = append(trace, []string{"deployment_option", newOptionName, newOptionValue, "delete"})
+			}
+		} else {
+			_, err := objMgr.CreateDeploymentOption(entities.DeploymentOption{
+				Configuration: configuration,
+				View:          view,
+				Zone:          zone,
+				Name:          newOptionName,
+				Value:         newOptionValue,
+			})
+			if err != nil {
+				return trace, err
+			}
+			trace = append(trace, []string{"deployment_option", newOptionName, newOptionValue, "delete"})
+		}
+	}
+
+	return trace, nil
+}
+
 func rollBackData(objMgr *utils.ObjectManager, trace [][]string, configuration string, view string, zone string) (err error) {
 	for len(trace) > 0 {
-		serverRole := trace[len(trace)-1]
-		serverFQDN, role, action := serverRole[0], serverRole[1], serverRole[2]
-		if action == "append" {
-			_, err = objMgr.CreateDeploymentRole(configuration, view, zone, serverFQDN, "dns", role, "", "")
-		} else if action == "delete" {
-			_, err = objMgr.DeleteDeploymentRole(configuration, view, zone, serverFQDN)
-		} else if action == "update" {
-			_, err = objMgr.UpdateDeploymentRole(configuration, view, zone, serverFQDN, "dns", role, "", "")
+		item := trace[len(trace)-1]
+		itemType, itemKey, itemValue, action := item[0], item[1], item[2], item[3]
+		if itemType == "server_role" {
+			if action == "append" {
+				_, err = objMgr.CreateDeploymentRole(configuration, view, zone, itemKey, "dns", itemValue, "", "")
+			} else if action == "delete" {
+				_, err = objMgr.DeleteDeploymentRole(configuration, view, zone, itemKey)
+			} else if action == "update" {
+				_, err = objMgr.UpdateDeploymentRole(configuration, view, zone, itemKey, "dns", itemValue, "", "")
+			}
+		} else if itemType == "deployment_option" {
+			if action == "append" {
+				_, err = objMgr.CreateDeploymentOption(entities.DeploymentOption{
+					Configuration: configuration,
+					View:          view,
+					Zone:          zone,
+					Name:          itemKey,
+					Value:         itemValue,
+				})
+			} else if action == "delete" {
+				_, err = objMgr.DeleteDeploymentOption(entities.DeploymentOption{
+					Configuration: configuration,
+					View:          view,
+					Zone:          zone,
+					Name:          itemKey,
+					ServerID:      utils.DeploymentOptionAllServersID,
+				})
+			}
 		}
 		if err != nil {
 			return
@@ -436,4 +606,27 @@ func rollBackData(objMgr *utils.ObjectManager, trace [][]string, configuration s
 		trace = trace[:len(trace)-1]
 	}
 	return
+}
+
+func getDeploymentOptions(objMgr *utils.ObjectManager, configuration string, view string, zone string, optionNames []string) (map[string]string, error) {
+	deploymentOptions := make(map[string]string, len(optionNames))
+	if len(optionNames) == 0 {
+		return deploymentOptions, nil
+	}
+
+	for _, optionName := range optionNames {
+		deploymentOption, err := objMgr.GetDeploymentOption(entities.DeploymentOption{
+			Configuration: configuration,
+			View:          view,
+			Zone:          zone,
+			Name:          optionName,
+			ServerID:      utils.DeploymentOptionLookupServerID,
+		})
+		if err != nil {
+			return nil, err
+		}
+		deploymentOptions[optionName] = deploymentOption.Value
+	}
+
+	return deploymentOptions, nil
 }

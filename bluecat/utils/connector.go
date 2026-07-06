@@ -98,7 +98,7 @@ type BCConnector interface {
 	GetObject(obj entities.BAMObject, res interface{}) error
 	UpdateObject(obj entities.BAMObject, res interface{}) (err error)
 	DeleteObject(obj entities.BAMObject) (res string, err error)
-	DeployObject(obj entities.BAMObject) (res string, err error)
+	DeployObject(ids []int, batchMode string) (res string, err error)
 }
 
 // APIRequestBuilder Rest API request builder
@@ -111,7 +111,7 @@ type HTTPRequestBuilder interface {
 	Init(HostConfig)
 	BuildRequest(r RequestType, obj entities.BAMObject) (req *http.Request, err error)
 	BuildLoginRequest(r RequestType, obj entities.BAMObject) (req *http.Request, err error)
-	BuildDeployRequest(obj entities.BAMObject) (req *http.Request, err error)
+	BuildDeployRequest(ids []int, batchMode string) (req *http.Request, err error)
 }
 
 // Init Initialize the Rest API requester
@@ -271,15 +271,25 @@ func (arb *APIRequestBuilder) BuildLoginRequest(rType RequestType, obj entities.
 }
 
 // BuildLoginRequest Build login request
-func (arb *APIRequestBuilder) BuildDeployRequest(obj entities.BAMObject) (req *http.Request, err error) {
+func (arb *APIRequestBuilder) BuildDeployRequest(ids []int, batchMode string) (req *http.Request, err error) {
 	urlObj := url.URL{
 		Scheme: arb.HostConfig.Transport,
 		Host:   arb.HostConfig.Host + ":" + arb.HostConfig.Port,
 		Path:   "/api/v1/deployments/",
 	}
-	var bodyStr []byte
-	if obj != nil {
-		bodyStr = arb.buildBody(obj)
+	payload := map[string]interface{}{
+		"ids": ids,
+	}
+	if batchMode != "" {
+		if strings.EqualFold(strings.TrimSpace(batchMode), "true") {
+			batchMode = "batch_by_server"
+		}
+		payload["batch_mode"] = batchMode
+	}
+	bodyStr, err := json.Marshal(payload)
+	if err != nil {
+		log.Errorf("Cannot marshal deploy request body: %s", err)
+		return nil, err
 	}
 	req, err = http.NewRequest(CREATE.toMethod(), urlObj.String(), bytes.NewBuffer(bodyStr))
 	if err != nil {
@@ -403,12 +413,12 @@ func (c *Connector) DeleteObject(obj entities.BAMObject) (res string, err error)
 }
 
 // CreateObject Create the new object
-func (c *Connector) DeployObject(obj entities.BAMObject) (ref string, err error) {
-	log.Debugf("Deploying object %+v", obj)
+func (c *Connector) DeployObject(ids []int, batchMode string) (ref string, err error) {
+	log.Debugf("Deploying object ids %+v with batch_mode %s", ids, batchMode)
 	ref = ""
 	var req *http.Request
 	var res []byte
-	req, err = c.RequestBuilder.BuildDeployRequest(obj)
+	req, err = c.RequestBuilder.BuildDeployRequest(ids, batchMode)
 	if err != nil {
 		log.Errorf("Build deploy request error: '%s'", err)
 		return
