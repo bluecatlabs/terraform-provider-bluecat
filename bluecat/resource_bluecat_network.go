@@ -181,16 +181,27 @@ func createNetwork(d *schema.ResourceData, m interface{}) error {
 			return fmt.Errorf(msg)
 		}
 
-		if strings.Contains(network.ParentBlock, "/") {
-			network.ParentBlock = strings.Split(network.ParentBlock, "/")[0]
+		// Keep the mask the user supplied in parent_block; deriving it from the
+		// block GET response is unreliable, which yields a /0 subnet.
+		parts := strings.Split(network.ParentBlock, "/")
+		if len(parts) > 2 {
+			msg := fmt.Sprintf("Invalid parent_block %q: expected 'address' or 'address/cidr'", network.ParentBlock)
+			log.Error(msg)
+			return fmt.Errorf(msg)
 		}
-		block, err := objMgr.GetBlock(network.Configuration, network.ParentBlock, "0", network.IPVersion)
+		blockAddress := parts[0]
+		blockCIDR := "0"
+		if len(parts) == 2 {
+			blockCIDR = parts[1]
+		}
+		network.ParentBlock = blockAddress
+		_, err = objMgr.GetBlock(network.Configuration, blockAddress, blockCIDR, network.IPVersion)
 		if err != nil {
 			msg := fmt.Sprintf("Failed to getting the IPv4 Block for (%s): %s", network.CIDR, err)
 			log.Error(msg)
 			return fmt.Errorf(msg)
 		}
-		network.BlockAddr = block.AddressCIDR()
+		network.BlockAddr = fmt.Sprintf("%s/%s", blockAddress, blockCIDR)
 
 		_, ref, err := objMgr.CreateNextAvailableNetwork(network)
 		if err != nil {
