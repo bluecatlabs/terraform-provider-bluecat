@@ -137,7 +137,7 @@ func createHostRecord(d *schema.ResourceData, m interface{}) error {
 	if err != nil {
 		msg := fmt.Sprintf("Error creating Host record %s: %s", fqdnName, err)
 		log.Debug(msg)
-		return fmt.Errorf(msg)
+		return fmt.Errorf("%s", msg)
 	}
 	deploy := utils.ParseDeploymentValue(d.Get("to_deploy").(string))
 	if deploy {
@@ -146,7 +146,7 @@ func createHostRecord(d *schema.ResourceData, m interface{}) error {
 		if err != nil {
 			msg := fmt.Sprintf("Error deploying Host record %s: %s", fqdnName, err)
 			log.Debug(msg)
-			return fmt.Errorf(msg)
+			return fmt.Errorf("%s", msg)
 		}
 		log.Debugf("Successfully deployed. %s", res)
 	}
@@ -233,7 +233,7 @@ func updateHostRecord(d *schema.ResourceData, m interface{}) error {
 	if err != nil {
 		msg := fmt.Sprintf("Error updating Host record %s: %s", fqdnName, err)
 		log.Debug(msg)
-		return fmt.Errorf(msg)
+		return fmt.Errorf("%s", msg)
 	}
 
 	deploy := utils.ParseDeploymentValue(d.Get("to_deploy").(string))
@@ -243,7 +243,7 @@ func updateHostRecord(d *schema.ResourceData, m interface{}) error {
 		if err != nil {
 			msg := fmt.Sprintf("Error deploying Host record %s: %s", fqdnName, err)
 			log.Debug(msg)
-			return fmt.Errorf(msg)
+			return fmt.Errorf("%s", msg)
 		}
 		log.Debugf("Successfully deployed. %s", res)
 	}
@@ -268,7 +268,7 @@ func deleteHostRecord(d *schema.ResourceData, m interface{}) error {
 	if err != nil {
 		msg := fmt.Sprintf("Delete Host record %s failed: %s", absoluteName, err)
 		log.Debug(msg)
-		return fmt.Errorf(msg)
+		return fmt.Errorf("%s", msg)
 	}
 	deploy := utils.ParseDeploymentValue(d.Get("to_deploy").(string))
 	if deploy {
@@ -276,7 +276,7 @@ func deleteHostRecord(d *schema.ResourceData, m interface{}) error {
 		if err != nil {
 			msg := fmt.Sprintf("Error deploying Host record %s: %s", absoluteName, err)
 			log.Debug(msg)
-			return fmt.Errorf(msg)
+			return fmt.Errorf("%s", msg)
 		}
 		log.Debugf("Successfully deployed. %s", res)
 	}

@@ -49,7 +49,7 @@ func createConfiguration(d *schema.ResourceData, m interface{}) error {
 	if err != nil {
 		msg := fmt.Sprintf("Error creating Configuration (%s): %s", name, err)
 		log.Debug(msg)
-		return fmt.Errorf(msg)
+		return fmt.Errorf("%s", msg)
 	}
 	log.Debugf("Completed to create Configuration %s", d.Get("name"))
 	return getConfiguration(d, m)
@@ -68,7 +68,7 @@ func getConfiguration(d *schema.ResourceData, m interface{}) error {
 	if err != nil {
 		msg := fmt.Sprintf("Getting Configuration %s failed: %s", name, err)
 		log.Debug(msg)
-		return fmt.Errorf(msg)
+		return fmt.Errorf("%s", msg)
 	}
 	// --- Parse both server and config properties ---
 	bamProps := utils.ParseProperties(config.Properties)
@@ -97,7 +97,7 @@ func updateConfiguration(d *schema.ResourceData, m interface{}) error {
 	if err != nil {
 		msg := fmt.Sprintf("Updating Configuration %s failed: %s", name, err)
 		log.Debug(msg)
-		return fmt.Errorf(msg)
+		return fmt.Errorf("%s", msg)
 	}
 	d.Set("name", config.Name)
 	log.Debugf("Completed to update Configuration %s", d.Get("name"))
@@ -117,7 +117,7 @@ func deleteConfiguration(d *schema.ResourceData, m interface{}) error {
 	if err != nil {
 		msg := fmt.Sprintf("Delete Configuration %s failed: %s", name, err)
 		log.Debug(msg)
-		return fmt.Errorf(msg)
+		return fmt.Errorf("%s", msg)
 	}
 	d.SetId("")
 	log.Debugf("Deletion of Configuration complete")

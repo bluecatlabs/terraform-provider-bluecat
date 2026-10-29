@@ -42,13 +42,13 @@ func testAccCheckConfigurationDestroy(s *terraform.State) error {
 		if rs.Type != "bluecat_configuration" {
 			msg := fmt.Sprintf("There is an unexpected resource %s %s", rs.Primary.ID, rs.Type)
 			log.Error(msg)
-			return fmt.Errorf(msg)
+			return fmt.Errorf("%s", msg)
 		}
 		_, err := objMgr.GetConfiguration("terraform_test_configuration_1")
 		if err == nil {
 			msg := fmt.Sprintf("Configuration %s is not removed", rs.Primary.ID)
 			log.Error(msg)
-			return fmt.Errorf(msg)
+			return fmt.Errorf("%s", msg)
 		}
 	}
 	return nil
@@ -72,13 +72,13 @@ func testAccConfigurationExists(t *testing.T, resource string, name string, conf
 		if err != nil {
 			msg := fmt.Sprintf("Getting configuration %s failed: %s", rs.Primary.ID, err)
 			log.Error(msg)
-			return fmt.Errorf(msg)
+			return fmt.Errorf("%s", msg)
 		}
 		descriptionProperty := utils.GetPropertyValue("description", conf.Properties)
 		if descriptionProperty != confDescriptionProperty {
 			msg := fmt.Sprintf("Getting configuration %s failed: %s. Expect description='%s' in properties, but received '%s'", rs.Primary.ID, err, confDescriptionProperty, descriptionProperty)
 			log.Error(msg)
-			return fmt.Errorf(msg)
+			return fmt.Errorf("%s", msg)
 		}
 		return nil
 	}

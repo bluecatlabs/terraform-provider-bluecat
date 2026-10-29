@@ -87,7 +87,7 @@ func dataSourceHostRecordRead(d *schema.ResourceData, m interface{}) error {
 	if err != nil {
 		msg := fmt.Sprintf("Getting Host record %s failed: %s", fqdnName, err)
 		log.Debug(msg)
-		return fmt.Errorf(msg)
+		return fmt.Errorf("%s", msg)
 	}
 
 	ipLinked := utils.GetPropertyValue("addresses", hostRecord.Properties)
@@ -95,7 +95,7 @@ func dataSourceHostRecordRead(d *schema.ResourceData, m interface{}) error {
 	if !(strings.Contains(ipLinked, ipAddress)) {
 		msg := fmt.Sprintf("Getting Host record %s failed: IP Address %s isn't matching", fqdnName, ipAddress)
 		log.Debug(msg)
-		return fmt.Errorf(msg)
+		return fmt.Errorf("%s", msg)
 	}
 
 	if len(zone) == 0 {

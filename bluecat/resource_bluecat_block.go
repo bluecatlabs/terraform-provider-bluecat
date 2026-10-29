@@ -141,21 +141,21 @@ func createBlock(d *schema.ResourceData, m interface{}) error {
 		if block.Address == "" || block.CIDR == "" {
 			msg := "'address' and 'cidr' are required to create specified block"
 			log.Error(msg)
-			return fmt.Errorf(msg)
+			return fmt.Errorf("%s", msg)
 		}
 
 		_, err := strconv.Atoi(block.CIDR)
 		if err != nil {
 			msg := fmt.Sprintf("Error converting the CIDR (%s): %s", block.CIDR, err)
 			log.Error(msg)
-			return fmt.Errorf(msg)
+			return fmt.Errorf("%s", msg)
 		}
 
 		_, err = objMgr.CreateBlock(block)
 		if err != nil {
 			msg := fmt.Sprintf("Error creating Block (%s): %s", block.Address, err)
 			log.Error(msg)
-			return fmt.Errorf(msg)
+			return fmt.Errorf("%s", msg)
 		}
 		log.Debugf("Completed to create Block %s", d.Get("address"))
 	} else if block.IPVersion != entities.IPV6 {
@@ -164,14 +164,14 @@ func createBlock(d *schema.ResourceData, m interface{}) error {
 		if block.ParentBlock == "" {
 			msg := "'parent_block' is a required property to get next available block"
 			log.Error(msg)
-			return fmt.Errorf(msg)
+			return fmt.Errorf("%s", msg)
 		}
 
 		sizeNumber, err := strconv.Atoi(block.Size)
 		if err != nil || !isPowerOfTwo(sizeNumber) {
 			msg := "'size' is a required property and must be power of 2 to get next available block"
 			log.Error(msg)
-			return fmt.Errorf(msg)
+			return fmt.Errorf("%s", msg)
 		}
 
 		parentBlockAddress := block.ParentBlock
@@ -186,7 +186,7 @@ func createBlock(d *schema.ResourceData, m interface{}) error {
 		if err != nil {
 			msg := fmt.Sprintf("Failed to getting the IPv4 Block for (%s): %s", block.ParentBlock, err)
 			log.Error(msg)
-			return fmt.Errorf(msg)
+			return fmt.Errorf("%s", msg)
 		}
 		block.ParentBlock = parentBlockEntity.AddressCIDR()
 
@@ -194,7 +194,7 @@ func createBlock(d *schema.ResourceData, m interface{}) error {
 		if err != nil {
 			msg := fmt.Sprintf("Error creating next available block of Block(%s): %s", block.ParentBlock, err)
 			log.Error(msg)
-			return fmt.Errorf(msg)
+			return fmt.Errorf("%s", msg)
 		}
 
 		log.Debugf("Successful to create next available Block of Block %s", d.Get("parent_block"))
@@ -208,14 +208,14 @@ func createBlock(d *schema.ResourceData, m interface{}) error {
 		if block.Address == "" || block.CIDR == "" {
 			msg := fmt.Sprintf("Error parsing created next available Block response for (%s): %s", block.ParentBlock, ref)
 			log.Error(msg)
-			return fmt.Errorf(msg)
+			return fmt.Errorf("%s", msg)
 		}
 		d.Set("address", block.Address)
 		d.Set("cidr", block.CIDR)
 	} else {
 		msg := "'address' and 'cidr' are required to create IPv6 block"
 		log.Error(msg)
-		return fmt.Errorf(msg)
+		return fmt.Errorf("%s", msg)
 	}
 	err := utils.CreateDeploymentOptions(objMgr, entities.DeploymentOption{
 		Configuration: block.Configuration,
@@ -253,7 +253,7 @@ func getBlock(d *schema.ResourceData, m interface{}) error {
 	if err != nil {
 		msg := fmt.Sprintf("Error converting the CIDR (%s): %s", cidrStr, err)
 		log.Error(msg)
-		return fmt.Errorf(msg)
+		return fmt.Errorf("%s", msg)
 	}
 	connector := m.(*utils.Connector)
 	objMgr := new(utils.ObjectManager)
@@ -316,7 +316,7 @@ func updateBlock(d *schema.ResourceData, m interface{}) error {
 	if err != nil {
 		msg := fmt.Sprintf("Error converting the CIDR (%s): %s", block.CIDR, err)
 		log.Error(msg)
-		return fmt.Errorf(msg)
+		return fmt.Errorf("%s", msg)
 	}
 
 	connector := m.(*utils.Connector)
@@ -327,7 +327,7 @@ func updateBlock(d *schema.ResourceData, m interface{}) error {
 	if err != nil {
 		msg := fmt.Sprintf("Error updating Block (%s): %s", block.Address, err)
 		log.Error(msg)
-		return fmt.Errorf(msg)
+		return fmt.Errorf("%s", msg)
 	}
 	currentRaw, newRaw := d.GetChange("deployment_options")
 	err = utils.UpdateDeploymentOptionsForTarget(objMgr, entities.DeploymentOption{
@@ -354,7 +354,7 @@ func deleteBlock(d *schema.ResourceData, m interface{}) error {
 	if err != nil {
 		msg := fmt.Sprintf("Error converting the CIDR (%s): %s", cidrStr, err)
 		log.Error(msg)
-		return fmt.Errorf(msg)
+		return fmt.Errorf("%s", msg)
 	}
 
 	ipVersion = getIpVersion(d, address)
@@ -367,7 +367,7 @@ func deleteBlock(d *schema.ResourceData, m interface{}) error {
 	if err != nil {
 		msg := fmt.Sprintf("Delete Block %s/%s failed: %s", address, cidrStr, err)
 		log.Error(msg)
-		return fmt.Errorf(msg)
+		return fmt.Errorf("%s", msg)
 	}
 	d.SetId("")
 	log.Debugf("Deletion of Block complete ")

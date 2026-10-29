@@ -118,7 +118,7 @@ func deleteIPAssociation(d *schema.ResourceData, m interface{}) error {
 	address := entities.IPAddress{}
 	if !address.InitIPAddress(d) {
 		log.Error(address.InitError)
-		return fmt.Errorf(address.InitError)
+		return fmt.Errorf("%s", address.InitError)
 	}
 	//address.Properties = utils.RemoveImmutableProperties(address.Properties, []string{"parentId", "parentType", "addresses", "addressesIds"})
 
@@ -164,7 +164,7 @@ func deleteIPAssociation(d *schema.ResourceData, m interface{}) error {
 			if err != nil {
 				msg := fmt.Sprintf("Error updating Host record %s: %s", fqdnName, err)
 				log.Debug(msg)
-				return fmt.Errorf(msg)
+				return fmt.Errorf("%s", msg)
 			}
 		}
 	}
@@ -174,7 +174,7 @@ func deleteIPAssociation(d *schema.ResourceData, m interface{}) error {
 	if err != nil {
 		msg := fmt.Sprintf("Releasing the IP address %s failed: %s", address.Address, err)
 		log.Debug(msg)
-		return fmt.Errorf(msg)
+		return fmt.Errorf("%s", msg)
 	}
 	d.SetId("")
 	log.Debugf("Completed to release an association for the IP address %s", address.Address)

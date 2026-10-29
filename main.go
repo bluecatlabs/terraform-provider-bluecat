@@ -4,9 +4,10 @@ package main
 
 import (
 	"flag"
+	"terraform-provider-bluecat/bluecat"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/plugin"
-	"terraform-provider-bluecat/bluecat"
 )
 
 func main() {

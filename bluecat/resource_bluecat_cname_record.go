@@ -116,7 +116,7 @@ func createCNAMERecord(d *schema.ResourceData, m interface{}) error {
 	if err != nil {
 		msg := fmt.Sprintf("Error creating CNAME record %s: %s", fqdnName, err)
 		log.Debug(msg)
-		return fmt.Errorf(msg)
+		return fmt.Errorf("%s", msg)
 	}
 	deploy := utils.ParseDeploymentValue(d.Get("to_deploy").(string))
 	if deploy {
@@ -125,7 +125,7 @@ func createCNAMERecord(d *schema.ResourceData, m interface{}) error {
 		if err != nil {
 			msg := fmt.Sprintf("Error deploying CNAME record %s: %s", fqdnName, err)
 			log.Debug(msg)
-			return fmt.Errorf(msg)
+			return fmt.Errorf("%s", msg)
 		}
 		log.Debugf("Successfully deployed. %s", res)
 	}
@@ -208,7 +208,7 @@ func updateCNAMERecord(d *schema.ResourceData, m interface{}) error {
 	if err != nil {
 		msg := fmt.Sprintf("Error updating CNAME record %s: %s", fqdnName, err)
 		log.Debug(msg)
-		return fmt.Errorf(msg)
+		return fmt.Errorf("%s", msg)
 	}
 	deploy := utils.ParseDeploymentValue(d.Get("to_deploy").(string))
 	if deploy {
@@ -217,7 +217,7 @@ func updateCNAMERecord(d *schema.ResourceData, m interface{}) error {
 		if err != nil {
 			msg := fmt.Sprintf("Error deploying CNAME record %s: %s", fqdnName, err)
 			log.Debug(msg)
-			return fmt.Errorf(msg)
+			return fmt.Errorf("%s", msg)
 		}
 		log.Debugf("Successfully deployed. %s", res)
 	}
@@ -243,7 +243,7 @@ func deleteCNAMERecord(d *schema.ResourceData, m interface{}) error {
 	if err != nil {
 		msg := fmt.Sprintf("Getting CNAME record %s failed: %s", absoluteName, err)
 		log.Debug(msg)
-		return fmt.Errorf(msg)
+		return fmt.Errorf("%s", msg)
 	}
 	deploy := utils.ParseDeploymentValue(d.Get("to_deploy").(string))
 	if deploy {
@@ -251,7 +251,7 @@ func deleteCNAMERecord(d *schema.ResourceData, m interface{}) error {
 		if err != nil {
 			msg := fmt.Sprintf("Error deploying CNAME record %s: %s", absoluteName, err)
 			log.Debug(msg)
-			return fmt.Errorf(msg)
+			return fmt.Errorf("%s", msg)
 		}
 		log.Debugf("Successfully deployed. %s", res)
 	}

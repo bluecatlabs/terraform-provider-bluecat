@@ -121,7 +121,7 @@ func getPTRRecord(d *schema.ResourceData, m interface{}) error {
 	if err != nil {
 		msg := fmt.Sprintf("Getting PTR record %s failed: %s", name, err)
 		log.Debug(msg)
-		return fmt.Errorf(msg)
+		return fmt.Errorf("%s", msg)
 	}
 	d.SetId(hostRecord.AbsoluteName)
 	d.Set("name", hostRecord.AbsoluteName)
@@ -172,7 +172,7 @@ func updatePTR(m interface{}, configuration, view, zone, name, ip4Address, rever
 	if err != nil {
 		msg := fmt.Sprintf("Getting Host record %s failed: %s", fqdnName, err)
 		log.Debug(msg)
-		return "", fmt.Errorf(msg)
+		return "", fmt.Errorf("%s", msg)
 	}
 
 	// Update the host record
@@ -187,7 +187,7 @@ func updatePTR(m interface{}, configuration, view, zone, name, ip4Address, rever
 	} else {
 		msg := fmt.Sprintf("invalid reverse_record value (must be either 'true' or 'false'): '%s'", reverseRecord)
 		log.Debug(msg)
-		return "", fmt.Errorf(msg)
+		return "", fmt.Errorf("%s", msg)
 	}
 
 	var immutableProperties = []string{"parentId", "parentType"} // these properties will raise error on the rest-api
@@ -197,7 +197,7 @@ func updatePTR(m interface{}, configuration, view, zone, name, ip4Address, rever
 	if err != nil {
 		msg := fmt.Sprintf("Error updating PTR record %s: %s", fqdnName, err)
 		log.Debug(msg)
-		return "", fmt.Errorf(msg)
+		return "", fmt.Errorf("%s", msg)
 	}
 	deploy := utils.ParseDeploymentValue(to_deploy)
 	if deploy {
@@ -206,7 +206,7 @@ func updatePTR(m interface{}, configuration, view, zone, name, ip4Address, rever
 		if err != nil {
 			msg := fmt.Sprintf("Error deploying PTR record %s: %s", fqdnName, err)
 			log.Debug(msg)
-			return fqdnName, fmt.Errorf(msg)
+			return fqdnName, fmt.Errorf("%s", msg)
 		}
 		log.Debugf("Successfully deployed. %s", res)
 	}

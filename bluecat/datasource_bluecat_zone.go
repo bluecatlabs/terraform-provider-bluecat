@@ -72,7 +72,7 @@ func dataSourceZoneRead(d *schema.ResourceData, m interface{}) error {
 	if err != nil {
 		msg := fmt.Sprintf("Getting Zone %s failed: %s", zone, err)
 		log.Debug(msg)
-		return fmt.Errorf(msg)
+		return fmt.Errorf("%s", msg)
 	}
 
 	// Parse BAM properties
@@ -98,7 +98,7 @@ func dataSourceZoneRead(d *schema.ResourceData, m interface{}) error {
 	if err != nil {
 		msg := fmt.Sprintf("error get all deployment roles on the zone: %s", err)
 		log.Debug(msg)
-		return fmt.Errorf(msg)
+		return fmt.Errorf("%s", msg)
 	}
 
 	var serverRolesRaw []string
