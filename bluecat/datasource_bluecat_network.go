@@ -63,7 +63,7 @@ func dataSourceIPv4NetworkRead(d *schema.ResourceData, m interface{}) error {
 	network := entities.Network{}
 	if !network.InitNetwork(d) {
 		log.Error(network.InitError)
-		return fmt.Errorf(network.InitError)
+		return fmt.Errorf("%s", network.InitError)
 	}
 
 	connector := m.(*utils.Connector)
@@ -74,7 +74,7 @@ func dataSourceIPv4NetworkRead(d *schema.ResourceData, m interface{}) error {
 	if err != nil {
 		msg := fmt.Sprintf("Getting Network %s failed: %s", retrievedNetwork.CIDR, err)
 		log.Error(msg)
-		return fmt.Errorf(msg)
+		return fmt.Errorf("%s", msg)
 	}
 
 	gateway := utils.GetPropertyValue("gateway", retrievedNetwork.Properties)

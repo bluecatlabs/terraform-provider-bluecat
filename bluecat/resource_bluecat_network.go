@@ -124,7 +124,7 @@ func createNetwork(d *schema.ResourceData, m interface{}) error {
 	network := entities.Network{}
 	if !network.InitNetwork(d) {
 		log.Error(network.InitError)
-		return fmt.Errorf(network.InitError)
+		return fmt.Errorf("%s", network.InitError)
 	}
 	log.Debugf("Beginning to create Network %s", network.CIDR)
 
@@ -144,7 +144,7 @@ func createNetwork(d *schema.ResourceData, m interface{}) error {
 		if err != nil {
 			msg := fmt.Sprintf("Failed to getting the IPv4 Block for (%s): %s", network.CIDR, err)
 			log.Error(msg)
-			return fmt.Errorf(msg)
+			return fmt.Errorf("%s", msg)
 		}
 
 		if network.IPVersion == "" || network.IPVersion == entities.IPV4 {
@@ -160,7 +160,7 @@ func createNetwork(d *schema.ResourceData, m interface{}) error {
 		if err != nil {
 			msg := fmt.Sprintf("Error creating Network (%s): %s", network.CIDR, err)
 			log.Error(msg)
-			return fmt.Errorf(msg)
+			return fmt.Errorf("%s", msg)
 		}
 
 		log.Debugf("Successful to create Network %s", network.CIDR)
@@ -171,14 +171,14 @@ func createNetwork(d *schema.ResourceData, m interface{}) error {
 		if network.ParentBlock == "" {
 			msg := "'parent_block' is a required property to get next available network"
 			log.Error(msg)
-			return fmt.Errorf(msg)
+			return fmt.Errorf("%s", msg)
 		}
 
 		sizeNumber, err := strconv.Atoi(network.Size)
 		if err != nil || !isPowerOfTwo(sizeNumber) {
 			msg := "'size' is a required property and must be power of 2 to get next available network"
 			log.Error(msg)
-			return fmt.Errorf(msg)
+			return fmt.Errorf("%s", msg)
 		}
 
 		// Keep the mask the user supplied in parent_block; deriving it from the
@@ -187,7 +187,7 @@ func createNetwork(d *schema.ResourceData, m interface{}) error {
 		if len(parts) > 2 {
 			msg := fmt.Sprintf("Invalid parent_block %q: expected 'address' or 'address/cidr'", network.ParentBlock)
 			log.Error(msg)
-			return fmt.Errorf(msg)
+			return fmt.Errorf("%s", msg)
 		}
 		blockAddress := parts[0]
 		blockCIDR := "0"
@@ -199,7 +199,7 @@ func createNetwork(d *schema.ResourceData, m interface{}) error {
 		if err != nil {
 			msg := fmt.Sprintf("Failed to getting the IPv4 Block for (%s): %s", network.CIDR, err)
 			log.Error(msg)
-			return fmt.Errorf(msg)
+			return fmt.Errorf("%s", msg)
 		}
 		network.BlockAddr = fmt.Sprintf("%s/%s", blockAddress, blockCIDR)
 
@@ -207,7 +207,7 @@ func createNetwork(d *schema.ResourceData, m interface{}) error {
 		if err != nil {
 			msg := fmt.Sprintf("Error creating next available Network of Block(%s): %s", network.ParentBlock, err)
 			log.Error(msg)
-			return fmt.Errorf(msg)
+			return fmt.Errorf("%s", msg)
 		}
 
 		log.Debugf("Successful to create next available Network of Block %s", d.Get("parent_block"))
@@ -228,7 +228,7 @@ func createNetwork(d *schema.ResourceData, m interface{}) error {
 				if err != nil {
 					msg := fmt.Sprintf("Reservation IP Address failed in network %s:%s", network.CIDR, err)
 					log.Error(msg)
-					return fmt.Errorf(msg)
+					return fmt.Errorf("%s", msg)
 				}
 			}
 		}
@@ -285,7 +285,7 @@ func getNetwork(d *schema.ResourceData, m interface{}) error {
 	networkEntity := entities.Network{}
 	if !networkEntity.InitNetwork(d) {
 		log.Error(networkEntity.InitError)
-		return fmt.Errorf(networkEntity.InitError)
+		return fmt.Errorf("%s", networkEntity.InitError)
 	}
 
 	var network *entities.Network
@@ -311,7 +311,7 @@ func getNetwork(d *schema.ResourceData, m interface{}) error {
 		if err != nil {
 			msg := fmt.Sprintf("Getting Network in block %s failed: %s", parentBlock, err)
 			log.Error(msg)
-			return fmt.Errorf(msg)
+			return fmt.Errorf("%s", msg)
 		}
 	}
 
@@ -347,7 +347,7 @@ func updateNetwork(d *schema.ResourceData, m interface{}) error {
 	network := entities.Network{}
 	if !network.InitNetwork(d) {
 		log.Error(network.InitError)
-		return fmt.Errorf(network.InitError)
+		return fmt.Errorf("%s", network.InitError)
 	}
 	log.Debugf("Beginning to update Network %s", network.CIDR)
 
@@ -355,7 +355,7 @@ func updateNetwork(d *schema.ResourceData, m interface{}) error {
 	if err != nil {
 		msg := fmt.Sprintf("Error updating Network (%s): %s", network.CIDR, err)
 		log.Error(msg)
-		return fmt.Errorf(msg)
+		return fmt.Errorf("%s", msg)
 	}
 	currentRaw, newRaw := d.GetChange("deployment_options")
 	err = utils.UpdateDeploymentOptionsForTarget(objMgr, entities.DeploymentOption{
@@ -379,7 +379,7 @@ func deleteNetwork(d *schema.ResourceData, m interface{}) error {
 	network := entities.Network{}
 	if !network.InitNetwork(d) {
 		log.Error(network.InitError)
-		return fmt.Errorf(network.InitError)
+		return fmt.Errorf("%s", network.InitError)
 	}
 	log.Debugf("Beginning to delete Network %s", network.CIDR)
 
@@ -387,7 +387,7 @@ func deleteNetwork(d *schema.ResourceData, m interface{}) error {
 	if err != nil {
 		msg := fmt.Sprintf("Delete Network %s failed: %s", network.CIDR, err)
 		log.Error(msg)
-		return fmt.Errorf(msg)
+		return fmt.Errorf("%s", msg)
 	}
 	d.SetId("")
 	log.Debugf("Deletion of Network complete ")

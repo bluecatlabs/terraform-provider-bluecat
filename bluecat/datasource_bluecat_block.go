@@ -66,7 +66,7 @@ func dataSourceBlockRead(d *schema.ResourceData, m interface{}) error {
 	if !(strings.Contains(cidr, "/")) {
 		msg := fmt.Sprintf("Invalid cidr block %s", cidr)
 		log.Error(msg)
-		return fmt.Errorf(msg)
+		return fmt.Errorf("%s", msg)
 	}
 
 	cidrList := strings.Split(cidr, "/")
@@ -76,7 +76,7 @@ func dataSourceBlockRead(d *schema.ResourceData, m interface{}) error {
 	if err != nil {
 		msg := fmt.Sprintf("Getting Block %s/%s failed: %s", address, cidr, err)
 		log.Error(msg)
-		return fmt.Errorf(msg)
+		return fmt.Errorf("%s", msg)
 	}
 
 	// Parse BAM properties

@@ -76,7 +76,7 @@ func createDHCPRange(d *schema.ResourceData, m interface{}) error {
 	dhcpRange := entities.DHCPRange{}
 	if !dhcpRange.InitRange(d) {
 		log.Error(dhcpRange.InitError)
-		return fmt.Errorf(dhcpRange.InitError)
+		return fmt.Errorf("%s", dhcpRange.InitError)
 	}
 
 	log.Debugf("Beginning to create DHCP Range (%s - %s) in the network %s", dhcpRange.Start, dhcpRange.End, dhcpRange.Network)
@@ -87,7 +87,7 @@ func createDHCPRange(d *schema.ResourceData, m interface{}) error {
 	if err != nil {
 		msg := fmt.Sprintf("Error creating DHCP Range (%s - %s) in the network %s: %s", dhcpRange.Start, dhcpRange.End, dhcpRange.Network, err)
 		log.Error(msg)
-		return fmt.Errorf(msg)
+		return fmt.Errorf("%s", msg)
 	}
 
 	log.Debugf("Successful to create DHCP Range (%s - %s) in the network %s", dhcpRange.Start, dhcpRange.End, dhcpRange.Network)
@@ -103,7 +103,7 @@ func getDHCPRange(d *schema.ResourceData, m interface{}) error {
 	dhcpRange := entities.DHCPRange{}
 	if !dhcpRange.InitRange(d) {
 		log.Error(dhcpRange.InitError)
-		return fmt.Errorf(dhcpRange.InitError)
+		return fmt.Errorf("%s", dhcpRange.InitError)
 	}
 
 	log.Debugf("Beginning to get DHCP Range (%s - %s)", dhcpRange.Start, dhcpRange.End)
@@ -113,7 +113,7 @@ func getDHCPRange(d *schema.ResourceData, m interface{}) error {
 		msg := fmt.Sprintf("Getting DHCP Range (%s - %s) failed: %s", dhcpRangeEntity.Start, dhcpRangeEntity.End, err)
 		msg += fmt.Sprintf("Subpath: %s", dhcpRangeEntity.SubPath())
 		log.Error(msg)
-		return fmt.Errorf(msg)
+		return fmt.Errorf("%s", msg)
 	}
 	// --- Parse both server and config properties ---
 	bamProps := utils.ParseProperties(dhcpRange.Properties)
@@ -138,7 +138,7 @@ func updateDHCPRange(d *schema.ResourceData, m interface{}) error {
 	dhcpRange := entities.DHCPRange{}
 	if !dhcpRange.InitRange(d) {
 		log.Error(dhcpRange.InitError)
-		return fmt.Errorf(dhcpRange.InitError)
+		return fmt.Errorf("%s", dhcpRange.InitError)
 	}
 
 	log.Debugf("Beginning to update DHCP Range (%s - %s)", dhcpRange.Start, dhcpRange.End)
@@ -152,7 +152,7 @@ func updateDHCPRange(d *schema.ResourceData, m interface{}) error {
 	if err != nil {
 		msg := fmt.Sprintf("Error updating DHCP Range (%s - %s): %s", dhcpRange.Start, dhcpRange.End, err)
 		log.Error(msg)
-		return fmt.Errorf(msg)
+		return fmt.Errorf("%s", msg)
 	}
 
 	startAfterUpdate := getAttributeFromProperties("start", dhcpRange.Properties)
@@ -178,7 +178,7 @@ func deleteDHCPRange(d *schema.ResourceData, m interface{}) error {
 	dhcpRange := entities.DHCPRange{}
 	if !dhcpRange.InitRange(d) {
 		log.Error(dhcpRange.InitError)
-		return fmt.Errorf(dhcpRange.InitError)
+		return fmt.Errorf("%s", dhcpRange.InitError)
 	}
 
 	log.Debugf("Beginning to delete DHCP Range (%s - %s)", dhcpRange.Start, dhcpRange.End)
@@ -187,7 +187,7 @@ func deleteDHCPRange(d *schema.ResourceData, m interface{}) error {
 	if err != nil {
 		msg := fmt.Sprintf("Delete DHCP Range (%s - %s) failed: %s", dhcpRange.Start, dhcpRange.End, err)
 		log.Error(msg)
-		return fmt.Errorf(msg)
+		return fmt.Errorf("%s", msg)
 	}
 	d.SetId("")
 	log.Debugf("Deletion of DHCP Range complete ")

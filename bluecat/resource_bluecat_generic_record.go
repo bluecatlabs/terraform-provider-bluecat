@@ -122,7 +122,7 @@ func createGenericRecord(d *schema.ResourceData, m interface{}) error {
 	if err != nil {
 		msg := fmt.Sprintf("Error creating Generic record %s: %s", fqdnName, err)
 		log.Debug(msg)
-		return fmt.Errorf(msg)
+		return fmt.Errorf("%s", msg)
 	}
 	deploy := utils.ParseDeploymentValue(d.Get("to_deploy").(string))
 	if deploy {
@@ -131,7 +131,7 @@ func createGenericRecord(d *schema.ResourceData, m interface{}) error {
 		if err != nil {
 			msg := fmt.Sprintf("Error deploying Generic record %s: %s", absoluteName, err)
 			log.Debug(msg)
-			return fmt.Errorf(msg)
+			return fmt.Errorf("%s", msg)
 		}
 		log.Debugf("Successfully deployed. %s", res)
 	}
@@ -213,7 +213,7 @@ func updateGenericRecord(d *schema.ResourceData, m interface{}) error {
 	if err != nil {
 		msg := fmt.Sprintf("Error updating Generic record %s: %s", fqdnName, err)
 		log.Debug(msg)
-		return fmt.Errorf(msg)
+		return fmt.Errorf("%s", msg)
 	}
 	deploy := utils.ParseDeploymentValue(d.Get("to_deploy").(string))
 	if deploy {
@@ -222,7 +222,7 @@ func updateGenericRecord(d *schema.ResourceData, m interface{}) error {
 		if err != nil {
 			msg := fmt.Sprintf("Error deploying Generic record %s: %s", absoluteName, err)
 			log.Debug(msg)
-			return fmt.Errorf(msg)
+			return fmt.Errorf("%s", msg)
 		}
 		log.Debugf("Successfully deployed. %s", res)
 	}
@@ -248,7 +248,7 @@ func deleteGenericRecord(d *schema.ResourceData, m interface{}) error {
 	if err != nil {
 		msg := fmt.Sprintf("Getting Generic record %s failed: %s", absoluteName, err)
 		log.Debug(msg)
-		return fmt.Errorf(msg)
+		return fmt.Errorf("%s", msg)
 	}
 	deploy := utils.ParseDeploymentValue(d.Get("to_deploy").(string))
 	if deploy {
@@ -256,7 +256,7 @@ func deleteGenericRecord(d *schema.ResourceData, m interface{}) error {
 		if err != nil {
 			msg := fmt.Sprintf("Error deploying Generic record %s: %s", absoluteName, err)
 			log.Debug(msg)
-			return fmt.Errorf(msg)
+			return fmt.Errorf("%s", msg)
 		}
 		log.Debugf("Successfully deployed. %s", res)
 	}

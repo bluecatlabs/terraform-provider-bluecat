@@ -140,7 +140,7 @@ func createSRVRecord(d *schema.ResourceData, m interface{}) error {
 	if err != nil {
 		msg := fmt.Sprintf("Error creating SRV record %s: %s", fqdnName, err)
 		log.Debug(msg)
-		return fmt.Errorf(msg)
+		return fmt.Errorf("%s", msg)
 	}
 	deploy := utils.ParseDeploymentValue(d.Get("to_deploy").(string))
 	if deploy {
@@ -149,7 +149,7 @@ func createSRVRecord(d *schema.ResourceData, m interface{}) error {
 		if err != nil {
 			msg := fmt.Sprintf("Error deploying SRV record %s: %s", absoluteName, err)
 			log.Debug(msg)
-			return fmt.Errorf(msg)
+			return fmt.Errorf("%s", msg)
 		}
 		log.Debugf("Successfully deployed. %s", res)
 	}
@@ -235,7 +235,7 @@ func updateSRVRecord(d *schema.ResourceData, m interface{}) error {
 	if err != nil {
 		msg := fmt.Sprintf("Error updating SRV record %s: %s", fqdnName, err)
 		log.Debug(msg)
-		return fmt.Errorf(msg)
+		return fmt.Errorf("%s", msg)
 	}
 
 	deploy := utils.ParseDeploymentValue(d.Get("to_deploy").(string))
@@ -245,7 +245,7 @@ func updateSRVRecord(d *schema.ResourceData, m interface{}) error {
 		if err != nil {
 			msg := fmt.Sprintf("Error deploying SRV record %s: %s", absoluteName, err)
 			log.Debug(msg)
-			return fmt.Errorf(msg)
+			return fmt.Errorf("%s", msg)
 		}
 		log.Debugf("Successfully deployed. %s", res)
 	}
@@ -275,7 +275,7 @@ func deleteSRVRecord(d *schema.ResourceData, m interface{}) error {
 	if err != nil {
 		msg := fmt.Sprintf("Getting SRV record %s failed: %s", absoluteName, err)
 		log.Debug(msg)
-		return fmt.Errorf(msg)
+		return fmt.Errorf("%s", msg)
 	}
 	deploy := utils.ParseDeploymentValue(d.Get("to_deploy").(string))
 	if deploy {
@@ -283,7 +283,7 @@ func deleteSRVRecord(d *schema.ResourceData, m interface{}) error {
 		if err != nil {
 			msg := fmt.Sprintf("Error deploying SRV record %s: %s", absoluteName, err)
 			log.Debug(msg)
-			return fmt.Errorf(msg)
+			return fmt.Errorf("%s", msg)
 		}
 		log.Debugf("Successfully deployed. %s", res)
 	}

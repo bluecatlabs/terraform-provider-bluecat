@@ -68,7 +68,7 @@ func createView(d *schema.ResourceData, m interface{}) error {
 	if err != nil {
 		msg := fmt.Sprintf("Error creating View (%s): %s", name, err)
 		log.Error(msg)
-		return fmt.Errorf(msg)
+		return fmt.Errorf("%s", msg)
 	}
 	err = utils.CreateDeploymentOptions(objMgr, entities.DeploymentOption{
 		Configuration: configuration,
@@ -77,7 +77,7 @@ func createView(d *schema.ResourceData, m interface{}) error {
 	if err != nil {
 		msg := fmt.Sprintf("Error creating deployment options on View (%s): %s", name, err)
 		log.Error(msg)
-		return fmt.Errorf(msg)
+		return fmt.Errorf("%s", msg)
 	}
 	log.Debugf("Completed to create View %s", d.Get("name"))
 	return getView(d, m)
@@ -158,7 +158,7 @@ func deleteView(d *schema.ResourceData, m interface{}) error {
 	if err != nil {
 		msg := fmt.Sprintf("Delete View %s failed: %s", view_name, err)
 		log.Error(msg)
-		return fmt.Errorf(msg)
+		return fmt.Errorf("%s", msg)
 	}
 	d.SetId("")
 	log.Debugf("Deletion of View complete ")

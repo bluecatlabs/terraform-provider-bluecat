@@ -65,7 +65,7 @@ func dataSourceViewRead(d *schema.ResourceData, m interface{}) error {
 	if err != nil {
 		msg := fmt.Sprintf("Getting Zone %s failed: %s", viewName, err)
 		log.Debug(msg)
-		return fmt.Errorf(msg)
+		return fmt.Errorf("%s", msg)
 	}
 	// Parse BAM properties
 	bamProps := utils.ParseProperties(viewObj.Properties)

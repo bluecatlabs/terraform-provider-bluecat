@@ -84,7 +84,7 @@ func createZone(d *schema.ResourceData, m interface{}) error {
 	if err != nil {
 		msg := fmt.Sprintf("Error creating Zone (%s): %s", zone, err)
 		log.Debug(msg)
-		return fmt.Errorf(msg)
+		return fmt.Errorf("%s", msg)
 	}
 
 	connector := m.(*utils.Connector)
@@ -95,7 +95,7 @@ func createZone(d *schema.ResourceData, m interface{}) error {
 	if err != nil {
 		msg := fmt.Sprintf("Error creating Zone (%s): %s", zone, err)
 		log.Debug(msg)
-		return fmt.Errorf(msg)
+		return fmt.Errorf("%s", msg)
 	}
 
 	serverRoles := make([]string, len(serverRolesRaw))
@@ -127,7 +127,7 @@ func createZone(d *schema.ResourceData, m interface{}) error {
 					msg := fmt.Sprintf("Rollback data - Delete Zone %s failed: %s", zone, err)
 					log.Debug(msg)
 				}
-				return fmt.Errorf(msg)
+				return fmt.Errorf("%s", msg)
 			}
 		}
 	}
@@ -149,7 +149,7 @@ func createZone(d *schema.ResourceData, m interface{}) error {
 				msg := fmt.Sprintf("Rollback data - Delete Zone %s failed: %s", zone, err)
 				log.Debug(msg)
 			}
-			return fmt.Errorf(msg)
+			return fmt.Errorf("%s", msg)
 		}
 	}
 
@@ -214,7 +214,7 @@ func getZone(d *schema.ResourceData, m interface{}) error {
 	if rolesErr != nil {
 		msg := fmt.Sprintf("error get all deployment roles on the zone: %s", rolesErr)
 		log.Debug(msg)
-		return fmt.Errorf(msg)
+		return fmt.Errorf("%s", msg)
 	}
 
 	serverRolesRaw := make([]string, 0, len(serverRoles.ServerRoles))
@@ -229,7 +229,7 @@ func getZone(d *schema.ResourceData, m interface{}) error {
 	if optionsErr != nil {
 		msg := fmt.Sprintf("error get deployment options on the zone: %s", optionsErr)
 		log.Debug(msg)
-		return fmt.Errorf(msg)
+		return fmt.Errorf("%s", msg)
 	}
 	d.Set("deployment_options", utils.FlattenStringMap(deploymentOptionsRaw))
 
@@ -251,7 +251,7 @@ func updateZone(d *schema.ResourceData, m interface{}) error {
 	if err != nil {
 		msg := fmt.Sprintf("Error updating Zone (%s): %s", zone, err)
 		log.Debug(msg)
-		return fmt.Errorf(msg)
+		return fmt.Errorf("%s", msg)
 	}
 
 	connector := m.(*utils.Connector)
@@ -262,7 +262,7 @@ func updateZone(d *schema.ResourceData, m interface{}) error {
 	if err != nil {
 		msg := fmt.Sprintf("Error updating Zone (%s): %s", zone, err)
 		log.Debug(msg)
-		return fmt.Errorf(msg)
+		return fmt.Errorf("%s", msg)
 	}
 
 	currentDeploymentOptionsRaw, newDeploymentOptionsRaw := d.GetChange("deployment_options")
@@ -286,7 +286,7 @@ func updateZone(d *schema.ResourceData, m interface{}) error {
 			log.Debug(msg)
 		}
 
-		return fmt.Errorf(msg)
+		return fmt.Errorf("%s", msg)
 	}
 
 	return getZone(d, m)
@@ -307,7 +307,7 @@ func deleteZone(d *schema.ResourceData, m interface{}) error {
 	if err != nil {
 		msg := fmt.Sprintf("Delete Zone %s failed: %s", zone, err)
 		log.Debug(msg)
-		return fmt.Errorf(msg)
+		return fmt.Errorf("%s", msg)
 	}
 	d.SetId("")
 	log.Debugf("Deletion of Zone complete")

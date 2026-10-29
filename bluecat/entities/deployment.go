@@ -21,7 +21,7 @@ type DeploymentRoles struct {
 	Configuration string           `json:"-"`
 	View          string           `json:"-"`
 	Zone          string           `json:"-"`
-	ServerRoles   []DeploymentRole `json:"deployment_roles, omitempty"`
+	ServerRoles   []DeploymentRole `json:"deployment_roles,omitempty"`
 }
 
 // DeploymentOption the Deployment option entity

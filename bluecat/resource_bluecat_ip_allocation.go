@@ -118,7 +118,7 @@ func createIPAllocation(d *schema.ResourceData, m interface{}) error {
 	address := entities.IPAddress{}
 	if !address.InitIPAddress(d) {
 		log.Error(address.InitError)
-		return fmt.Errorf(address.InitError)
+		return fmt.Errorf("%s", address.InitError)
 	}
 
 	// these props are not directly related to address
@@ -164,7 +164,7 @@ func createIPAllocation(d *schema.ResourceData, m interface{}) error {
 		if err != nil {
 			msg := fmt.Sprintf("Error allocating IP from network %s: %s", network, err)
 			log.Debug(msg)
-			return fmt.Errorf(msg)
+			return fmt.Errorf("%s", msg)
 		}
 		if len(address.Address) == 0 {
 			//No IP address, so need to get the IP after got the new ones in the above step
@@ -180,7 +180,7 @@ func createIPAllocation(d *schema.ResourceData, m interface{}) error {
 		if err != nil {
 			msg := fmt.Sprintf("Updating IP address %s failed: %s", address.Address, err)
 			log.Debug(msg)
-			return fmt.Errorf(msg)
+			return fmt.Errorf("%s", msg)
 		}
 	}
 
@@ -194,7 +194,7 @@ func createIPAllocation(d *schema.ResourceData, m interface{}) error {
 			if err != nil {
 				msg := fmt.Sprintf("Error creating the Host record %s: %s", fqdnName, err)
 				log.Debug(msg)
-				return fmt.Errorf(msg)
+				return fmt.Errorf("%s", msg)
 			}
 			if d.Get("action").(string) == "MAKE_STATIC" {
 				to_deploy := d.Get("to_deploy")
@@ -206,7 +206,7 @@ func createIPAllocation(d *schema.ResourceData, m interface{}) error {
 						if err != nil {
 							msg := fmt.Sprintf("Error deploying IP Allocation record %s: %s", fqdnName, err)
 							log.Debug(msg)
-							return fmt.Errorf(msg)
+							return fmt.Errorf("%s", msg)
 						}
 						log.Debugf("Successfully deployed. %s", res)
 					}
@@ -230,7 +230,7 @@ func getIPAllocation(d *schema.ResourceData, m interface{}) error {
 	address := entities.IPAddress{}
 	if !address.InitIPAddress(d) {
 		log.Error(address.InitError)
-		return fmt.Errorf(address.InitError)
+		return fmt.Errorf("%s", address.InitError)
 	}
 	log.Debugf("Beginning to get IP address: %s", address.Address)
 
@@ -258,7 +258,7 @@ func getIPAllocation(d *schema.ResourceData, m interface{}) error {
 		if err != nil {
 			msg := fmt.Sprintf("Getting IP address %s failed: %s", address.Address, err)
 			log.Debug(msg)
-			return fmt.Errorf(msg)
+			return fmt.Errorf("%s", msg)
 		}
 		properties = ipAddress.Properties
 	}
@@ -294,7 +294,7 @@ func deleteIPAllocation(d *schema.ResourceData, m interface{}) error {
 	address := entities.IPAddress{}
 	if !address.InitIPAddress(d) {
 		log.Error(address.InitError)
-		return fmt.Errorf(address.InitError)
+		return fmt.Errorf("%s", address.InitError)
 	}
 	log.Debugf("Beginning to release an IP allocated in the network %s", d.Get("network"))
 
@@ -309,7 +309,7 @@ func deleteIPAllocation(d *schema.ResourceData, m interface{}) error {
 		if err != nil {
 			msg := fmt.Sprintf("Delete IP address %s failed: %s", address.Address, err)
 			log.Debug(msg)
-			return fmt.Errorf(msg)
+			return fmt.Errorf("%s", msg)
 		}
 	}
 
@@ -326,7 +326,7 @@ func updateAllocatedResource(d *schema.ResourceData, m interface{}) error {
 	address := entities.IPAddress{}
 	if !address.InitIPAddress(d) {
 		log.Error(address.InitError)
-		return fmt.Errorf(address.InitError)
+		return fmt.Errorf("%s", address.InitError)
 	}
 
 	log.Debugf("Updating allocated resource in network %s", d.Get("network"))
@@ -346,7 +346,7 @@ func updateAllocatedResource(d *schema.ResourceData, m interface{}) error {
 		hostRecord, err := objMgr.GetHostRecord(address.Configuration, view, fqdnName)
 		if err == nil {
 			// Keeps values as in the server
-			log.Debugf(hostRecord.Properties)
+			log.Debugf("%s", hostRecord.Properties)
 			TTL := utils.GetPropertyValue("ttl", hostRecord.Properties)
 			rrTTL, err := strconv.Atoi(TTL)
 			if err != nil {
@@ -368,7 +368,7 @@ func updateAllocatedResource(d *schema.ResourceData, m interface{}) error {
 			if err != nil {
 				msg := fmt.Sprintf("Error updating Host record %s: %s", fqdnName, err)
 				log.Debug(msg)
-				return fmt.Errorf(msg)
+				return fmt.Errorf("%s", msg)
 			}
 			if action, ok := d.Get("action").(string); ok && action == "MAKE_STATIC" {
 				to_deploy := d.Get("to_deploy")
@@ -380,7 +380,7 @@ func updateAllocatedResource(d *schema.ResourceData, m interface{}) error {
 						if err != nil {
 							msg := fmt.Sprintf("Error deploying IP Allocation record %s: %s", fqdnName, err)
 							log.Debug(msg)
-							return fmt.Errorf(msg)
+							return fmt.Errorf("%s", msg)
 						}
 						log.Debugf("Successfully deployed. %s", res)
 					}
@@ -396,7 +396,7 @@ func updateAllocatedResource(d *schema.ResourceData, m interface{}) error {
 	if err != nil {
 		msg := fmt.Sprintf("Getting IP address %s failed: %s", address.Address, err)
 		log.Debug(msg)
-		return fmt.Errorf(msg)
+		return fmt.Errorf("%s", msg)
 	}
 	// The properties field belongs to Host record if the zone field is not none
 	if len(zone) > 0 {
@@ -424,7 +424,7 @@ func updateAllocatedResource(d *schema.ResourceData, m interface{}) error {
 	if err != nil {
 		msg := fmt.Sprintf("Error updating IP address %s: %s", address.Address, err)
 		log.Debug(msg)
-		return fmt.Errorf(msg)
+		return fmt.Errorf("%s", msg)
 	}
 
 	log.Debugf("Completed to update the allocated resource in network %s", d.Get("network"))
